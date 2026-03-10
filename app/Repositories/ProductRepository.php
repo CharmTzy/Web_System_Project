@@ -182,7 +182,7 @@ final class ProductRepository implements CatalogRepositoryInterface
             'price' => (float) $row['price'],
             'compare_price' => $row['compare_price'] === null ? null : (float) $row['compare_price'],
             'stock_quantity' => (int) $row['stock_quantity'],
-            'image_url' => (string) ($row['image_url'] ?: 'https://placehold.co/640x480/e8e2d8/152238?text=Product'),
+            'image_url' => (string) ($row['image_url'] ?: '/assets/images/products/product-fallback.svg'),
             'rating' => (float) $row['rating'],
             'review_count' => (int) $row['review_count'],
             'is_active' => (bool) $row['is_active'],
@@ -191,4 +191,3 @@ final class ProductRepository implements CatalogRepositoryInterface
         ];
     }
 }
-
