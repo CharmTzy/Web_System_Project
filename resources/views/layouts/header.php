@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-$pageTitle = $pageTitle ?? 'Storefront';
-$appName = $appName ?? 'Meridian Mart';
+$pageTitle = $pageTitle ?? 'Shop';
+$appName = $appName ?? 'NovaMarket';
 $headerSearchValue = $headerSearchValue ?? '';
 $cartSummary = $cartSummary ?? [
     'total_items' => 0,
@@ -28,31 +28,15 @@ $sessionName = $_SESSION['user_name'] ?? '';
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
 <body class="<?= e($bodyClass ?? '') ?>">
-    <div class="utility-bar">
-        <div class="container utility-bar__inner">
-            <div class="utility-bar__links">
-                <a href="/">Shop discovery</a>
-                <span class="utility-bar__dot" aria-hidden="true"></span>
-                <a href="/cart.php">Shopping cart</a>
-                <span class="utility-bar__dot" aria-hidden="true"></span>
-                <span>INF1005 customer module</span>
-            </div>
-            <div class="utility-bar__meta">
-                <span>Responsive Bootstrap + PHP storefront</span>
-                <span class="pill-badge pill-badge--soft">Cart <?= e((string) $cartSummary['total_items']) ?></span>
-            </div>
-        </div>
-    </div>
-
     <header class="site-header">
         <div class="container">
             <div class="site-header__main">
-                <a class="site-nav__brand-link" href="/">
-                    <span class="site-nav__eyebrow">INF1005 B2C Module</span>
+                <a class="site-nav__brand-link" href="/index.html">
+                    <span class="site-nav__eyebrow">Everyday style. Smart prices.</span>
                     <span class="site-nav__brand"><?= e($appName) ?></span>
                 </a>
 
-                <form class="header-search" action="/" method="get" role="search">
+                <form class="header-search" action="/index.html" method="get" role="search">
                     <label class="visually-hidden" for="header-search-input">Search the product catalog</label>
                     <input
                         id="header-search-input"
@@ -60,13 +44,13 @@ $sessionName = $_SESSION['user_name'] ?? '';
                         type="search"
                         name="search"
                         value="<?= e($headerSearchValue) ?>"
-                        placeholder="Search products, sellers, or categories"
+                        placeholder="Search products, brands, or categories"
                     >
                     <button class="btn btn-brand header-search__button" type="submit">Search</button>
                 </form>
 
                 <div class="site-header__actions">
-                    <a class="header-cart-link" href="/cart.php">
+                    <a class="header-cart-link" href="/cart.html">
                         <span>Cart</span>
                         <strong data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>
                     </a>

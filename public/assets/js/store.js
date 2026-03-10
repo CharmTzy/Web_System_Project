@@ -22,7 +22,7 @@
   };
 
   const updateCartCount = (count) => {
-    document.querySelectorAll('[data-cart-count]').forEach((node) => {
+    document.querySelectorAll('[data-cart-count], [data-hero-cart-count]').forEach((node) => {
       node.textContent = String(count);
     });
   };
@@ -60,6 +60,24 @@
     form._cartTimer = window.setTimeout(() => {
       form.requestSubmit();
     }, delay);
+  };
+
+  const refreshCart = async () => {
+    const response = await fetch('/api/cart.php', {
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.message || 'Unable to load the cart.');
+    }
+
+    applyCartPayload(payload);
+
+    return payload;
   };
 
   const sendCartForm = async (form) => {
@@ -144,11 +162,17 @@
     }
   });
 
+  document.addEventListener('DOMContentLoaded', () => {
+    refreshCart().catch(() => {
+      // Leave the page usable even if the cart snapshot fails.
+    });
+  });
+
   window.Storefront = {
     applyCartPayload,
     flashMessage,
     openCartDrawer,
+    refreshCart,
     scheduleFormSubmit,
   };
 })();
-

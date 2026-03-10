@@ -1,9 +1,26 @@
 (() => {
-  const cartPage = document.querySelector('[data-cart-page]');
+  const page = document.querySelector('[data-cart-screen]');
 
-  if (!cartPage) {
+  if (!page) {
     return;
   }
+
+  const cartItems = document.querySelector('[data-cart-items]');
+  const cartSubtotal = document.querySelector('[data-cart-subtotal]');
+
+  const applyCartSummary = (payload) => {
+    if (cartItems) {
+      cartItems.textContent = String(payload.total_items ?? payload.count ?? 0);
+    }
+
+    if (cartSubtotal) {
+      cartSubtotal.textContent = payload.subtotal_formatted || payload.subtotal || '$0.00';
+    }
+  };
+
+  document.addEventListener('storefront:cart-updated', (event) => {
+    applyCartSummary(event.detail || {});
+  });
 
   document.addEventListener('input', (event) => {
     const target = event.target;
@@ -25,4 +42,3 @@
     }
   });
 })();
-

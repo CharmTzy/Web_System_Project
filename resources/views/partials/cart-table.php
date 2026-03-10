@@ -4,9 +4,9 @@ declare(strict_types=1);
 ?>
 <?php if ($cart['is_empty']): ?>
     <section class="empty-state">
-        <h3>Your cart is ready for products.</h3>
-        <p>Once customers add items from the shop page, quantity updates and line totals will appear here.</p>
-        <a class="btn btn-brand" href="/">Continue shopping</a>
+        <h3>Your cart is ready.</h3>
+        <p>Add products from NovaMarket to see your selected items, quantities, and totals here.</p>
+        <a class="btn btn-brand" href="/index.html">Continue shopping</a>
     </section>
 <?php else: ?>
     <div class="row g-4">
@@ -71,8 +71,8 @@ declare(strict_types=1);
 
         <div class="col-xl-4">
             <aside class="summary-card">
-                <span class="summary-card__eyebrow">Cart totals</span>
-                <h3>Ready for order handoff</h3>
+                <span class="summary-card__eyebrow">Order summary</span>
+                <h3>Review your totals</h3>
                 <div class="summary-card__rows">
                     <div class="summary-row">
                         <span>Total items</span>
@@ -91,10 +91,9 @@ declare(strict_types=1);
                         <strong><?= e($cart['grand_total_formatted']) ?></strong>
                     </div>
                 </div>
-                <button class="btn btn-brand w-100" type="button" disabled>Connect checkout in System 4</button>
+                <button class="btn btn-brand w-100" type="button" disabled>Checkout coming soon</button>
                 <p class="summary-card__note">Shipping is free once the cart subtotal reaches <?= e(money($cart['free_shipping_threshold'])) ?>.</p>
             </aside>
         </div>
     </div>
 <?php endif; ?>
-
