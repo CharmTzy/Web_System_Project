@@ -14,6 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     respond([
         'ok' => true,
         'count' => $summary['total_items'],
+        'total_items' => $summary['total_items'],
+        'subtotal_formatted' => $summary['subtotal_formatted'],
+        'grand_total_formatted' => $summary['grand_total_formatted'],
         'drawer_html' => render('partials/cart-panel', ['cart' => $summary]),
         'cart_html' => render('partials/cart-table', ['cart' => $summary]),
     ]);
@@ -52,7 +55,10 @@ try {
         'ok' => true,
         'message' => $result['message'],
         'count' => $summary['total_items'],
+        'total_items' => $summary['total_items'],
         'subtotal' => $summary['subtotal_formatted'],
+        'subtotal_formatted' => $summary['subtotal_formatted'],
+        'grand_total_formatted' => $summary['grand_total_formatted'],
         'drawer_html' => render('partials/cart-panel', ['cart' => $summary]),
         'cart_html' => render('partials/cart-table', ['cart' => $summary]),
     ]);

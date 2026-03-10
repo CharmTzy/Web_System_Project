@@ -5,8 +5,8 @@ declare(strict_types=1);
 <?php if ($cart['is_empty']): ?>
     <div class="empty-state empty-state--compact">
         <h3>Your cart is empty.</h3>
-        <p>Add products from the storefront to build a customer-ready order flow.</p>
-        <a class="btn btn-brand" href="/">Browse products</a>
+        <p>Start exploring NovaMarket and add your favorite picks here.</p>
+        <a class="btn btn-brand" href="/index.html">Browse products</a>
     </div>
 <?php else: ?>
     <div class="cart-panel">
@@ -38,7 +38,6 @@ declare(strict_types=1);
                 <strong><?= e($cart['shipping_formatted']) ?></strong>
             </div>
         </div>
-        <a class="btn btn-brand w-100" href="/cart.php">Review full cart</a>
+        <a class="btn btn-brand w-100" href="/cart.html">Review full cart</a>
     </div>
 <?php endif; ?>
-
