@@ -1,10 +1,10 @@
 INSERT INTO users (id, name, email, password_hash, role) VALUES
-    (1, 'Admin User', 'admin@meridianmart.test', '$2y$12$8PhOFSa4hVU4tUzkSuf2iucCBP91r5fqtAmwHL3PPELbaHhY6m5pu', 'admin'),
-    (2, 'Northwind Audio', 'seller1@meridianmart.test', '$2y$12$8PhOFSa4hVU4tUzkSuf2iucCBP91r5fqtAmwHL3PPELbaHhY6m5pu', 'seller'),
-    (3, 'Summit Office', 'seller2@meridianmart.test', '$2y$12$8PhOFSa4hVU4tUzkSuf2iucCBP91r5fqtAmwHL3PPELbaHhY6m5pu', 'seller'),
-    (4, 'Harbor Home', 'seller3@meridianmart.test', '$2y$12$8PhOFSa4hVU4tUzkSuf2iucCBP91r5fqtAmwHL3PPELbaHhY6m5pu', 'seller'),
-    (5, 'Tide Carry Co.', 'seller4@meridianmart.test', '$2y$12$8PhOFSa4hVU4tUzkSuf2iucCBP91r5fqtAmwHL3PPELbaHhY6m5pu', 'seller'),
-    (6, 'Sample Customer', 'customer@meridianmart.test', '$2y$12$8PhOFSa4hVU4tUzkSuf2iucCBP91r5fqtAmwHL3PPELbaHhY6m5pu', 'customer');
+    (1, 'Admin User', 'admin@meridianmart.test', '$2y$12$eBzUWJoDoB55n7mjjzpaquK/l.EfPgXG7xL/0dEKaSsxhK7o8T2yq', 'admin'),
+    (2, 'Northwind Audio', 'seller1@meridianmart.test', '$2y$12$eBzUWJoDoB55n7mjjzpaquK/l.EfPgXG7xL/0dEKaSsxhK7o8T2yq', 'seller'),
+    (3, 'Summit Office', 'seller2@meridianmart.test', '$2y$12$eBzUWJoDoB55n7mjjzpaquK/l.EfPgXG7xL/0dEKaSsxhK7o8T2yq', 'seller'),
+    (4, 'Harbor Home', 'seller3@meridianmart.test', '$2y$12$eBzUWJoDoB55n7mjjzpaquK/l.EfPgXG7xL/0dEKaSsxhK7o8T2yq', 'seller'),
+    (5, 'Tide Carry Co.', 'seller4@meridianmart.test', '$2y$12$eBzUWJoDoB55n7mjjzpaquK/l.EfPgXG7xL/0dEKaSsxhK7o8T2yq', 'seller'),
+    (6, 'Sample Customer', 'customer@meridianmart.test', '$2y$12$eBzUWJoDoB55n7mjjzpaquK/l.EfPgXG7xL/0dEKaSsxhK7o8T2yq', 'customer');
 
 INSERT INTO seller_profiles (user_id, store_name, store_slug, support_email) VALUES
     (2, 'Northwind Audio', 'northwind-audio', 'support@northwind-audio.test'),
