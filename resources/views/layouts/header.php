@@ -9,6 +9,10 @@ $headerSearchValue = $headerSearchValue ?? '';
 $cartSummary = $cartSummary ?? [
     'total_items' => 0,
 ];
+
+$isLoggedIn = !empty($_SESSION['user_id']);
+$sessionRole = $_SESSION['user_role'] ?? '';
+$sessionName = $_SESSION['user_name'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -76,11 +80,25 @@ $cartSummary = $cartSummary ?? [
                 <nav class="header-nav" aria-label="Primary">
                     <a class="nav-link <?= $currentPath === '/' || $currentPath === '/index.php' ? 'active' : '' ?>" href="/">Shop</a>
                     <a class="nav-link <?= $currentPath === '/cart.php' ? 'active' : '' ?>" href="/cart.php">Cart</a>
+                    <?php if ($isLoggedIn && $sessionRole === 'admin'): ?>
+                        <a class="nav-link <?= str_starts_with($currentPath, '/admin') ? 'active' : '' ?>" href="/admin/">Dashboard</a>
+                        <a class="nav-link <?= $currentPath === '/admin/users.php' ? 'active' : '' ?>" href="/admin/users.php">Users</a>
+                    <?php elseif ($isLoggedIn && $sessionRole === 'seller'): ?>
+                        <a class="nav-link <?= str_starts_with($currentPath, '/seller') ? 'active' : '' ?>" href="/seller/">Dashboard</a>
+                        <a class="nav-link <?= $currentPath === '/seller/store-profile.php' ? 'active' : '' ?>" href="/seller/store-profile.php">Store</a>
+                    <?php elseif ($isLoggedIn && $sessionRole === 'customer'): ?>
+                        <a class="nav-link <?= $currentPath === '/customer/addresses.php' ? 'active' : '' ?>" href="/customer/addresses.php">Addresses</a>
+                    <?php endif; ?>
                 </nav>
-                <div class="header-highlights" aria-label="Store highlights">
-                    <span>Curated offers</span>
-                    <span>Live filters</span>
-                    <span>Secure cart actions</span>
+                <div class="header-auth" aria-label="Account">
+                    <?php if ($isLoggedIn): ?>
+                        <a class="nav-link <?= $currentPath === '/profile.php' ? 'active' : '' ?>" href="/profile.php"><?= e($sessionName) ?></a>
+                        <span class="pill-badge pill-badge--soft"><?= e(ucfirst($sessionRole)) ?></span>
+                        <a class="nav-link" href="/logout.php">Sign out</a>
+                    <?php else: ?>
+                        <a class="nav-link <?= $currentPath === '/login.php' ? 'active' : '' ?>" href="/login.php">Sign in</a>
+                        <a class="btn btn-brand-outline" href="/register.php" style="padding:0.5rem 1rem;font-size:0.9rem;">Register</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

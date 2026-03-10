@@ -1111,3 +1111,185 @@ a {
         max-width: 180px;
     }
 }
+
+/* ── Auth & Profile Pages ─────────────────────────────────── */
+
+.auth-section {
+    padding: 2.5rem 0;
+}
+
+.auth-wrapper {
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.auth-card,
+.profile-card {
+    background: var(--surface);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow);
+    padding: 2rem;
+}
+
+.auth-card__title {
+    font-family: "Sora", sans-serif;
+    font-size: 1.6rem;
+    margin: 0.5rem 0 1.2rem;
+}
+
+.auth-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.auth-card__error {
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(138, 61, 32, 0.1);
+    color: var(--accent-dark);
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.auth-card__success {
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(36, 92, 97, 0.1);
+    color: var(--teal);
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.auth-card__footer {
+    margin: 1.2rem 0 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.auth-card__footer a {
+    color: var(--teal);
+    font-weight: 700;
+}
+
+/* ── Header Auth Row ──────────────────────────────────────── */
+
+.header-auth {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* ── Admin Table ──────────────────────────────────────────── */
+
+.admin-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.admin-table th {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    border-bottom: 2px solid var(--line);
+}
+
+.admin-table td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(24, 34, 47, 0.06);
+}
+
+.admin-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Address Cards ────────────────────────────────────────── */
+
+.address-card {
+    background: var(--surface);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 1.4rem;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.address-card__header {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.address-card__name {
+    font-family: "Sora", sans-serif;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.address-card__line {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.address-card__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.35rem 0.75rem !important;
+    font-size: 0.82rem !important;
+}
+
+/* ── Address Modal ────────────────────────────────────────── */
+
+.address-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1060;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(24, 34, 47, 0.45);
+    backdrop-filter: blur(4px);
+}
+
+.address-modal {
+    background: var(--surface-strong);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow);
+    padding: 1.8rem;
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.address-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+}
+
+.address-modal__header h3 {
+    font-family: "Sora", sans-serif;
+    font-size: 1.3rem;
+    margin: 0;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}

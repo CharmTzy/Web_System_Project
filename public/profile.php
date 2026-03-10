@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+$config = require dirname(__DIR__) . '/bootstrap.php';
+
+if (empty($_SESSION['user_id'])) {
+    header('Location: /login.php');
+    exit;
+}
+
+$database = new \App\Support\Database($config['database']);
+$connection = $database->connection();
+
+if (!$connection) {
+    http_response_code(503);
+    echo 'Database connection required for user management.';
+    exit;
+}
+
+$userService = new \App\Services\UserService(
+    new \App\Repositories\UserRepository($connection)
+);
+
+$user = $userService->getProfile((int) $_SESSION['user_id']);
+
+if ($user === null) {
+    $_SESSION = [];
+    header('Location: /login.php');
+    exit;
+}
+
+$pageTitle = 'My Profile';
+$appName = $config['app']['name'];
+$pageScript = 'profile.js';
+$cartSummary = ['total_items' => 0];
+
+require dirname(__DIR__) . '/resources/views/layouts/header.php';
+?>
+<main>
+    <section class="auth-section">
+        <div class="container">
+            <div class="auth-wrapper">
+                <?= render('profile/profile-form', ['user' => $user]) ?>
+            </div>
+        </div>
+    </section>
+</main>
+<?php require dirname(__DIR__) . '/resources/views/layouts/footer.php'; ?>
