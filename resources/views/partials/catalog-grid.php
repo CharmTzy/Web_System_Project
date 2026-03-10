@@ -8,12 +8,11 @@ declare(strict_types=1);
         <p>Try a different category, lower the minimum price, or clear the search to widen the results.</p>
     </div>
 <?php else: ?>
-    <div class="row g-4">
+    <div class="catalog-product-grid">
         <?php foreach ($products as $product): ?>
-            <div class="col-sm-6 col-xl-4">
+            <div class="catalog-product-grid__item">
                 <?= render('partials/product-card', ['product' => $product]) ?>
             </div>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
-

@@ -14,11 +14,14 @@
   const shortcutGrid = document.querySelector('[data-shortcut-grid]');
   const featuredSection = document.querySelector('[data-featured-section]');
   const featuredStrip = document.querySelector('[data-featured-strip]');
+  const homeSections = document.querySelectorAll('[data-home-discovery]');
   const sidebarHost = document.querySelector('[data-catalog-sidebar-host]');
   const shell = document.getElementById('catalog-shell');
   const main = document.getElementById('catalog-main');
   const productsShown = document.querySelector('[data-products-shown]');
   const categoriesTotal = document.querySelector('[data-categories-total]');
+  const catalogTitle = document.querySelector('[data-catalog-title]');
+  const catalogCopy = document.querySelector('[data-catalog-copy]');
   let searchTimer = null;
 
   const cleanParams = (params) => {
@@ -84,8 +87,14 @@
 
       if (featuredSection && featuredStrip) {
         featuredStrip.innerHTML = payload.featured_html || '';
-        featuredSection.hidden = (payload.featured_html || '').trim() === '';
+        featuredSection.hidden = Boolean(payload.show_sidebar_filters) || (payload.featured_html || '').trim() === '';
       }
+
+      homeSections.forEach((section) => {
+        if (section !== featuredSection) {
+          section.hidden = Boolean(payload.show_sidebar_filters);
+        }
+      });
 
       if (sidebarHost && shell && main) {
         sidebarHost.innerHTML = payload.sidebar_html || '';
@@ -95,6 +104,24 @@
       }
 
       results.innerHTML = payload.results_html || '';
+
+      if (catalogTitle) {
+        if (payload.filters.search) {
+          catalogTitle.textContent = `Results for "${payload.filters.search}"`;
+        } else if (payload.filters.category) {
+          catalogTitle.textContent = 'Filtered products';
+        } else {
+          catalogTitle.textContent = 'Popular gifts right now';
+        }
+      }
+
+      if (catalogCopy) {
+        if (payload.filters.search || payload.filters.category) {
+          catalogCopy.textContent = 'Browse the products that match your search and category filters.';
+        } else {
+          catalogCopy.textContent = 'Fresh picks from independent sellers and trending home finds.';
+        }
+      }
 
       if (resultsCount) {
         resultsCount.textContent = payload.summary || '0 products available';
