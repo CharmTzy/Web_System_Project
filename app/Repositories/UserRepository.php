@@ -102,8 +102,9 @@ final class UserRepository
         }
 
         if (!empty($filters['search'])) {
-            $conditions[] = '(name LIKE :search OR email LIKE :search)';
-            $params['search'] = '%' . $filters['search'] . '%';
+            $conditions[] = '(name LIKE :search_name OR email LIKE :search_email)';
+            $params['search_name'] = '%' . $filters['search'] . '%';
+            $params['search_email'] = '%' . $filters['search'] . '%';
         }
 
         if (isset($filters['is_active'])) {
