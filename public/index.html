@@ -15,6 +15,18 @@
         <div class="container">
             <div class="site-header__main site-header__main--market">
                 <div class="site-header__start">
+                    <button
+                        class="mobile-menu-toggle"
+                        type="button"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileNavDrawer"
+                        aria-controls="mobileNavDrawer"
+                        aria-label="Open navigation menu"
+                    >
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
                     <a class="site-nav__brand-link site-nav__brand-link--market" href="/index.html" aria-label="NovaMarket home">
                         <span class="site-nav__brand site-nav__brand--market">NovaMarket</span>
                     </a>
@@ -56,7 +68,13 @@
     <main class="storefront-home storefront-home--market">
         <section class="home-carousel" data-home-discovery>
             <div class="container">
-                <div id="novaMarketCarousel" class="carousel slide home-carousel__shell" data-bs-ride="carousel">
+                <div
+                    id="novaMarketCarousel"
+                    class="carousel slide home-carousel__shell"
+                    data-bs-ride="carousel"
+                    data-bs-interval="4200"
+                    data-bs-pause="false"
+                >
                     <div class="carousel-indicators home-carousel__indicators">
                         <button type="button" data-bs-target="#novaMarketCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
                         <button type="button" data-bs-target="#novaMarketCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
@@ -91,14 +109,6 @@
                             </div>
                         </div>
                     </div>
-                    <button class="carousel-control-prev home-carousel__control" type="button" data-bs-target="#novaMarketCarousel" data-bs-slide="prev">
-                        <span class="home-carousel__control-icon" aria-hidden="true">&#8249;</span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next home-carousel__control" type="button" data-bs-target="#novaMarketCarousel" data-bs-slide="next">
-                        <span class="home-carousel__control-icon" aria-hidden="true">&#8250;</span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
                 </div>
             </div>
         </section>
@@ -119,6 +129,18 @@
                         <h2 data-catalog-title>Popular gifts right now</h2>
                         <p class="section-heading__copy" data-catalog-copy>Fresh picks from independent sellers and trending home finds.</p>
                     </div>
+                    <button
+                        class="mobile-filter-toggle"
+                        type="button"
+                        data-mobile-filter-button
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileFilterDrawer"
+                        aria-controls="mobileFilterDrawer"
+                        hidden
+                    >
+                        <span class="mobile-filter-toggle__icon" aria-hidden="true"></span>
+                        <span>Filters</span>
+                    </button>
                 </div>
                 <div id="catalog-shell" class="catalog-shell catalog-shell--without-sidebar">
                     <div data-catalog-sidebar-host></div>
@@ -140,6 +162,43 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body" data-cart-drawer></div>
+    </div>
+
+    <div class="offcanvas offcanvas-start mobile-drawer" tabindex="-1" id="mobileNavDrawer" aria-labelledby="mobileNavDrawerLabel">
+        <div class="offcanvas-header">
+            <div>
+                <span class="hero-section__eyebrow">NovaMarket</span>
+                <h2 class="offcanvas-title" id="mobileNavDrawerLabel">Browse menu</h2>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <nav class="mobile-drawer__nav" aria-label="Mobile site navigation">
+                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Gift Mode</a>
+                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Halloween Shop</a>
+                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Home Favorites</a>
+                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Fashion Finds</a>
+                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Registry</a>
+                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Gift Cards</a>
+            </nav>
+            <div class="mobile-drawer__links">
+                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Sign in</a>
+                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Favorites</a>
+                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Gift ideas</a>
+                <a href="/cart.html">Cart</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end mobile-drawer mobile-filter-drawer" tabindex="-1" id="mobileFilterDrawer" aria-labelledby="mobileFilterDrawerLabel">
+        <div class="offcanvas-header">
+            <div>
+                <span class="hero-section__eyebrow">Catalog tools</span>
+                <h2 class="offcanvas-title" id="mobileFilterDrawerLabel">Filters</h2>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body" data-mobile-filter-body></div>
     </div>
 
     <footer class="site-footer">
