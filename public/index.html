@@ -45,9 +45,9 @@
                 </form>
 
                 <div class="site-header__actions site-header__actions--market">
-                    <a class="header-action-link" href="#catalog-feed">Sign in</a>
-                    <a class="header-action-link" href="#catalog-feed">Favorites</a>
-                    <a class="header-action-link" href="#catalog-feed">Gift ideas</a>
+                    <a class="header-action-link" href="/login.php">Sign in</a>
+                    <a class="header-action-link" href="/index.html#discover-shops">Favorites</a>
+                    <a class="header-action-link" href="/index.html?sort=featured#catalog-feed">Gift ideas</a>
                     <a class="header-cart-link header-cart-link--market" href="/cart.html">
                         <span>Cart</span>
                         <strong data-cart-count>0</strong>
@@ -55,12 +55,12 @@
                 </div>
             </div>
             <nav class="market-subnav" aria-label="Featured links">
-                <a href="#catalog-feed">Gift Mode</a>
-                <a href="#catalog-feed">Halloween Shop</a>
-                <a href="#catalog-feed">Home Favorites</a>
-                <a href="#catalog-feed">Fashion Finds</a>
-                <a href="#catalog-feed">Registry</a>
-                <a href="#catalog-feed">Gift Cards</a>
+                <a href="/index.html?sort=featured#catalog-feed">Gift Mode</a>
+                <a href="/index.html?sort=newest#catalog-feed">Halloween Shop</a>
+                <a href="/index.html?category=home-living#catalog-feed">Home Favorites</a>
+                <a href="/index.html?category=lifestyle#catalog-feed">Fashion Finds</a>
+                <a href="/register.php">Registry</a>
+                <a href="/index.html#catalog-feed">Gift Cards</a>
             </nav>
         </div>
     </header>
@@ -113,7 +113,7 @@
             </div>
         </section>
 
-        <section class="discover-section" data-home-discovery data-featured-section>
+        <section id="discover-shops" class="discover-section" data-home-discovery data-featured-section>
             <div class="container">
                 <div class="section-heading section-heading--market">
                     <h1>Discover the latest trends from shops</h1>
@@ -174,17 +174,17 @@
         </div>
         <div class="offcanvas-body">
             <nav class="mobile-drawer__nav" aria-label="Mobile site navigation">
-                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Gift Mode</a>
-                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Halloween Shop</a>
-                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Home Favorites</a>
-                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Fashion Finds</a>
-                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Registry</a>
-                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Gift Cards</a>
+                <a href="/index.html?sort=featured#catalog-feed" data-bs-dismiss="offcanvas">Gift Mode</a>
+                <a href="/index.html?sort=newest#catalog-feed" data-bs-dismiss="offcanvas">Halloween Shop</a>
+                <a href="/index.html?category=home-living#catalog-feed" data-bs-dismiss="offcanvas">Home Favorites</a>
+                <a href="/index.html?category=lifestyle#catalog-feed" data-bs-dismiss="offcanvas">Fashion Finds</a>
+                <a href="/register.php" data-bs-dismiss="offcanvas">Registry</a>
+                <a href="/index.html#catalog-feed" data-bs-dismiss="offcanvas">Gift Cards</a>
             </nav>
             <div class="mobile-drawer__links">
-                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Sign in</a>
-                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Favorites</a>
-                <a href="#catalog-feed" data-bs-dismiss="offcanvas">Gift ideas</a>
+                <a href="/login.php" data-bs-dismiss="offcanvas">Sign in</a>
+                <a href="/index.html#discover-shops" data-bs-dismiss="offcanvas">Favorites</a>
+                <a href="/index.html?sort=featured#catalog-feed" data-bs-dismiss="offcanvas">Gift ideas</a>
                 <a href="/cart.html">Cart</a>
             </div>
         </div>
