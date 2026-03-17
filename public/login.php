@@ -12,17 +12,16 @@ if (!empty($_SESSION['user_id'])) {
 $pageTitle = 'Sign In';
 $appName = $config['app']['name'];
 $pageScript = 'auth.js';
-$cartSummary = ['total_items' => 0];
+$bodyClass = 'auth-page auth-page--login';
+$authFormView = 'auth/login-form';
+$authPage = [
+    'title' => 'Welcome back to your shopping space',
+    'copy' => 'Sign in to review saved details, manage your cart, and jump back into the latest NovaMarket finds.',
+    'utility_links' => [],
+    'banner_title' => 'Want to browse first?',
+    'banner_copy' => 'The storefront is always open if you want to explore before signing in.',
+    'cta_label' => 'Back to storefront',
+    'cta_href' => '/index.html',
+];
 
-require dirname(__DIR__) . '/resources/views/layouts/header.php';
-?>
-<main>
-    <section class="auth-section">
-        <div class="container">
-            <div class="auth-wrapper">
-                <?= render('auth/login-form') ?>
-            </div>
-        </div>
-    </section>
-</main>
-<?php require dirname(__DIR__) . '/resources/views/layouts/footer.php'; ?>
+require dirname(__DIR__) . '/resources/views/layouts/auth-page.php';
