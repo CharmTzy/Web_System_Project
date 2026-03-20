@@ -1,13 +1,22 @@
 <?php declare(strict_types=1); ?>
 <div class="auth-card">
-    <span class="hero-section__eyebrow">New customer</span>
+    <span class="hero-section__eyebrow">Join NovaMarket</span>
     <h2 class="auth-card__title">Create your account</h2>
 
     <div class="auth-card__error" data-auth-error style="display:none;"></div>
+    <div class="auth-card__success" data-auth-success style="display:none;"></div>
 
     <form class="auth-form" data-auth-form data-action="register" novalidate>
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="action" value="register">
+
+        <div class="form-group">
+            <label for="reg-account-type">I want to</label>
+            <select id="reg-account-type" class="form-select" name="account_type">
+                <option value="customer" selected>Shop on NovaMarket</option>
+                <option value="seller">Sell on NovaMarket</option>
+            </select>
+        </div>
 
         <div class="form-group">
             <label for="reg-name">Full name</label>
@@ -17,6 +26,13 @@
         <div class="form-group">
             <label for="reg-email">Email address</label>
             <input id="reg-email" class="form-control" type="email" name="email" required autocomplete="email" placeholder="you@example.com">
+        </div>
+
+        <div id="seller-reg-fields" style="display:none;">
+            <div class="form-group">
+                <label for="reg-store-name">Store name</label>
+                <input id="reg-store-name" class="form-control" type="text" name="store_name" placeholder="e.g. My Awesome Store" maxlength="120">
+            </div>
         </div>
 
         <div class="form-group">
@@ -34,8 +50,24 @@
             <input id="reg-password-confirm" class="form-control" type="password" name="password_confirm" required autocomplete="new-password" placeholder="Re-enter your password">
         </div>
 
+        <p id="seller-notice" class="auth-card__notice" style="display:none;">Seller accounts require admin approval. You will be notified once your account has been reviewed.</p>
+
         <button class="btn btn-brand w-100" type="submit">Create account</button>
     </form>
 
     <p class="auth-card__footer">Already have an account? <a href="/login.php">Sign in</a></p>
 </div>
+
+<script>
+(() => {
+    const typeSelect = document.getElementById('reg-account-type');
+    const sellerFields = document.getElementById('seller-reg-fields');
+    const sellerNotice = document.getElementById('seller-notice');
+    if (!typeSelect) return;
+    typeSelect.addEventListener('change', () => {
+        const isSeller = typeSelect.value === 'seller';
+        sellerFields.style.display = isSeller ? '' : 'none';
+        sellerNotice.style.display = isSeller ? '' : 'none';
+    });
+})();
+</script>
