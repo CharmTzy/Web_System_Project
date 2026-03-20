@@ -36,6 +36,21 @@ try {
         default => throw new \InvalidArgumentException('Unknown action.'),
     };
 
+    // Seller registration: pending approval, don't redirect to dashboard
+    if (!empty($result['pending_approval'])) {
+        respond([
+            'ok' => true,
+            'pending_approval' => true,
+            'message' => 'Your seller account has been created and is pending admin approval. You will be able to sign in once approved.',
+            'redirect' => '/login.php',
+            'user' => [
+                'id' => $result['id'],
+                'name' => $result['name'],
+                'role' => $result['role'],
+            ],
+        ]);
+    }
+
     $redirect = match ($result['role']) {
         'admin' => '/admin/',
         'seller' => '/seller/',
