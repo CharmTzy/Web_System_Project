@@ -55,6 +55,17 @@ final class SampleProductRepository implements CatalogRepositoryInterface
         return null;
     }
 
+    public function findBySlug(string $slug): ?array
+    {
+        foreach ($this->products as $product) {
+            if ($product['slug'] === $slug && $product['is_active']) {
+                return $product;
+            }
+        }
+
+        return null;
+    }
+
     public function findByIds(array $ids): array
     {
         $lookup = array_flip(array_map('intval', $ids));
@@ -119,4 +130,3 @@ final class SampleProductRepository implements CatalogRepositoryInterface
         };
     }
 }
-

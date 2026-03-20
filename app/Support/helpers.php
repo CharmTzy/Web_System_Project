@@ -89,6 +89,16 @@ function asset(string $path): string
     return '/assets/' . ltrim($path, '/');
 }
 
+function product_url(array $product): string
+{
+    $params = http_build_query([
+        'id' => (string) ($product['id'] ?? ''),
+        'slug' => (string) ($product['slug'] ?? ''),
+    ]);
+
+    return '/product.html' . ($params !== '' ? '?' . $params : '');
+}
+
 function render(string $view, array $data = []): string
 {
     $file = dirname(__DIR__, 2) . '/resources/views/' . $view . '.php';

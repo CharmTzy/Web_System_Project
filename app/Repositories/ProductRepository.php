@@ -63,6 +63,17 @@ final class ProductRepository implements CatalogRepositoryInterface
         return is_array($row) ? $this->normalizeProduct($row) : null;
     }
 
+    public function findBySlug(string $slug): ?array
+    {
+        $statement = $this->connection->prepare(
+            $this->baseSelect() . ' WHERE p.is_active = 1 AND p.slug = :slug LIMIT 1'
+        );
+        $statement->execute(['slug' => $slug]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? $this->normalizeProduct($row) : null;
+    }
+
     public function findByIds(array $ids): array
     {
         $ids = array_values(array_filter(array_map('intval', $ids)));
