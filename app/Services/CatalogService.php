@@ -33,6 +33,17 @@ final class CatalogService
         return $this->repository->findById($id);
     }
 
+    public function findProductBySlug(string $slug): ?array
+    {
+        $slug = preg_replace('/[^a-z0-9-]/i', '', trim($slug)) ?? '';
+
+        if ($slug === '') {
+            return null;
+        }
+
+        return $this->repository->findBySlug($slug);
+    }
+
     private function sanitizeFilters(array $input): array
     {
         $allowedSorts = ['featured', 'newest', 'price_asc', 'price_desc', 'rating_desc'];
@@ -98,4 +109,3 @@ final class CatalogService
         return $count;
     }
 }
-

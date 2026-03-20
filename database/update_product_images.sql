@@ -1,0 +1,10 @@
+UPDATE products SET image_url = 'https://storage.googleapis.com/novamarket-product-images/product-images/nova-wireless-earbuds.jpg' WHERE slug = 'nova-wireless-earbuds';
+UPDATE products SET image_url = 'https://storage.googleapis.com/novamarket-product-images/product-images/echo-mechanical-keyboard.jpg' WHERE slug = 'echo-mechanical-keyboard';
+UPDATE products SET image_url = 'https://storage.googleapis.com/novamarket-product-images/product-images/halo-standing-desk-lamp.jpg' WHERE slug = 'halo-standing-desk-lamp';
+UPDATE products SET image_url = 'https://storage.googleapis.com/novamarket-product-images/product-images/ember-mug-warmer.jpg' WHERE slug = 'ember-mug-warmer';
+UPDATE products SET image_url = 'https://storage.googleapis.com/novamarket-product-images/product-images/solace-aroma-diffuser.jpg' WHERE slug = 'solace-aroma-diffuser';
+UPDATE products SET image_url = 'https://storage.googleapis.com/novamarket-product-images/product-images/tidefold-weekender-bag.jpg' WHERE slug = 'tidefold-weekender-bag';
+UPDATE products SET image_url = 'https://storage.googleapis.com/novamarket-product-images/product-images/pulse-smart-bottle.jpg' WHERE slug = 'pulse-smart-bottle';
+UPDATE products SET image_url = 'https://storage.googleapis.com/novamarket-product-images/product-images/hearth-throw-blanket.jpg' WHERE slug = 'hearth-throw-blanket';
+UPDATE products SET image_url = 'https://storage.googleapis.com/novamarket-product-images/product-images/aeroblend-portable-blender.jpg' WHERE slug = 'aeroblend-portable-blender';
+UPDATE products SET image_url = 'https://storage.googleapis.com/novamarket-product-images/product-images/terra-recycled-tote.jpg' WHERE slug = 'terra-recycled-tote';

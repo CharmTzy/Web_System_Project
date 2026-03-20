@@ -13,10 +13,13 @@ declare(strict_types=1);
         <div class="cart-panel__items">
             <?php foreach ($cart['items'] as $item): ?>
                 <?php $product = $item['product']; ?>
+                <?php $detailUrl = product_url($product); ?>
                 <article class="cart-panel__item">
-                    <img src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>" loading="lazy">
+                    <a class="cart-panel__image-link" href="<?= e($detailUrl) ?>">
+                        <img src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>" loading="lazy">
+                    </a>
                     <div class="cart-panel__copy">
-                        <h3><?= e($product['name']) ?></h3>
+                        <h3><a class="cart-panel__title-link" href="<?= e($detailUrl) ?>"><?= e($product['name']) ?></a></h3>
                         <p><?= e($product['seller_name']) ?></p>
                         <span><?= e((string) $item['quantity']) ?> x <?= e(money($product['price'])) ?></span>
                     </div>

@@ -8,6 +8,7 @@ use App\Repositories\ProductRepository;
 use App\Repositories\SampleProductRepository;
 use App\Services\CartService;
 use App\Services\CatalogService;
+use RuntimeException;
 
 final class AppFactory
 {
@@ -15,6 +16,12 @@ final class AppFactory
     {
         $database = new Database($config['database']);
         $connection = $database->connection();
+        $databaseConfigured = (string) ($config['database']['database'] ?? '') !== '';
+
+        if (!$connection && $databaseConfigured) {
+            throw new RuntimeException('Database connection required.');
+        }
+
         $repository = $connection ? new ProductRepository($connection) : new SampleProductRepository();
 
         return [
@@ -23,4 +30,3 @@ final class AppFactory
         ];
     }
 }
-
