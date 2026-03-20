@@ -12,17 +12,16 @@ if (!empty($_SESSION['user_id'])) {
 $pageTitle = 'Create Account';
 $appName = $config['app']['name'];
 $pageScript = 'auth.js';
-$cartSummary = ['total_items' => 0];
+$bodyClass = 'auth-page auth-page--register';
+$authFormView = 'auth/register-form';
+$authPage = [
+    'title' => 'Create your account and start shopping with ease',
+    'copy' => 'Set up your customer account to save details, revisit favourites, and move through checkout faster.',
+    'utility_links' => [],
+    'banner_title' => 'Already have an account?',
+    'banner_copy' => 'Sign back in and continue browsing the products you have been exploring.',
+    'cta_label' => 'Go to sign in',
+    'cta_href' => '/login.php',
+];
 
-require dirname(__DIR__) . '/resources/views/layouts/header.php';
-?>
-<main>
-    <section class="auth-section">
-        <div class="container">
-            <div class="auth-wrapper">
-                <?= render('auth/register-form') ?>
-            </div>
-        </div>
-    </section>
-</main>
-<?php require dirname(__DIR__) . '/resources/views/layouts/footer.php'; ?>
+require dirname(__DIR__) . '/resources/views/layouts/auth-page.php';

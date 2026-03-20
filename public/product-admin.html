@@ -15,18 +15,6 @@
         <div class="container">
             <div class="site-header__main site-header__main--market">
                 <div class="site-header__start">
-                    <button
-                        class="mobile-menu-toggle"
-                        type="button"
-                        data-bs-toggle="offcanvas"
-                        data-bs-target="#mobileNavDrawer"
-                        aria-controls="mobileNavDrawer"
-                        aria-label="Open navigation menu"
-                    >
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </button>
                     <a class="site-nav__brand-link site-nav__brand-link--market" href="/index.html" aria-label="NovaMarket home">
                         <span class="site-nav__brand site-nav__brand--market">NovaMarket</span>
                     </a>
@@ -45,9 +33,9 @@
                 </form>
 
                 <div class="site-header__actions site-header__actions--market">
-                    <a class="header-action-link" href="/login.php">Sign in</a>
-                    <a class="header-action-link" href="/index.html#discover-shops">Favorites</a>
-                    <a class="header-action-link" href="/index.html?sort=featured#catalog-feed">Gift ideas</a>
+                    <a class="header-action-link" href="#catalog-feed">Sign in</a>
+                    <a class="header-action-link" href="#catalog-feed">Favorites</a>
+                    <a class="header-action-link" href="#catalog-feed">Gift ideas</a>
                     <a class="header-cart-link header-cart-link--market" href="/cart.html">
                         <span>Cart</span>
                         <strong data-cart-count>0</strong>
@@ -55,12 +43,12 @@
                 </div>
             </div>
             <nav class="market-subnav" aria-label="Featured links">
-                <a href="/index.html?sort=featured#catalog-feed">Gift Mode</a>
-                <a href="/index.html?sort=newest#catalog-feed">Halloween Shop</a>
-                <a href="/index.html?category=home-living#catalog-feed">Home Favorites</a>
-                <a href="/index.html?category=lifestyle#catalog-feed">Fashion Finds</a>
-                <a href="/register.php">Registry</a>
-                <a href="/index.html#catalog-feed">Gift Cards</a>
+                <a href="#catalog-feed">Gift Mode</a>
+                <a href="#catalog-feed">Halloween Shop</a>
+                <a href="#catalog-feed">Home Favorites</a>
+                <a href="#catalog-feed">Fashion Finds</a>
+                <a href="#catalog-feed">Registry</a>
+                <a href="#catalog-feed">Gift Cards</a>
             </nav>
         </div>
     </header>
@@ -68,13 +56,7 @@
     <main class="storefront-home storefront-home--market">
         <section class="home-carousel" data-home-discovery>
             <div class="container">
-                <div
-                    id="novaMarketCarousel"
-                    class="carousel slide home-carousel__shell"
-                    data-bs-ride="carousel"
-                    data-bs-interval="4200"
-                    data-bs-pause="false"
-                >
+                <div id="novaMarketCarousel" class="carousel slide home-carousel__shell" data-bs-ride="carousel">
                     <div class="carousel-indicators home-carousel__indicators">
                         <button type="button" data-bs-target="#novaMarketCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
                         <button type="button" data-bs-target="#novaMarketCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
@@ -109,11 +91,19 @@
                             </div>
                         </div>
                     </div>
+                    <button class="carousel-control-prev home-carousel__control" type="button" data-bs-target="#novaMarketCarousel" data-bs-slide="prev">
+                        <span class="home-carousel__control-icon" aria-hidden="true">&#8249;</span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next home-carousel__control" type="button" data-bs-target="#novaMarketCarousel" data-bs-slide="next">
+                        <span class="home-carousel__control-icon" aria-hidden="true">&#8250;</span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
                 </div>
             </div>
         </section>
 
-        <section id="discover-shops" class="discover-section" data-home-discovery data-featured-section>
+        <section class="discover-section" data-home-discovery data-featured-section>
             <div class="container">
                 <div class="section-heading section-heading--market">
                     <h1>Discover the latest trends from shops</h1>
@@ -129,18 +119,6 @@
                         <h2 data-catalog-title>Popular gifts right now</h2>
                         <p class="section-heading__copy" data-catalog-copy>Fresh picks from independent sellers and trending home finds.</p>
                     </div>
-                    <button
-                        class="mobile-filter-toggle"
-                        type="button"
-                        data-mobile-filter-button
-                        data-bs-toggle="offcanvas"
-                        data-bs-target="#mobileFilterDrawer"
-                        aria-controls="mobileFilterDrawer"
-                        hidden
-                    >
-                        <span class="mobile-filter-toggle__icon" aria-hidden="true"></span>
-                        <span>Filters</span>
-                    </button>
                 </div>
                 <div id="catalog-shell" class="catalog-shell catalog-shell--without-sidebar">
                     <div data-catalog-sidebar-host></div>
@@ -164,43 +142,6 @@
         <div class="offcanvas-body" data-cart-drawer></div>
     </div>
 
-    <div class="offcanvas offcanvas-start mobile-drawer" tabindex="-1" id="mobileNavDrawer" aria-labelledby="mobileNavDrawerLabel">
-        <div class="offcanvas-header">
-            <div>
-                <span class="hero-section__eyebrow">NovaMarket</span>
-                <h2 class="offcanvas-title" id="mobileNavDrawerLabel">Browse menu</h2>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <nav class="mobile-drawer__nav" aria-label="Mobile site navigation">
-                <a href="/index.html?sort=featured#catalog-feed" data-bs-dismiss="offcanvas">Gift Mode</a>
-                <a href="/index.html?sort=newest#catalog-feed" data-bs-dismiss="offcanvas">Halloween Shop</a>
-                <a href="/index.html?category=home-living#catalog-feed" data-bs-dismiss="offcanvas">Home Favorites</a>
-                <a href="/index.html?category=lifestyle#catalog-feed" data-bs-dismiss="offcanvas">Fashion Finds</a>
-                <a href="/register.php" data-bs-dismiss="offcanvas">Registry</a>
-                <a href="/index.html#catalog-feed" data-bs-dismiss="offcanvas">Gift Cards</a>
-            </nav>
-            <div class="mobile-drawer__links">
-                <a href="/login.php" data-bs-dismiss="offcanvas">Sign in</a>
-                <a href="/index.html#discover-shops" data-bs-dismiss="offcanvas">Favorites</a>
-                <a href="/index.html?sort=featured#catalog-feed" data-bs-dismiss="offcanvas">Gift ideas</a>
-                <a href="/cart.html">Cart</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="offcanvas offcanvas-end mobile-drawer mobile-filter-drawer" tabindex="-1" id="mobileFilterDrawer" aria-labelledby="mobileFilterDrawerLabel">
-        <div class="offcanvas-header">
-            <div>
-                <span class="hero-section__eyebrow">Catalog tools</span>
-                <h2 class="offcanvas-title" id="mobileFilterDrawerLabel">Filters</h2>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body" data-mobile-filter-body></div>
-    </div>
-
     <footer class="site-footer">
         <div class="container">
             <p class="mb-0">Copyright &copy; 2026 NovaMarket. All rights reserved.</p>
@@ -211,7 +152,6 @@
     <div class="visually-hidden" id="cart-live-region" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="/assets/js/session-header.js"></script>
     <script src="/assets/js/store.js"></script>
     <script src="/assets/js/catalog.js"></script>
 </body>

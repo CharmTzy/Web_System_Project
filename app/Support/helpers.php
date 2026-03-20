@@ -2,6 +2,29 @@
 
 declare(strict_types=1);
 
+if (!function_exists('mb_strlen')) {
+    function mb_strlen(string $string, ?string $encoding = null): int
+    {
+        return strlen($string);
+    }
+}
+
+if (!function_exists('mb_substr')) {
+    function mb_substr(string $string, int $start, ?int $length = null, ?string $encoding = null): string
+    {
+        return $length === null
+            ? substr($string, $start)
+            : substr($string, $start, $length);
+    }
+}
+
+if (!function_exists('mb_strtolower')) {
+    function mb_strtolower(string $string, ?string $encoding = null): string
+    {
+        return strtolower($string);
+    }
+}
+
 function load_env(string $path): void
 {
     if (!is_file($path)) {
@@ -108,4 +131,3 @@ function bool_from_input(mixed $value): bool
 
     return $normalized ?? false;
 }
-

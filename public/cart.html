@@ -15,6 +15,18 @@
         <div class="container">
             <div class="site-header__main site-header__main--market">
                 <div class="site-header__start">
+                    <button
+                        class="mobile-menu-toggle"
+                        type="button"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileNavDrawer"
+                        aria-controls="mobileNavDrawer"
+                        aria-label="Open navigation menu"
+                    >
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
                     <a class="site-nav__brand-link site-nav__brand-link--market" href="/index.html" aria-label="NovaMarket home">
                         <span class="site-nav__brand site-nav__brand--market">NovaMarket</span>
                     </a>
@@ -33,9 +45,9 @@
                 </form>
 
                 <div class="site-header__actions site-header__actions--market">
-                    <a class="header-action-link" href="/index.html#catalog-feed">Sign in</a>
-                    <a class="header-action-link" href="/index.html#catalog-feed">Favorites</a>
-                    <a class="header-action-link" href="/index.html#catalog-feed">Gift ideas</a>
+                    <a class="header-action-link" href="/login.php">Sign in</a>
+                    <a class="header-action-link" href="/index.html#discover-shops">Favorites</a>
+                    <a class="header-action-link" href="/index.html?sort=featured#catalog-feed">Gift ideas</a>
                     <a class="header-cart-link header-cart-link--market" href="/cart.html">
                         <span>Cart</span>
                         <strong data-cart-count>0</strong>
@@ -43,11 +55,11 @@
                 </div>
             </div>
             <nav class="market-subnav" aria-label="Featured links">
-                <a href="/index.html#catalog-feed">Gift Mode</a>
-                <a href="/index.html#catalog-feed">Halloween Shop</a>
-                <a href="/index.html#catalog-feed">Home Favorites</a>
-                <a href="/index.html#catalog-feed">Fashion Finds</a>
-                <a href="/index.html#catalog-feed">Registry</a>
+                <a href="/index.html?sort=featured#catalog-feed">Gift Mode</a>
+                <a href="/index.html?sort=newest#catalog-feed">Halloween Shop</a>
+                <a href="/index.html?category=home-living#catalog-feed">Home Favorites</a>
+                <a href="/index.html?category=lifestyle#catalog-feed">Fashion Finds</a>
+                <a href="/register.php">Registry</a>
                 <a href="/index.html#catalog-feed">Gift Cards</a>
             </nav>
         </div>
@@ -85,6 +97,32 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body" data-cart-drawer></div>
+    </div>
+
+    <div class="offcanvas offcanvas-start mobile-drawer" tabindex="-1" id="mobileNavDrawer" aria-labelledby="mobileNavDrawerLabel">
+        <div class="offcanvas-header">
+            <div>
+                <span class="hero-section__eyebrow">NovaMarket</span>
+                <h2 class="offcanvas-title" id="mobileNavDrawerLabel">Browse menu</h2>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <nav class="mobile-drawer__nav" aria-label="Mobile site navigation">
+                <a href="/index.html?sort=featured#catalog-feed" data-bs-dismiss="offcanvas">Gift Mode</a>
+                <a href="/index.html?sort=newest#catalog-feed" data-bs-dismiss="offcanvas">Halloween Shop</a>
+                <a href="/index.html?category=home-living#catalog-feed" data-bs-dismiss="offcanvas">Home Favorites</a>
+                <a href="/index.html?category=lifestyle#catalog-feed" data-bs-dismiss="offcanvas">Fashion Finds</a>
+                <a href="/register.php" data-bs-dismiss="offcanvas">Registry</a>
+                <a href="/index.html#catalog-feed" data-bs-dismiss="offcanvas">Gift Cards</a>
+            </nav>
+            <div class="mobile-drawer__links">
+                <a href="/login.php" data-bs-dismiss="offcanvas">Sign in</a>
+                <a href="/index.html#discover-shops" data-bs-dismiss="offcanvas">Favorites</a>
+                <a href="/index.html?sort=featured#catalog-feed" data-bs-dismiss="offcanvas">Gift ideas</a>
+                <a href="/cart.html">Cart</a>
+            </div>
+        </div>
     </div>
 
     <footer class="site-footer">

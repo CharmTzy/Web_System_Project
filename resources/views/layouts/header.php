@@ -62,8 +62,8 @@ $sessionName = $_SESSION['user_name'] ?? '';
 
             <div class="site-header__navrow">
                 <nav class="header-nav" aria-label="Primary">
-                    <a class="nav-link <?= $currentPath === '/' || $currentPath === '/index.php' ? 'active' : '' ?>" href="/">Shop</a>
-                    <a class="nav-link <?= $currentPath === '/cart.php' ? 'active' : '' ?>" href="/cart.php">Cart</a>
+                    <a class="nav-link <?= $currentPath === '/' || $currentPath === '/index.html' ? 'active' : '' ?>" href="/index.html">Shop</a>
+                    <a class="nav-link <?= $currentPath === '/cart.html' ? 'active' : '' ?>" href="/cart.html">Cart</a>
                     <?php if ($isLoggedIn && $sessionRole === 'admin'): ?>
                         <a class="nav-link <?= str_starts_with($currentPath, '/admin') ? 'active' : '' ?>" href="/admin/">Dashboard</a>
                         <a class="nav-link <?= $currentPath === '/admin/users.php' ? 'active' : '' ?>" href="/admin/users.php">Users</a>

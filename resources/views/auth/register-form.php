@@ -6,7 +6,7 @@
     <div class="auth-card__error" data-auth-error style="display:none;"></div>
     <div class="auth-card__success" data-auth-success style="display:none;"></div>
 
-    <form class="auth-form" data-auth-form data-action="register" novalidate>
+    <form class="auth-form auth-form--guest" data-auth-form data-action="register" novalidate>
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="action" value="register">
 
@@ -23,9 +23,10 @@
             <input id="reg-name" class="form-control" type="text" name="name" required autocomplete="name" placeholder="Your full name" maxlength="120">
         </div>
 
-        <div class="form-group">
-            <label for="reg-email">Email address</label>
-            <input id="reg-email" class="form-control" type="email" name="email" required autocomplete="email" placeholder="you@example.com">
+            <div class="form-group">
+                <label for="reg-email">Email address</label>
+                <input id="reg-email" class="form-control" type="email" name="email" required autocomplete="email" placeholder="you@example.com">
+            </div>
         </div>
 
         <div id="seller-reg-fields" style="display:none;">
@@ -40,14 +41,16 @@
             <input id="reg-phone" class="form-control" type="tel" name="phone" autocomplete="tel" placeholder="+65 9123 4567">
         </div>
 
-        <div class="form-group">
-            <label for="reg-password">Password</label>
-            <input id="reg-password" class="form-control" type="password" name="password" required autocomplete="new-password" placeholder="Min. 8 characters" minlength="8">
-        </div>
+        <div class="auth-form__split">
+            <div class="form-group">
+                <label for="reg-password">Password</label>
+                <input id="reg-password" class="form-control" type="password" name="password" required autocomplete="new-password" placeholder="Min. 8 characters" minlength="8">
+            </div>
 
-        <div class="form-group">
-            <label for="reg-password-confirm">Confirm password</label>
-            <input id="reg-password-confirm" class="form-control" type="password" name="password_confirm" required autocomplete="new-password" placeholder="Re-enter your password">
+            <div class="form-group">
+                <label for="reg-password-confirm">Confirm password</label>
+                <input id="reg-password-confirm" class="form-control" type="password" name="password_confirm" required autocomplete="new-password" placeholder="Re-enter your password">
+            </div>
         </div>
 
         <p id="seller-notice" class="auth-card__notice" style="display:none;">Seller accounts require admin approval. You will be notified once your account has been reviewed.</p>
