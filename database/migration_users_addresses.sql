@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS addresses (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Seed: set all existing users as active
-UPDATE users SET is_active = 1;
+UPDATE users SET is_active = 1 WHERE id > 0;
 
 -- Seed: sample address for the customer
 INSERT INTO addresses (user_id, label, recipient, line_1, city, state, postal_code, country, phone, is_default) VALUES
