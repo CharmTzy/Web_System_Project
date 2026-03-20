@@ -1,13 +1,22 @@
 (() => {
   const form = document.querySelector('[data-auth-form]');
   const errorBox = document.querySelector('[data-auth-error]');
+  const successBox = document.querySelector('[data-auth-success]');
 
   if (!form) return;
 
   const showError = (message) => {
+    if (successBox) successBox.style.display = 'none';
     if (!errorBox) return;
     errorBox.textContent = message;
     errorBox.style.display = 'block';
+  };
+
+  const showSuccess = (message) => {
+    if (errorBox) errorBox.style.display = 'none';
+    if (!successBox) return;
+    successBox.textContent = message;
+    successBox.style.display = 'block';
   };
 
   const hideError = () => {
@@ -33,6 +42,14 @@
 
       if (!response.ok || !payload.ok) {
         throw new Error(payload.message || 'Something went wrong.');
+      }
+
+      // Seller pending approval — show message, don't redirect immediately
+      if (payload.pending_approval) {
+        showSuccess(payload.message);
+        form.reset();
+        if (submitBtn) submitBtn.disabled = false;
+        return;
       }
 
       window.location.href = payload.redirect || '/';
