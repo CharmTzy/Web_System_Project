@@ -47,7 +47,8 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
         <div class="container">
             <?= render('admin/dashboard', ['stats' => $stats]) ?>
             <div class="d-flex gap-3 flex-wrap">
-                <a class="btn btn-brand" href="/admin/users.php">Manage users</a>
+                <a class="btn btn-brand" href="/admin/products.php">Manage products</a>
+                <a class="btn btn-brand-outline" href="/admin/users.php">Manage users</a>
                 <a class="btn btn-brand-outline" href="/admin/user-edit.php">Create new user</a>
             </div>
         </div>

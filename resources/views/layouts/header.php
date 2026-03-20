@@ -67,9 +67,11 @@ $sessionName = $_SESSION['user_name'] ?? '';
                     <?php if ($isLoggedIn && $sessionRole === 'admin'): ?>
                         <a class="nav-link <?= str_starts_with($currentPath, '/admin') ? 'active' : '' ?>" href="/admin/">Dashboard</a>
                         <a class="nav-link <?= $currentPath === '/admin/users.php' ? 'active' : '' ?>" href="/admin/users.php">Users</a>
+                        <a class="nav-link <?= $currentPath === '/admin/products.php' ? 'active' : '' ?>" href="/admin/products.php">Products</a>
                     <?php elseif ($isLoggedIn && $sessionRole === 'seller'): ?>
                         <a class="nav-link <?= str_starts_with($currentPath, '/seller') ? 'active' : '' ?>" href="/seller/">Dashboard</a>
                         <a class="nav-link <?= $currentPath === '/seller/store-profile.php' ? 'active' : '' ?>" href="/seller/store-profile.php">Store</a>
+                        <a class="nav-link <?= $currentPath === '/seller/products.php' ? 'active' : '' ?>" href="/seller/products.php">Products</a>
                     <?php elseif ($isLoggedIn && $sessionRole === 'customer'): ?>
                         <a class="nav-link <?= $currentPath === '/customer/addresses.php' ? 'active' : '' ?>" href="/customer/addresses.php">Addresses</a>
                     <?php endif; ?>

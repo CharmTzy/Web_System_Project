@@ -23,10 +23,17 @@ $userService = new \App\Services\UserService(
 );
 
 $profile = $userService->getProfile((int) $_SESSION['user_id']);
+$storeName = trim((string) ($profile['seller_profile']['store_name'] ?? $profile['name'] ?? ''));
+$seedProducts = product_manager_seed_products($storeName);
+$categoryOptions = product_manager_categories($storeName);
 
-$pageTitle = 'Seller Dashboard';
+$pageTitle = 'Seller Products';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
+$pageScript = 'product-manager.js';
+$storageKey = 'product-manager-seller-v3-' . (string) ($_SESSION['user_id'] ?? 'guest');
+$roleLabel = 'Seller';
+$scopeLabel = $storeName !== '' ? $storeName : 'Your store';
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 ?>
@@ -34,17 +41,19 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     <section class="hero-section hero-section--compact">
         <div class="container">
             <span class="hero-section__eyebrow">Seller panel</span>
-            <h1 class="hero-section__title" style="max-width:20ch;">Seller Dashboard</h1>
-            <p class="hero-section__copy">Manage your store profile and view your seller information.</p>
+            <h1 class="hero-section__title" style="max-width:20ch;">Manage Your Store Products</h1>
+            <p class="hero-section__copy">Organize your listings, update pricing and stock, and keep your catalog tidy without waiting on backend setup.</p>
         </div>
     </section>
     <section class="catalog-section">
         <div class="container">
-            <?= render('seller/dashboard', ['profile' => $profile]) ?>
-            <div class="d-flex gap-3 flex-wrap">
-                <a class="btn btn-brand" href="/seller/products.php">Manage products</a>
-                <a class="btn btn-brand-outline" href="/seller/store-profile.php">Edit store profile</a>
-            </div>
+            <?= render('partials/product-manager', [
+                'seedProducts' => $seedProducts,
+                'categoryOptions' => $categoryOptions,
+                'storageKey' => $storageKey,
+                'roleLabel' => $roleLabel,
+                'scopeLabel' => $scopeLabel,
+            ]) ?>
         </div>
     </section>
 </main>

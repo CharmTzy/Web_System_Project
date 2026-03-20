@@ -131,3 +131,55 @@ function bool_from_input(mixed $value): bool
 
     return $normalized ?? false;
 }
+
+function product_manager_seed_products(?string $sellerName = null): array
+{
+    $products = \App\Support\SampleCatalog::products();
+
+    if ($sellerName !== null && $sellerName !== '') {
+        $products = array_values(array_filter(
+            $products,
+            static fn (array $product): bool => $product['seller_name'] === $sellerName
+        ));
+    }
+
+    return array_map(static function (array $product): array {
+        return [
+            'id' => 'catalog-' . (string) $product['id'],
+            'name' => $product['name'],
+            'category' => $product['category_name'],
+            'price' => (float) $product['price'],
+            'stock' => (int) $product['stock_quantity'],
+            'sku' => $product['sku'],
+            'status' => !$product['is_active']
+                ? 'Draft'
+                : ($product['stock_quantity'] > 0 ? 'Active' : 'Out of Stock'),
+            'featured' => (bool) $product['is_featured'],
+            'image' => $product['image_url'],
+            'description' => $product['short_description'] ?: $product['description'],
+            'updated_at' => $product['created_at'],
+            'seller_name' => $product['seller_name'],
+        ];
+    }, $products);
+}
+
+function product_manager_categories(?string $sellerName = null): array
+{
+    $products = product_manager_seed_products($sellerName);
+
+    if ($products === []) {
+        $categories = array_map(
+            static fn (array $category): string => $category['name'],
+            \App\Support\SampleCatalog::categories()
+        );
+    } else {
+        $categories = array_values(array_unique(array_map(
+            static fn (array $product): string => $product['category'],
+            $products
+        )));
+    }
+
+    sort($categories);
+
+    return $categories;
+}
