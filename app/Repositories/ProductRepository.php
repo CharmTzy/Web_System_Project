@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use PDO;
+use PDOException;
 
 final class ProductRepository implements CatalogRepositoryInterface
 {
@@ -60,7 +61,7 @@ final class ProductRepository implements CatalogRepositoryInterface
         $statement->execute(['id' => $id]);
         $row = $statement->fetch();
 
-        return is_array($row) ? $this->normalizeProduct($row) : null;
+        return is_array($row) ? $this->enrichProductWithMedia($this->normalizeProduct($row)) : null;
     }
 
     public function findBySlug(string $slug): ?array
@@ -71,7 +72,7 @@ final class ProductRepository implements CatalogRepositoryInterface
         $statement->execute(['slug' => $slug]);
         $row = $statement->fetch();
 
-        return is_array($row) ? $this->normalizeProduct($row) : null;
+        return is_array($row) ? $this->enrichProductWithMedia($this->normalizeProduct($row)) : null;
     }
 
     public function findByIds(array $ids): array
@@ -199,6 +200,90 @@ final class ProductRepository implements CatalogRepositoryInterface
             'is_active' => (bool) $row['is_active'],
             'is_featured' => (bool) $row['is_featured'],
             'created_at' => (string) $row['created_at'],
+        ];
+    }
+
+    private function enrichProductWithMedia(array $product): array
+    {
+        $product['media'] = $this->fetchMediaForProduct(
+            $product['id'],
+            $product['image_url'],
+            $product['name']
+        );
+
+        foreach ($product['media'] as $media) {
+            if (($media['type'] ?? 'image') !== 'image') {
+                continue;
+            }
+
+            $product['image_url'] = $media['url'];
+            break;
+        }
+
+        return $product;
+    }
+
+    private function fetchMediaForProduct(int $productId, string $fallbackUrl, string $fallbackAlt): array
+    {
+        try {
+            $statement = $this->connection->prepare(
+                <<<SQL
+                SELECT
+                    id,
+                    media_type,
+                    media_url,
+                    thumbnail_url,
+                    alt_text,
+                    sort_order,
+                    is_primary
+                FROM product_media
+                WHERE product_id = :product_id
+                ORDER BY is_primary DESC, sort_order ASC, id ASC
+                SQL
+            );
+            $statement->execute(['product_id' => $productId]);
+            $rows = $statement->fetchAll();
+        } catch (PDOException) {
+            return [$this->fallbackMediaItem($fallbackUrl, $fallbackAlt)];
+        }
+
+        if ($rows === []) {
+            return [$this->fallbackMediaItem($fallbackUrl, $fallbackAlt)];
+        }
+
+        $media = array_map(function (array $row) use ($fallbackUrl, $fallbackAlt): array {
+            $type = ($row['media_type'] ?? 'image') === 'video' ? 'video' : 'image';
+            $url = (string) ($row['media_url'] ?: $fallbackUrl);
+            $thumbnail = (string) ($row['thumbnail_url'] ?: ($type === 'image' ? $url : $fallbackUrl));
+
+            return [
+                'id' => (int) $row['id'],
+                'type' => $type,
+                'url' => $url,
+                'thumbnail_url' => $thumbnail,
+                'alt_text' => (string) ($row['alt_text'] ?: $fallbackAlt),
+                'sort_order' => (int) $row['sort_order'],
+                'is_primary' => (bool) $row['is_primary'],
+            ];
+        }, $rows);
+
+        if (!array_filter($media, static fn (array $item): bool => $item['is_primary'])) {
+            $media[0]['is_primary'] = true;
+        }
+
+        return $media;
+    }
+
+    private function fallbackMediaItem(string $fallbackUrl, string $fallbackAlt): array
+    {
+        return [
+            'id' => 0,
+            'type' => 'image',
+            'url' => $fallbackUrl,
+            'thumbnail_url' => $fallbackUrl,
+            'alt_text' => $fallbackAlt,
+            'sort_order' => 1,
+            'is_primary' => true,
         ];
     }
 }

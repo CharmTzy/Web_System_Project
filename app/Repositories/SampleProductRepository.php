@@ -15,7 +15,10 @@ final class SampleProductRepository implements CatalogRepositoryInterface
     public function __construct()
     {
         $this->categories = SampleCatalog::categories();
-        $this->products = SampleCatalog::products();
+        $this->products = array_map(
+            fn (array $product): array => $this->withDefaultMedia($product),
+            SampleCatalog::products()
+        );
     }
 
     public function categories(): array
@@ -128,5 +131,26 @@ final class SampleProductRepository implements CatalogRepositoryInterface
             'newest' => strcmp($right['created_at'], $left['created_at']),
             default => [$right['is_featured'], $right['created_at'], $left['name']] <=> [$left['is_featured'], $left['created_at'], $right['name']],
         };
+    }
+
+    private function withDefaultMedia(array $product): array
+    {
+        if (isset($product['media']) && is_array($product['media']) && $product['media'] !== []) {
+            return $product;
+        }
+
+        $imageUrl = (string) ($product['image_url'] ?? '/assets/images/products/product-fallback.svg');
+
+        $product['media'] = [[
+            'id' => 'sample-media-' . $product['id'],
+            'type' => 'image',
+            'url' => $imageUrl,
+            'thumbnail_url' => $imageUrl,
+            'alt_text' => (string) $product['name'],
+            'sort_order' => 1,
+            'is_primary' => true,
+        ]];
+
+        return $product;
     }
 }

@@ -6,6 +6,8 @@ namespace App\Support;
 
 final class SampleCatalog
 {
+    private const MEDIA_BASE_URL = 'https://storage.googleapis.com/novamarket-product-images/product-images/';
+
     public static function categories(): array
     {
         return [
@@ -44,8 +46,10 @@ final class SampleCatalog
 
     public static function products(): array
     {
-        return [
+        return array_map(
+            static fn (array $product): array => self::withCloudMedia($product),
             [
+                [
                 'id' => 1,
                 'seller_id' => 2,
                 'seller_name' => 'Northwind Audio',
@@ -265,6 +269,90 @@ final class SampleCatalog
                 'is_featured' => false,
                 'created_at' => '2026-01-29 17:05:00',
             ],
+            ]
+        );
+    }
+
+    private static function withCloudMedia(array $product): array
+    {
+        $slug = (string) $product['slug'];
+        $name = (string) $product['name'];
+
+        $product['image_url'] = self::mediaUrl($slug . '-1.jpg');
+        $product['media'] = self::buildMediaGallery((int) $product['id'], $slug, $name);
+
+        return $product;
+    }
+
+    private static function buildMediaGallery(int $productId, string $slug, string $name): array
+    {
+        $items = [
+            [
+                'type' => 'image',
+                'file' => $slug . '-1.jpg',
+                'thumbnail' => $slug . '-1.jpg',
+                'alt_text' => $name . ' image 1',
+                'is_primary' => true,
+            ],
+            [
+                'type' => 'video',
+                'file' => $slug . '-1.mp4',
+                'thumbnail' => $slug . '-1.jpg',
+                'alt_text' => $name . ' video 1',
+                'is_primary' => false,
+            ],
+            [
+                'type' => 'image',
+                'file' => $slug . '-2.jpg',
+                'thumbnail' => $slug . '-2.jpg',
+                'alt_text' => $name . ' image 2',
+                'is_primary' => false,
+            ],
         ];
+
+        if (in_array($slug, ['nova-wireless-earbuds', 'echo-mechanical-keyboard'], true)) {
+            $items[] = [
+                'type' => 'video',
+                'file' => $slug . '-2.mp4',
+                'thumbnail' => $slug . '-2.jpg',
+                'alt_text' => $name . ' video 2',
+                'is_primary' => false,
+            ];
+        }
+
+        $items[] = [
+            'type' => 'image',
+            'file' => $slug . '-3.jpg',
+            'thumbnail' => $slug . '-3.jpg',
+            'alt_text' => $name . ' image 3',
+            'is_primary' => false,
+        ];
+
+        $items[] = [
+            'type' => 'image',
+            'file' => $slug . '.jpg',
+            'thumbnail' => $slug . '.jpg',
+            'alt_text' => $name . ' image 4',
+            'is_primary' => false,
+        ];
+
+        return array_map(
+            static fn (array $item, int $index): array => [
+                'id' => 'sample-media-' . $productId . '-' . ($index + 1),
+                'type' => $item['type'],
+                'url' => self::mediaUrl($item['file']),
+                'thumbnail_url' => self::mediaUrl($item['thumbnail']),
+                'alt_text' => $item['alt_text'],
+                'sort_order' => $index + 1,
+                'is_primary' => $item['is_primary'],
+            ],
+            $items,
+            array_keys($items)
+        );
+    }
+
+    private static function mediaUrl(string $fileName): string
+    {
+        return self::MEDIA_BASE_URL . $fileName;
     }
 }
