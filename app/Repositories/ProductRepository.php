@@ -105,8 +105,12 @@ final class ProductRepository implements CatalogRepositoryInterface
         $params = [];
 
         if ($filters['search'] !== '') {
-            $conditions[] = '(p.name LIKE :search OR p.short_description LIKE :search OR c.name LIKE :search OR COALESCE(sp.store_name, u.name) LIKE :search)';
-            $params['search'] = '%' . $filters['search'] . '%';
+            $conditions[] = '(p.name LIKE :search_name OR p.short_description LIKE :search_description OR c.name LIKE :search_category OR COALESCE(sp.store_name, u.name) LIKE :search_seller)';
+            $searchPattern = '%' . $filters['search'] . '%';
+            $params['search_name'] = $searchPattern;
+            $params['search_description'] = $searchPattern;
+            $params['search_category'] = $searchPattern;
+            $params['search_seller'] = $searchPattern;
         }
 
         if ($filters['category'] !== '') {
