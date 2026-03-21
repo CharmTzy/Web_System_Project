@@ -84,29 +84,36 @@ $renderHelpIcon = static function (string $iconKey): string {
                 </div>
             </div>
 
-            <div class="help-category-grid">
-                <?php foreach ($categories as $category): ?>
-                    <?php
-                    $iconKey = (string) ($category['icon_key'] ?? 'general');
-                    $isActiveCategory = (string) ($category['slug'] ?? '') === $activeCategory;
-                    $categorySlug = (string) ($category['slug'] ?? '');
-                    $categoryUrl = $isActiveCategory
-                        ? $buildHelpUrl('', $search)
-                        : $buildHelpUrl($categorySlug, $search);
-                    ?>
-                    <a
-                        class="help-category-card help-category-card--<?= e($iconKey) ?><?= $isActiveCategory ? ' is-active' : '' ?>"
-                        href="<?= e($categoryUrl) ?>"
-                        title="<?= e($isActiveCategory ? 'Click again to remove this filter' : 'Filter by ' . (string) ($category['name'] ?? 'this category')) ?>"
-                    >
-                        <span class="help-category-card__icon"><?= $renderHelpIcon($iconKey) ?></span>
-                        <span class="help-category-card__body">
-                            <strong><?= e((string) $category['name']) ?></strong>
-                            <span><?= e((string) ($category['description'] ?? '')) ?></span>
-                        </span>
-                    </a>
-                <?php endforeach; ?>
-            </div>
+            <?php if ($categories === []): ?>
+                <div class="help-center__empty">
+                    <h3>Help categories are not available yet.</h3>
+                    <p>Connect the help center tables to start showing category filters and hot questions here.</p>
+                </div>
+            <?php else: ?>
+                <div class="help-category-grid">
+                    <?php foreach ($categories as $category): ?>
+                        <?php
+                        $iconKey = (string) ($category['icon_key'] ?? 'general');
+                        $isActiveCategory = (string) ($category['slug'] ?? '') === $activeCategory;
+                        $categorySlug = (string) ($category['slug'] ?? '');
+                        $categoryUrl = $isActiveCategory
+                            ? $buildHelpUrl('', $search)
+                            : $buildHelpUrl($categorySlug, $search);
+                        ?>
+                        <a
+                            class="help-category-card help-category-card--<?= e($iconKey) ?><?= $isActiveCategory ? ' is-active' : '' ?>"
+                            href="<?= e($categoryUrl) ?>"
+                            title="<?= e($isActiveCategory ? 'Click again to remove this filter' : 'Filter by ' . (string) ($category['name'] ?? 'this category')) ?>"
+                        >
+                            <span class="help-category-card__icon"><?= $renderHelpIcon($iconKey) ?></span>
+                            <span class="help-category-card__body">
+                                <strong><?= e((string) $category['name']) ?></strong>
+                                <span><?= e((string) ($category['description'] ?? '')) ?></span>
+                            </span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </section>
 
         <section class="help-center__section section-block">

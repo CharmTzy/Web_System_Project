@@ -2,6 +2,10 @@
   const body = document.body;
   const toast = document.querySelector('[data-status-toast]');
   const liveRegion = document.getElementById('cart-live-region');
+  const headerState = (window.__novaHeaderState = window.__novaHeaderState || {
+    cartCount: 0,
+    notificationCount: 0,
+  });
   const minimumSkeletonMs = 900;
   const skeletonStartedAt = window.performance?.now?.() ?? Date.now();
   let pageRevealScheduled = false;
@@ -57,9 +61,26 @@
   };
 
   const updateCartCount = (count) => {
+    const normalizedCount = Number.isFinite(Number(count)) ? Number(count) : 0;
+    headerState.cartCount = normalizedCount;
+
     document.querySelectorAll('[data-cart-count], [data-hero-cart-count]').forEach((node) => {
-      node.textContent = String(count);
+      node.textContent = String(normalizedCount);
     });
+  };
+
+  const updateNotificationCount = (count) => {
+    const normalizedCount = Number.isFinite(Number(count)) ? Number(count) : 0;
+    headerState.notificationCount = normalizedCount;
+
+    document.querySelectorAll('[data-notification-count]').forEach((node) => {
+      node.textContent = String(normalizedCount);
+    });
+  };
+
+  const applyHeaderCounts = () => {
+    updateCartCount(headerState.cartCount);
+    updateNotificationCount(headerState.notificationCount);
   };
 
   const applyCartPayload = (payload) => {
@@ -134,6 +155,27 @@
   };
 
   document.addEventListener('click', (event) => {
+    const trigger = event.target.closest('[data-open-cart-drawer]');
+
+    if (!trigger || event.defaultPrevented) {
+      return;
+    }
+
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+      return;
+    }
+
+    const drawer = document.getElementById('cartDrawer');
+
+    if (!drawer || !window.bootstrap) {
+      return;
+    }
+
+    event.preventDefault();
+    openCartDrawer();
+  });
+
+  document.addEventListener('click', (event) => {
     const button = event.target.closest('[data-quantity-button]');
 
     if (!button) {
@@ -198,6 +240,8 @@
   });
 
   document.addEventListener('DOMContentLoaded', () => {
+    applyHeaderCounts();
+
     refreshCart().catch(() => {
       // Leave the page usable even if the cart snapshot fails.
     });
@@ -216,9 +260,12 @@
 
   window.Storefront = {
     applyCartPayload,
+    applyHeaderCounts,
     flashMessage,
     openCartDrawer,
     refreshCart,
     scheduleFormSubmit,
+    updateCartCount,
+    updateNotificationCount,
   };
 })();

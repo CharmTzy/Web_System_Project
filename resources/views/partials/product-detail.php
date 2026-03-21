@@ -6,7 +6,7 @@ $onSale = $product['compare_price'] !== null && $product['compare_price'] > $pro
 $discountPercentage = $onSale
     ? (int) round((1 - ($product['price'] / $product['compare_price'])) * 100)
     : 0;
-$categoryUrl = '/index.html?category=' . urlencode($product['category_slug']) . '#catalog-feed';
+$categoryUrl = '/index.html?category=' . urlencode($product['category_slug']);
 $maxQuantity = max(1, (int) $product['stock_quantity']);
 $mediaItems = array_values(array_filter(
     $product['media'] ?? [],

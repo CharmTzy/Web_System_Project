@@ -22,6 +22,11 @@ $authPage = [
     'banner_copy' => 'Sign back in and continue browsing the products you have been exploring.',
     'cta_label' => 'Go to sign in',
     'cta_href' => '/login.php',
+    'context_notice' => [
+        'id' => 'register-seller-notice',
+        'title' => 'Seller approval required',
+        'copy' => 'Seller accounts require admin approval. You will be notified once your account has been reviewed.',
+    ],
 ];
 
 require dirname(__DIR__) . '/resources/views/layouts/auth-page.php';

@@ -14,6 +14,7 @@ $utilityLinks = is_array($authPage['utility_links'] ?? null) ? $authPage['utilit
     ['label' => 'Shop', 'href' => '/index.html'],
     ['label' => 'Cart', 'href' => '/cart.html'],
 ];
+$contextNotice = is_array($authPage['context_notice'] ?? null) ? $authPage['context_notice'] : [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,7 +25,7 @@ $utilityLinks = is_array($authPage['utility_links'] ?? null) ? $authPage['utilit
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&amp;family=Sora:wght@400;500;600;700&amp;family=Source+Sans+3:wght@400;600;700&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
@@ -73,6 +74,21 @@ $utilityLinks = is_array($authPage['utility_links'] ?? null) ? $authPage['utilit
                                 <?= e((string) ($authPage['cta_label'] ?? 'Go to storefront')) ?>
                             </a>
                         </div>
+
+                        <?php if ($contextNotice !== []): ?>
+                            <div
+                                class="auth-spotlight__context-note"
+                                <?php if (!empty($contextNotice['id'])): ?>id="<?= e((string) $contextNotice['id']) ?>"<?php endif; ?>
+                                hidden
+                            >
+                                <?php if (!empty($contextNotice['title'])): ?>
+                                    <strong><?= e((string) $contextNotice['title']) ?></strong>
+                                <?php endif; ?>
+                                <?php if (!empty($contextNotice['copy'])): ?>
+                                    <p><?= e((string) $contextNotice['copy']) ?></p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 

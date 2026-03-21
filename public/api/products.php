@@ -37,15 +37,6 @@ try {
         || $catalogView['filters']['max_price'] !== null
         || $catalogView['filters']['in_stock'];
 
-    $featuredDeals = array_slice(
-        array_values(array_filter(
-            $catalogView['products'],
-            static fn (array $product): bool => $product['is_featured']
-        )),
-        0,
-        4
-    );
-
     $categoryShortcuts = array_slice($catalogView['categories'], 0, 6);
 
     echo json_encode([
@@ -66,8 +57,26 @@ try {
             ])
             : '',
         'shortcuts_html' => render('partials/catalog-shortcuts', ['categories' => $categoryShortcuts]),
-        'featured_html' => render('partials/featured-strip', ['products' => $featuredDeals]),
+        'featured_html' => render('partials/category-showcase', ['categories' => $catalogView['categories']]),
         'results_html' => render('partials/catalog-grid', ['products' => $catalogView['products']]),
+        'search_suggestions' => [
+            'products' => array_values(array_map(
+                static fn(array $product): array => [
+                    'name' => (string) $product['name'],
+                    'category' => (string) ($product['category_name'] ?? ''),
+                    'seller' => (string) ($product['seller_name'] ?? ''),
+                ],
+                $catalogView['products']
+            )),
+            'categories' => array_values(array_map(
+                static fn(array $category): array => [
+                    'name' => (string) ($category['name'] ?? ''),
+                    'slug' => (string) ($category['slug'] ?? ''),
+                    'product_count' => (int) ($category['product_count'] ?? 0),
+                ],
+                $catalogView['categories']
+            )),
+        ],
     ]);
 } catch (\Throwable $exception) {
     http_response_code(500);
