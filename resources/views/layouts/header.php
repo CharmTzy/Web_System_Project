@@ -9,6 +9,7 @@ $headerSearchValue = $headerSearchValue ?? '';
 $cartSummary = $cartSummary ?? [
     'total_items' => 0,
 ];
+$bodyClasses = trim(((string) ($bodyClass ?? '')) . ' page-loading');
 
 $isLoggedIn = !empty($_SESSION['user_id']);
 $sessionRole = $_SESSION['user_role'] ?? '';
@@ -27,7 +28,53 @@ $sessionName = $_SESSION['user_name'] ?? '';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
-<body class="<?= e($bodyClass ?? '') ?>">
+<body class="<?= e($bodyClasses) ?>">
+    <?= render('partials/page-skeleton') ?>
+    <script>
+        (() => {
+            const minimumDelay = 900;
+            const startedAt = window.performance?.now?.() ?? Date.now();
+            let revealScheduled = false;
+
+            const revealPage = () => {
+                const body = document.body;
+
+                if (!body) {
+                    return;
+                }
+
+                body.classList.remove('page-loading');
+                body.classList.add('page-ready');
+
+                window.setTimeout(() => {
+                    document.querySelectorAll('[data-page-skeleton]').forEach((node) => node.remove());
+                }, 320);
+            };
+
+            const scheduleReveal = () => {
+                if (revealScheduled) {
+                    return;
+                }
+
+                revealScheduled = true;
+
+                const now = window.performance?.now?.() ?? Date.now();
+                const remaining = Math.max(0, minimumDelay - (now - startedAt));
+
+                window.setTimeout(revealPage, remaining);
+            };
+
+            window.__novaRevealPageShell = revealPage;
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', scheduleReveal, { once: true });
+            } else {
+                scheduleReveal();
+            }
+
+            window.addEventListener('load', scheduleReveal, { once: true });
+        })();
+    </script>
     <header class="site-header">
         <div class="container">
             <div class="site-header__main">
@@ -64,6 +111,7 @@ $sessionName = $_SESSION['user_name'] ?? '';
                 <nav class="header-nav" aria-label="Primary">
                     <a class="nav-link <?= $currentPath === '/' || $currentPath === '/index.html' ? 'active' : '' ?>" href="/index.html">Shop</a>
                     <a class="nav-link <?= $currentPath === '/cart.html' ? 'active' : '' ?>" href="/cart.html">Cart</a>
+                    <a class="nav-link <?= $currentPath === '/help.php' ? 'active' : '' ?>" href="/help.php">Help</a>
                     <?php if ($isLoggedIn && $sessionRole === 'admin'): ?>
                         <a class="nav-link <?= str_starts_with($currentPath, '/admin') ? 'active' : '' ?>" href="/admin/">Dashboard</a>
                         <a class="nav-link <?= $currentPath === '/admin/users.php' ? 'active' : '' ?>" href="/admin/users.php">Users</a>

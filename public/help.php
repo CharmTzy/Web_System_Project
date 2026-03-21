@@ -1,47 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+$config = require dirname(__DIR__) . '/bootstrap.php';
+
+$database = new \App\Support\Database($config['database']);
+$connection = $database->connection();
+
+$helpRepository = $connection
+    ? new \App\Repositories\HelpCenterRepository($connection)
+    : new \App\Repositories\SampleHelpCenterRepository();
+$helpService = new \App\Services\HelpCenterService(
+    $helpRepository,
+    $connection ? 'mysql' : 'sample'
+);
+
+try {
+    $helpData = $helpService->browse($_GET);
+} catch (Throwable) {
+    $helpData = (new \App\Services\HelpCenterService(
+        new \App\Repositories\SampleHelpCenterRepository(),
+        'sample'
+    ))->browse($_GET);
+}
+
+$pageTitle = 'Help Center';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Product | NovaMarket</title>
+    <title><?= e($pageTitle) ?> | <?= e($config['app']['name']) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&amp;family=Sora:wght@400;500;600;700&amp;family=Source+Sans+3:wght@400;600;700&amp;display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="/assets/css/app.css">
 </head>
-<body class="page-loading" data-product-screen>
-    <div class="page-skeleton" data-page-skeleton aria-hidden="true">
-        <div class="page-skeleton__header">
-            <div class="container page-skeleton__header-inner">
-                <span class="page-skeleton__brand skeleton-shimmer"></span>
-                <span class="page-skeleton__search skeleton-shimmer"></span>
-                <div class="page-skeleton__header-actions">
-                    <span class="page-skeleton__chip skeleton-shimmer"></span>
-                    <span class="page-skeleton__chip skeleton-shimmer"></span>
-                    <span class="page-skeleton__chip skeleton-shimmer"></span>
-                </div>
-            </div>
-        </div>
-        <div class="page-skeleton__main">
-            <div class="container">
-                <div class="page-skeleton__hero">
-                    <span class="page-skeleton__eyebrow skeleton-shimmer"></span>
-                    <span class="page-skeleton__headline skeleton-shimmer"></span>
-                    <span class="page-skeleton__headline page-skeleton__headline--short skeleton-shimmer"></span>
-                    <span class="page-skeleton__copy skeleton-shimmer"></span>
-                    <span class="page-skeleton__copy page-skeleton__copy--short skeleton-shimmer"></span>
-                </div>
-                <div class="page-skeleton__grid">
-                    <span class="page-skeleton__card page-skeleton__card--wide skeleton-shimmer"></span>
-                    <span class="page-skeleton__card skeleton-shimmer"></span>
-                    <span class="page-skeleton__card skeleton-shimmer"></span>
-                    <span class="page-skeleton__card skeleton-shimmer"></span>
-                    <span class="page-skeleton__card page-skeleton__card--wide skeleton-shimmer"></span>
-                </div>
-            </div>
-        </div>
-    </div>
+<body class="help-page--market page-loading">
+    <?= render('partials/page-skeleton') ?>
     <script>
         (() => {
             const minimumDelay = 900;
@@ -141,17 +139,8 @@
         </div>
     </header>
 
-    <main class="product-page product-page--market">
-        <section class="product-page__content">
-            <div class="container">
-                <div class="product-page__shell" data-product-detail-host>
-                    <section class="empty-state empty-state--compact">
-                        <h3>Loading product details...</h3>
-                        <p>Please wait while NovaMarket prepares the latest product information.</p>
-                    </section>
-                </div>
-            </div>
-        </section>
+    <main class="storefront-home storefront-home--market help-page-shell">
+        <?= render('help/center', $helpData) ?>
     </main>
 
     <div class="offcanvas offcanvas-end cart-drawer" tabindex="-1" id="cartDrawer" aria-labelledby="cartDrawerLabel">
@@ -201,7 +190,7 @@
     <div class="visually-hidden" id="cart-live-region" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="/assets/js/session-header.js"></script>
     <script src="/assets/js/store.js"></script>
-    <script src="/assets/js/product.js"></script>
 </body>
 </html>

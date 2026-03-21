@@ -1,6 +1,41 @@
 (() => {
+  const body = document.body;
   const toast = document.querySelector('[data-status-toast]');
   const liveRegion = document.getElementById('cart-live-region');
+  const minimumSkeletonMs = 900;
+  const skeletonStartedAt = window.performance?.now?.() ?? Date.now();
+  let pageRevealScheduled = false;
+
+  const revealPageShell = () => {
+    if (!body) {
+      return;
+    }
+
+    body.classList.remove('page-loading');
+    body.classList.add('page-ready');
+
+    window.setTimeout(() => {
+      document.querySelectorAll('[data-page-skeleton]').forEach((node) => {
+        node.remove();
+      });
+    }, 320);
+  };
+
+  const schedulePageReveal = () => {
+    if (!body || !body.classList.contains('page-loading') || pageRevealScheduled) {
+      return;
+    }
+
+    pageRevealScheduled = true;
+    const now = window.performance?.now?.() ?? Date.now();
+    const remaining = Math.max(0, minimumSkeletonMs - (now - skeletonStartedAt));
+
+    window.setTimeout(() => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(revealPageShell);
+      });
+    }, remaining);
+  };
 
   const flashMessage = (message, tone = 'success') => {
     if (liveRegion) {
@@ -167,6 +202,17 @@
       // Leave the page usable even if the cart snapshot fails.
     });
   });
+
+  if (body && body.classList.contains('page-loading')) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', schedulePageReveal, { once: true });
+    } else {
+      schedulePageReveal();
+    }
+
+    window.addEventListener('pageshow', schedulePageReveal, { once: true });
+    window.setTimeout(schedulePageReveal, 1400);
+  }
 
   window.Storefront = {
     applyCartPayload,
