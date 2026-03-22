@@ -1712,6 +1712,13 @@ a {
     font-size: 0.9rem;
 }
 
+.cart-panel__note {
+    margin: -0.3rem 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
 .cart-line {
     grid-template-columns: 140px minmax(0, 1fr);
     padding: 1.4rem;
@@ -4734,6 +4741,89 @@ a {
     color: rgba(255, 255, 255, 0.82);
     font-size: 0.85rem;
     line-height: 1.35;
+}
+
+.auth-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+}
+
+.auth-modal.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.auth-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 34, 56, 0.56);
+    backdrop-filter: blur(8px);
+}
+
+.auth-modal__dialog {
+    position: relative;
+    z-index: 1;
+    inline-size: min(100%, 430px);
+    display: grid;
+    gap: 0.85rem;
+    padding: 1.45rem;
+    border: 1px solid rgba(23, 50, 77, 0.08);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 32px 68px rgba(15, 34, 56, 0.22);
+}
+
+.auth-modal__close {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.95rem;
+    border: 0;
+    padding: 0;
+    color: var(--muted);
+    font-size: 1.6rem;
+    line-height: 1;
+    background: transparent;
+}
+
+.auth-modal__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: fit-content;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    color: var(--accent-dark);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(13, 116, 217, 0.1);
+}
+
+.auth-modal__dialog h2 {
+    margin: 0;
+    padding-right: 2rem;
+    font-size: clamp(1.45rem, 3vw, 1.9rem);
+    line-height: 1.18;
+}
+
+.auth-modal__dialog p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.98rem;
+    line-height: 1.65;
+}
+
+body.auth-modal-open {
+    overflow: hidden;
 }
 
 .auth-panel {

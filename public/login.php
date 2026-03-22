@@ -4,8 +4,16 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__) . '/bootstrap.php';
 
+$redirectCandidate = trim((string) ($_GET['redirect'] ?? ''));
+$authRedirect = (
+    $redirectCandidate !== ''
+    && str_starts_with($redirectCandidate, '/')
+    && !str_starts_with($redirectCandidate, '//')
+) ? $redirectCandidate : '';
+$cartNotice = trim((string) ($_GET['cart_notice'] ?? ''));
+
 if (!empty($_SESSION['user_id'])) {
-    header('Location: /profile.php');
+    header('Location: ' . ($authRedirect !== '' ? $authRedirect : '/profile.php'));
     exit;
 }
 
@@ -23,5 +31,13 @@ $authPage = [
     'cta_label' => 'Back to storefront',
     'cta_href' => '/index.html',
 ];
+
+if ($cartNotice === 'full-cart') {
+    $authPage['modal_notice'] = [
+        'title' => 'The full cart can only be accessed after login.',
+        'copy' => 'Sign in to open your full cart. Any items you added as a guest will be kept and added to your account cart after you sign in.',
+        'button_label' => 'Continue to sign in',
+    ];
+}
 
 require dirname(__DIR__) . '/resources/views/layouts/auth-page.php';

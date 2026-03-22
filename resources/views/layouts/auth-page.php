@@ -12,9 +12,10 @@ $authPage = $authPage ?? [];
 $highlights = is_array($authPage['highlights'] ?? null) ? $authPage['highlights'] : [];
 $utilityLinks = is_array($authPage['utility_links'] ?? null) ? $authPage['utility_links'] : [
     ['label' => 'Shop', 'href' => '/index.html'],
-    ['label' => 'Cart', 'href' => '/cart.html'],
+    ['label' => 'Cart', 'href' => '/login.php?redirect=%2Fcart.html&cart_notice=full-cart'],
 ];
 $contextNotice = is_array($authPage['context_notice'] ?? null) ? $authPage['context_notice'] : [];
+$modalNotice = is_array($authPage['modal_notice'] ?? null) ? $authPage['modal_notice'] : [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -100,6 +101,48 @@ $contextNotice = is_array($authPage['context_notice'] ?? null) ? $authPage['cont
             <p class="auth-page__footnote">Copyright &copy; 2026 <?= e($appName) ?>. All rights reserved.</p>
         </div>
     </main>
+
+    <?php if ($modalNotice !== []): ?>
+        <div class="auth-modal is-visible" data-auth-modal>
+            <div class="auth-modal__backdrop" data-auth-modal-close></div>
+            <div class="auth-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+                <button class="auth-modal__close" type="button" data-auth-modal-close aria-label="Close notice">&times;</button>
+                <span class="auth-modal__eyebrow">Cart access</span>
+                <h2 id="authModalTitle"><?= e((string) ($modalNotice['title'] ?? '')) ?></h2>
+                <p><?= e((string) ($modalNotice['copy'] ?? '')) ?></p>
+                <button class="btn btn-brand w-100" type="button" data-auth-modal-close>
+                    <?= e((string) ($modalNotice['button_label'] ?? 'Continue')) ?>
+                </button>
+            </div>
+        </div>
+        <script>
+            (() => {
+                const modal = document.querySelector('[data-auth-modal]');
+
+                if (!modal) {
+                    return;
+                }
+
+                const closeModal = () => {
+                    modal.classList.remove('is-visible');
+                    document.body.classList.remove('auth-modal-open');
+                    document.getElementById('login-email')?.focus();
+                };
+
+                document.body.classList.add('auth-modal-open');
+
+                modal.querySelectorAll('[data-auth-modal-close]').forEach((node) => {
+                    node.addEventListener('click', closeModal);
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && modal.classList.contains('is-visible')) {
+                        closeModal();
+                    }
+                });
+            })();
+        </script>
+    <?php endif; ?>
 
     <?php if (!empty($pageScript)): ?>
         <script src="<?= e(asset('js/' . $pageScript)) ?>"></script>

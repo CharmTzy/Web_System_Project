@@ -101,6 +101,26 @@
     document.dispatchEvent(new CustomEvent('storefront:cart-updated', { detail: payload }));
   };
 
+  const redirectToCartLogin = (payload = {}) => {
+    const loginUrl = payload.login_url || '/login.php?redirect=%2Fcart.html&cart_notice=full-cart';
+    window.location.href = loginUrl;
+  };
+
+  const handleSignInRequiredCart = (payload, options = {}) => {
+    applyCartPayload({
+      ...payload,
+      count: 0,
+      total_items: 0,
+    });
+
+    if (options.redirectImmediately || body?.matches('[data-cart-screen]')) {
+      redirectToCartLogin(payload);
+      return true;
+    }
+
+    return true;
+  };
+
   const openCartDrawer = () => {
     const drawer = document.getElementById('cartDrawer');
 
@@ -127,6 +147,11 @@
 
     const payload = await response.json();
 
+    if (payload.sign_in_required) {
+      handleSignInRequiredCart(payload);
+      return payload;
+    }
+
     if (!response.ok || !payload.ok) {
       throw new Error(payload.message || 'Unable to load the cart.');
     }
@@ -146,6 +171,11 @@
     });
 
     const payload = await response.json();
+
+    if (payload.sign_in_required) {
+      handleSignInRequiredCart(payload, { redirectImmediately: true });
+      return null;
+    }
 
     if (!response.ok || !payload.ok) {
       throw new Error(payload.message || 'Unable to update the cart.');
@@ -224,6 +254,9 @@
 
     try {
       const payload = await sendCartForm(form);
+      if (!payload) {
+        return;
+      }
       applyCartPayload(payload);
       flashMessage(payload.message || 'Cart updated.');
 

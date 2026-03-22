@@ -21,12 +21,18 @@ if (!$connection) {
 $userService = new \App\Services\UserService(
     new \App\Repositories\UserRepository($connection)
 );
+$couponRepository = new \App\Repositories\CouponRepository($connection);
+$helpRepository = new \App\Repositories\HelpCenterRepository($connection);
 
 $allUsers = $userService->listUsers();
 $stats = [
     'total' => count($allUsers),
     'sellers' => count(array_filter($allUsers, fn ($u) => $u['role'] === 'seller')),
     'customers' => count(array_filter($allUsers, fn ($u) => $u['role'] === 'customer')),
+    'products' => count((new \App\Repositories\ProductRepository($connection))->listManagedProducts()),
+    'addresses' => count((new \App\Repositories\AddressRepository($connection))->listAll()),
+    'coupons' => count($couponRepository->listAll()),
+    'help_questions' => count($helpRepository->listAllQuestions()),
 ];
 
 $pageTitle = 'Admin Dashboard';
@@ -48,6 +54,10 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
             <?= render('admin/dashboard', ['stats' => $stats]) ?>
             <div class="d-flex gap-3 flex-wrap">
                 <a class="btn btn-brand" href="/admin/users.php">Manage users</a>
+                <a class="btn btn-brand-outline" href="/admin/products.php">Manage products</a>
+                <a class="btn btn-brand-outline" href="/admin/addresses.php">Manage addresses</a>
+                <a class="btn btn-brand-outline" href="/admin/coupons.php">Manage coupons</a>
+                <a class="btn btn-brand-outline" href="/admin/help-questions.php">Manage help center</a>
                 <a class="btn btn-brand-outline" href="/admin/user-edit.php">Create new user</a>
             </div>
         </div>

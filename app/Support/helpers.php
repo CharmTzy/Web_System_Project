@@ -141,3 +141,24 @@ function bool_from_input(mixed $value): bool
 
     return $normalized ?? false;
 }
+
+function flash(string $key, mixed $value = null): mixed
+{
+    if (!isset($_SESSION['_flash']) || !is_array($_SESSION['_flash'])) {
+        $_SESSION['_flash'] = [];
+    }
+
+    if (func_num_args() > 1) {
+        $_SESSION['_flash'][$key] = $value;
+        return null;
+    }
+
+    if (!array_key_exists($key, $_SESSION['_flash'])) {
+        return null;
+    }
+
+    $stored = $_SESSION['_flash'][$key];
+    unset($_SESSION['_flash'][$key]);
+
+    return $stored;
+}
