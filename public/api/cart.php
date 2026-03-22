@@ -4,6 +4,29 @@ declare(strict_types=1);
 
 header('Content-Type: application/json');
 
+function cart_login_url(): string
+{
+    return '/login.php?redirect=' . rawurlencode('/cart.html') . '&cart_notice=full-cart';
+}
+
+function guest_full_cart_prompt(): array
+{
+    return [
+        'title' => 'The full cart can only be accessed after login.',
+        'copy' => 'Sign in to open your full cart. Any items you added as a guest will be kept and added to your account cart after you sign in.',
+        'login_url' => cart_login_url(),
+        'cta_label' => 'Go to sign in',
+    ];
+}
+
+function guest_drawer_cart(array $summary): array
+{
+    $summary['review_url'] = cart_login_url();
+    $summary['requires_login_for_full_cart'] = true;
+
+    return $summary;
+}
+
 try {
     $config = require dirname(__DIR__, 2) . '/bootstrap.php';
     $services = \App\Support\AppFactory::storefront($config);
@@ -11,6 +34,19 @@ try {
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $summary = $cartService->summary();
+
+        if (empty($_SESSION['user_id'])) {
+            respond([
+                'ok' => true,
+                'login_url' => cart_login_url(),
+                'count' => $summary['total_items'],
+                'total_items' => $summary['total_items'],
+                'subtotal_formatted' => $summary['subtotal_formatted'],
+                'grand_total_formatted' => $summary['grand_total_formatted'],
+                'drawer_html' => render('partials/cart-panel', ['cart' => guest_drawer_cart($summary)]),
+                'cart_html' => render('partials/cart-signin-prompt', guest_full_cart_prompt()),
+            ]);
+        }
 
         respond([
             'ok' => true,
@@ -50,6 +86,7 @@ try {
     };
 
     $summary = $result['summary'];
+    $isGuest = empty($_SESSION['user_id']);
 
     respond([
         'ok' => true,
@@ -59,8 +96,10 @@ try {
         'subtotal' => $summary['subtotal_formatted'],
         'subtotal_formatted' => $summary['subtotal_formatted'],
         'grand_total_formatted' => $summary['grand_total_formatted'],
-        'drawer_html' => render('partials/cart-panel', ['cart' => $summary]),
-        'cart_html' => render('partials/cart-table', ['cart' => $summary]),
+        'drawer_html' => render('partials/cart-panel', ['cart' => $isGuest ? guest_drawer_cart($summary) : $summary]),
+        'cart_html' => $isGuest
+            ? render('partials/cart-signin-prompt', guest_full_cart_prompt())
+            : render('partials/cart-table', ['cart' => $summary]),
     ]);
 } catch (Throwable $exception) {
     respond([

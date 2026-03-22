@@ -21,8 +21,17 @@ if (!$connection) {
 $userService = new \App\Services\UserService(
     new \App\Repositories\UserRepository($connection)
 );
+$productService = new \App\Services\ProductManagementService(
+    new \App\Repositories\ProductRepository($connection)
+);
 
 $profile = $userService->getProfile((int) $_SESSION['user_id']);
+$products = $productService->listSellerProducts((int) $_SESSION['user_id']);
+$stats = [
+    'total_products' => count($products),
+    'active_products' => count(array_filter($products, static fn (array $product): bool => $product['is_active'])),
+    'out_of_stock_products' => count(array_filter($products, static fn (array $product): bool => (int) $product['stock_quantity'] === 0)),
+];
 
 $pageTitle = 'Seller Dashboard';
 $appName = $config['app']['name'];
@@ -40,8 +49,12 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     </section>
     <section class="catalog-section">
         <div class="container">
-            <?= render('seller/dashboard', ['profile' => $profile]) ?>
-            <a class="btn btn-brand" href="/seller/store-profile.php">Edit store profile</a>
+            <?= render('seller/dashboard', ['profile' => $profile, 'stats' => $stats]) ?>
+            <div class="d-flex gap-3 flex-wrap">
+                <a class="btn btn-brand" href="/seller/products.php">Manage products</a>
+                <a class="btn btn-brand-outline" href="/seller/product-edit.php">Add new product</a>
+                <a class="btn btn-brand-outline" href="/seller/store-profile.php">Edit store profile</a>
+            </div>
         </div>
     </section>
 </main>

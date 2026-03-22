@@ -11,6 +11,7 @@ $cartSummary = $cartSummary ?? [
 ];
 $notificationCount = $notificationCount ?? 0;
 $bodyClasses = trim(((string) ($bodyClass ?? '')) . ' page-loading');
+$guestCartUrl = '/login.php?redirect=' . rawurlencode('/cart.html');
 
 $isLoggedIn = !empty($_SESSION['user_id']);
 $sessionRole = $_SESSION['user_role'] ?? '';
@@ -75,7 +76,7 @@ if ($isLoggedIn) {
     }
 } else {
     $mobileAccountLinks = [
-        ['label' => 'Cart', 'href' => '/cart.html'],
+        ['label' => 'Cart', 'href' => $guestCartUrl],
         ['label' => 'Sign in', 'href' => '/login.php'],
     ];
 }
@@ -227,7 +228,7 @@ $renderHeaderIcon = static function (string $icon): string {
                             </a>
                         <?php endif; ?>
                     <?php else: ?>
-                        <a class="header-icon-action header-icon-action--with-badge" href="/cart.html" data-open-cart-drawer="true" aria-controls="cartDrawer" aria-haspopup="dialog">
+                        <a class="header-icon-action header-icon-action--with-badge" href="<?= e($guestCartUrl) ?>" data-open-cart-drawer="true" aria-controls="cartDrawer" aria-haspopup="dialog">
                             <span class="header-icon-action__icon-wrap">
                                 <?= $renderHeaderIcon('cart') ?>
                                 <strong class="header-icon-action__badge" data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>

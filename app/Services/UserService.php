@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Repositories\UserRepository;
 use InvalidArgumentException;
+use Throwable;
 use RuntimeException;
 
 final class UserService
@@ -208,6 +209,29 @@ final class UserService
         $this->userRepository->update($userId, ['is_active' => $user['is_active'] ? 0 : 1]);
 
         return $this->userRepository->findById($userId);
+    }
+
+    public function adminDeleteUser(int $userId, int $actingUserId): void
+    {
+        if ($userId < 1) {
+            throw new InvalidArgumentException('Invalid user selected.');
+        }
+
+        if ($userId === $actingUserId) {
+            throw new RuntimeException('You cannot delete your own admin account.');
+        }
+
+        $user = $this->userRepository->findById($userId);
+
+        if ($user === null) {
+            throw new RuntimeException('User not found.');
+        }
+
+        try {
+            $this->userRepository->delete($userId);
+        } catch (Throwable $exception) {
+            throw new RuntimeException('This user cannot be deleted yet because related records still exist.');
+        }
     }
 
     public function updateSellerStore(int $userId, array $input): array

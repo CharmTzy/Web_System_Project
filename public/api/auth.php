@@ -25,6 +25,7 @@ if (!verify_csrf($_POST['csrf_token'] ?? null)) {
 }
 
 $action = (string) ($_POST['action'] ?? '');
+$requestedRedirect = trim((string) ($_POST['redirect'] ?? ''));
 
 try {
     $result = match ($action) {
@@ -56,6 +57,10 @@ try {
         'seller' => '/seller/',
         default => '/',
     };
+
+    if ($requestedRedirect !== '' && str_starts_with($requestedRedirect, '/') && !str_starts_with($requestedRedirect, '//')) {
+        $redirect = $requestedRedirect;
+    }
 
     respond([
         'ok' => true,

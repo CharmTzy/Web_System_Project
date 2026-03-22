@@ -16,6 +16,11 @@ if ($uri === '/' || $uri === '/index.php') {
 }
 
 if ($uri === '/cart.php') {
+    if (empty($_SESSION['user_id'])) {
+        header('Location: /login.php?redirect=%2Fcart.html&cart_notice=full-cart', true, 302);
+        return true;
+    }
+
     header('Location: /cart.html', true, 302);
     return true;
 }

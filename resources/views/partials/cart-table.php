@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 ?>
-<?php if ($cart['is_empty']): ?>
+<?php if (!empty($cart['requires_sign_in'])): ?>
+    <?= render('partials/cart-signin-prompt', ['login_url' => $cart['login_url'] ?? '/login.php?redirect=%2Fcart.html&cart_notice=full-cart']) ?>
+<?php elseif ($cart['is_empty']): ?>
     <section class="empty-state">
         <h3>Your cart is ready.</h3>
         <p>Add products from NovaMarket to see your selected items, quantities, and totals here.</p>

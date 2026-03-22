@@ -7,6 +7,9 @@
     <form class="auth-form auth-form--guest" data-auth-form data-action="login" novalidate>
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="action" value="login">
+        <?php if (!empty($authRedirect)): ?>
+            <input type="hidden" name="redirect" value="<?= e((string) $authRedirect) ?>">
+        <?php endif; ?>
 
         <div class="form-group">
             <label for="login-email">Email address</label>

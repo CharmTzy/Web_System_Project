@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS payment_cards (
     created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_payment_cards_user (user_id),
+    INDEX idx_payment_cards_user_default (user_id, is_default),
     CONSTRAINT fk_payment_cards_user
         FOREIGN KEY (user_id) REFERENCES users(id)
         ON DELETE CASCADE
@@ -49,6 +50,7 @@ CREATE TABLE IF NOT EXISTS orders (
     updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_orders_customer (customer_id),
     INDEX idx_orders_status (status),
+    INDEX idx_orders_created_at (created_at),
     CONSTRAINT fk_orders_customer
         FOREIGN KEY (customer_id) REFERENCES users(id)
         ON DELETE RESTRICT
@@ -65,6 +67,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     line_total  DECIMAL(10, 2) NOT NULL,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_order_items_order (order_id),
+    UNIQUE KEY uq_order_items_order_product (order_id, product_id),
     CONSTRAINT fk_order_items_order
         FOREIGN KEY (order_id) REFERENCES orders(id)
         ON DELETE CASCADE,
@@ -73,6 +76,35 @@ CREATE TABLE IF NOT EXISTS order_items (
         ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Sample payment card for the test customer
-INSERT INTO payment_cards (user_id, label, cardholder_name, card_last_four, card_brand, expiry_month, expiry_year, is_default) VALUES
-    (6, 'Personal Visa', 'Sample Customer', '4242', 'visa', 12, 2028, 1);
+-- Sample payment card for the seeded test customer.
+-- Uses a guarded INSERT so the migration can be rerun safely.
+INSERT INTO payment_cards (
+    user_id,
+    label,
+    cardholder_name,
+    card_last_four,
+    card_brand,
+    expiry_month,
+    expiry_year,
+    is_default
+)
+SELECT
+    u.id,
+    'Personal Visa',
+    u.name,
+    '4242',
+    'visa',
+    12,
+    2028,
+    1
+FROM users u
+WHERE u.role = 'customer'
+  AND u.email = 'customer@meridianmart.test'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM payment_cards pc
+      WHERE pc.user_id = u.id
+        AND pc.card_last_four = '4242'
+        AND pc.card_brand = 'visa'
+  )
+LIMIT 1;

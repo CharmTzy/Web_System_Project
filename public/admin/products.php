@@ -18,43 +18,33 @@ if (!$connection) {
     exit;
 }
 
-$userService = new \App\Services\UserService(
+$service = new \App\Services\AdminProductService(
+    new \App\Repositories\ProductRepository($connection),
     new \App\Repositories\UserRepository($connection)
 );
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf($_POST['csrf_token'] ?? null)) {
-        flash('admin_users_error', 'Session expired. Please refresh and try again.');
-        header('Location: /admin/users.php');
+        flash('admin_products_error', 'Session expired. Please refresh and try again.');
+        header('Location: /admin/products.php');
         exit;
     }
 
     try {
         if (($_POST['action'] ?? '') === 'delete') {
-            $userService->adminDeleteUser(
-                (int) ($_POST['user_id'] ?? 0),
-                (int) $_SESSION['user_id']
-            );
-            flash('admin_users_notice', 'User deleted successfully.');
+            $service->delete((int) ($_POST['product_id'] ?? 0));
+            flash('admin_products_notice', 'Product deleted successfully.');
         }
     } catch (\Throwable $exception) {
-        flash('admin_users_error', $exception->getMessage());
+        flash('admin_products_error', $exception->getMessage());
     }
 
-    header('Location: /admin/users.php');
+    header('Location: /admin/products.php');
     exit;
 }
 
-$filters = [
-    'search' => trim((string) ($_GET['search'] ?? '')),
-    'role' => trim((string) ($_GET['role'] ?? '')),
-];
-
-$users = $userService->listUsers(array_filter($filters));
-
-$pageTitle = 'Manage Users';
+$pageTitle = 'Manage Products';
 $appName = $config['app']['name'];
-$pageScript = 'admin-users.js';
 $cartSummary = ['total_items' => 0];
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
@@ -63,17 +53,16 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     <section class="hero-section hero-section--compact">
         <div class="container">
             <span class="hero-section__eyebrow">Admin panel</span>
-            <h1 class="hero-section__title" style="max-width:20ch;">Manage Users</h1>
+            <h1 class="hero-section__title" style="max-width:20ch;">Manage Seller Products</h1>
+            <p class="hero-section__copy">View and manage every storefront listing across all seller accounts.</p>
         </div>
     </section>
     <section class="catalog-section">
         <div class="container">
-            <?= render('admin/user-list', [
-                'users' => $users,
-                'filters' => $filters,
-                'actingUserId' => (int) $_SESSION['user_id'],
-                'notice' => flash('admin_users_notice'),
-                'error' => flash('admin_users_error'),
+            <?= render('admin/product-list', [
+                'products' => $service->listProducts(),
+                'notice' => flash('admin_products_notice'),
+                'error' => flash('admin_products_error'),
             ]) ?>
         </div>
     </section>
