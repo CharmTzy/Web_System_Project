@@ -11,7 +11,7 @@ if ($uri !== '/' && $filePath !== false && str_starts_with($filePath, $publicDir
 }
 
 if ($uri === '/' || $uri === '/index.php') {
-    header('Location: /index.html', true, 302);
+    header('Location: /', true, 302);
     return true;
 }
 

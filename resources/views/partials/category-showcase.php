@@ -14,8 +14,9 @@ $renderCategoryIcon = static function (string $slug): string {
 };
 ?>
 <?php foreach ($categories as $category): ?>
-    <a class="category-tile" href="/index.html?category=<?= e((string) $category['slug']) ?>">
-        <span class="category-tile__icon category-tile__icon--<?= e((string) $category['slug']) ?>"><?= $renderCategoryIcon((string) $category['slug']) ?></span>
+    <a class="category-tile" href="/?category=<?= e((string) $category['slug']) ?>">
+        <span
+            class="category-tile__icon category-tile__icon--<?= e((string) $category['slug']) ?>"><?= $renderCategoryIcon((string) $category['slug']) ?></span>
         <span class="category-tile__title"><?= e((string) $category['name']) ?></span>
         <span class="category-tile__meta"><?= e((string) ($category['description'] ?? '')) ?></span>
     </a>

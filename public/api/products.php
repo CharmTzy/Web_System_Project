@@ -28,7 +28,7 @@ try {
 
         $query = http_build_query($params);
 
-        return '/index.html' . ($query !== '' ? '?' . $query : '') . '#catalog-feed';
+        return '/' . ($query !== '' ? '?' . $query : '') . '#catalog-feed';
     };
 
     $showSidebarFilters = $catalogView['filters']['search'] !== ''
@@ -79,11 +79,11 @@ try {
         ],
     ]);
 } catch (\Throwable $exception) {
+    report_exception($exception, 'api.products');
     http_response_code(500);
 
     echo json_encode([
         'ok' => false,
-        'message' => 'Unable to load products. Check the PHP setup on this machine.',
-        'error' => $exception->getMessage(),
+        'message' => 'Unable to load products right now. Please try again shortly.',
     ]);
 }

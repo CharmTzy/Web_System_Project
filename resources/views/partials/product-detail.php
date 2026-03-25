@@ -6,23 +6,25 @@ $onSale = $product['compare_price'] !== null && $product['compare_price'] > $pro
 $discountPercentage = $onSale
     ? (int) round((1 - ($product['price'] / $product['compare_price'])) * 100)
     : 0;
-$categoryUrl = '/index.html?category=' . urlencode($product['category_slug']);
+$categoryUrl = '/?category=' . urlencode($product['category_slug']);
 $maxQuantity = max(1, (int) $product['stock_quantity']);
 $mediaItems = array_values(array_filter(
     $product['media'] ?? [],
-    static fn (mixed $media): bool => is_array($media) && !empty($media['url'])
+    static fn(mixed $media): bool => is_array($media) && !empty($media['url'])
 ));
 
 if ($mediaItems === []) {
-    $mediaItems = [[
-        'id' => 0,
-        'type' => 'image',
-        'url' => $product['image_url'],
-        'thumbnail_url' => $product['image_url'],
-        'alt_text' => $product['name'],
-        'sort_order' => 1,
-        'is_primary' => true,
-    ]];
+    $mediaItems = [
+        [
+            'id' => 0,
+            'type' => 'image',
+            'url' => $product['image_url'],
+            'thumbnail_url' => $product['image_url'],
+            'alt_text' => $product['name'],
+            'sort_order' => 1,
+            'is_primary' => true,
+        ]
+    ];
 }
 
 $primaryMediaIndex = 0;
@@ -36,7 +38,7 @@ foreach ($mediaItems as $index => $media) {
 ?>
 <article class="product-detail">
     <nav class="product-detail__breadcrumb" aria-label="Breadcrumb">
-        <a href="/index.html">Shop</a>
+        <a href="/">Shop</a>
         <span aria-hidden="true">/</span>
         <a href="<?= e($categoryUrl) ?>"><?= e($product['category_name']) ?></a>
         <span aria-hidden="true">/</span>
@@ -54,28 +56,16 @@ foreach ($mediaItems as $index => $media) {
                     $thumbnailUrl = (string) ($media['thumbnail_url'] ?? ($mediaType === 'image' ? $mediaUrl : $product['image_url']));
                     $altText = (string) ($media['alt_text'] ?? $product['name']);
                     ?>
-                    <div
-                        class="product-detail__media-frame<?= $isActiveMedia ? ' is-active' : '' ?>"
-                        data-product-media-panel="<?= e((string) $index) ?>"
-                        <?= $isActiveMedia ? '' : 'hidden' ?>
-                    >
+                    <div class="product-detail__media-frame<?= $isActiveMedia ? ' is-active' : '' ?>"
+                        data-product-media-panel="<?= e((string) $index) ?>" <?= $isActiveMedia ? '' : 'hidden' ?>>
                         <?php if ($mediaType === 'video'): ?>
-                            <video
-                                class="product-detail__video"
-                                controls
-                                preload="metadata"
-                                poster="<?= e($thumbnailUrl) ?>"
-                            >
+                            <video class="product-detail__video" controls preload="metadata" poster="<?= e($thumbnailUrl) ?>">
                                 <source src="<?= e($mediaUrl) ?>">
                                 Your browser does not support embedded video.
                             </video>
                         <?php else: ?>
-                            <img
-                                class="product-detail__image"
-                                src="<?= e($mediaUrl) ?>"
-                                alt="<?= e($altText) ?>"
-                                loading="<?= $isActiveMedia ? 'eager' : 'lazy' ?>"
-                            >
+                            <img class="product-detail__image" src="<?= e($mediaUrl) ?>" alt="<?= e($altText) ?>"
+                                loading="<?= $isActiveMedia ? 'eager' : 'lazy' ?>">
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
@@ -91,19 +81,12 @@ foreach ($mediaItems as $index => $media) {
                         $thumbnailUrl = (string) ($media['thumbnail_url'] ?? ($mediaType === 'image' ? $mediaUrl : $product['image_url']));
                         $altText = (string) ($media['alt_text'] ?? $product['name']);
                         ?>
-                        <button
-                            class="product-detail__thumb<?= $isActiveMedia ? ' is-active' : '' ?>"
-                            type="button"
+                        <button class="product-detail__thumb<?= $isActiveMedia ? ' is-active' : '' ?>" type="button"
                             data-product-media-thumb="<?= e((string) $index) ?>"
                             aria-pressed="<?= $isActiveMedia ? 'true' : 'false' ?>"
-                            aria-label="Show <?= e($mediaType) ?> <?= e((string) ($index + 1)) ?>"
-                        >
-                            <img
-                                class="product-detail__thumb-media"
-                                src="<?= e($thumbnailUrl) ?>"
-                                alt="<?= e($altText) ?>"
-                                loading="lazy"
-                            >
+                            aria-label="Show <?= e($mediaType) ?> <?= e((string) ($index + 1)) ?>">
+                            <img class="product-detail__thumb-media" src="<?= e($thumbnailUrl) ?>" alt="<?= e($altText) ?>"
+                                loading="lazy">
                             <?php if ($mediaType === 'video'): ?>
                                 <span class="product-detail__thumb-badge">Video</span>
                             <?php endif; ?>
@@ -126,7 +109,8 @@ foreach ($mediaItems as $index => $media) {
             <div class="product-detail__meta">
                 <span class="product-detail__seller">Sold by <?= e($product['seller_name']) ?></span>
                 <span class="product-detail__meta-dot" aria-hidden="true"></span>
-                <span class="product-detail__rating">&#9733; <?= e(number_format((float) $product['rating'], 1)) ?></span>
+                <span class="product-detail__rating">&#9733;
+                    <?= e(number_format((float) $product['rating'], 1)) ?></span>
                 <span class="product-detail__reviews">(<?= e((string) $product['review_count']) ?> reviews)</span>
             </div>
 
@@ -164,22 +148,18 @@ foreach ($mediaItems as $index => $media) {
                     <div class="product-detail__quantity-group">
                         <span class="product-detail__quantity-label">Quantity</span>
                         <div class="quantity-picker quantity-picker--detail" data-quantity-picker>
-                            <button class="quantity-picker__button" type="button" data-quantity-button="decrement" aria-label="Decrease quantity">
+                            <button class="quantity-picker__button" type="button" data-quantity-button="decrement"
+                                aria-label="Decrease quantity">
                                 -
                             </button>
-                            <label class="visually-hidden" for="detail-quantity-<?= e((string) $product['id']) ?>">Quantity for <?= e($product['name']) ?></label>
-                            <input
-                                id="detail-quantity-<?= e((string) $product['id']) ?>"
-                                class="quantity-picker__input"
-                                type="number"
-                                name="quantity"
-                                value="1"
-                                min="1"
-                                max="<?= e((string) $maxQuantity) ?>"
-                                inputmode="numeric"
-                                data-quantity-input
-                            >
-                            <button class="quantity-picker__button" type="button" data-quantity-button="increment" aria-label="Increase quantity">
+                            <label class="visually-hidden"
+                                for="detail-quantity-<?= e((string) $product['id']) ?>">Quantity for
+                                <?= e($product['name']) ?></label>
+                            <input id="detail-quantity-<?= e((string) $product['id']) ?>" class="quantity-picker__input"
+                                type="number" name="quantity" value="1" min="1" max="<?= e((string) $maxQuantity) ?>"
+                                inputmode="numeric" data-quantity-input>
+                            <button class="quantity-picker__button" type="button" data-quantity-button="increment"
+                                aria-label="Increase quantity">
                                 +
                             </button>
                         </div>
@@ -192,7 +172,8 @@ foreach ($mediaItems as $index => $media) {
             </form>
 
             <div class="product-detail__actions">
-                <a class="product-detail__secondary-link" href="<?= e($categoryUrl) ?>">Back to <?= e($product['category_name']) ?></a>
+                <a class="product-detail__secondary-link" href="<?= e($categoryUrl) ?>">Back to
+                    <?= e($product['category_name']) ?></a>
             </div>
         </div>
     </section>
