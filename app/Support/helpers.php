@@ -116,7 +116,7 @@ function send_security_headers(): void
         "font-src 'self' data: https://fonts.gstatic.com",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
-        "connect-src 'self'",
+        "connect-src 'self' ws: wss: https://cdn.jsdelivr.net",
         "media-src 'self' https://storage.googleapis.com",
     ]);
 
@@ -166,6 +166,23 @@ function product_url(array $product): string
     ]);
 
     return '/product.html' . ($params !== '' ? '?' . $params : '');
+}
+
+function chat_websocket_url(array $appConfig): string
+{
+    $configured = trim((string) ($appConfig['chat_websocket_url'] ?? ''));
+
+    if ($configured !== '') {
+        return $configured;
+    }
+
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost'));
+    $host = preg_replace('/:\d+$/', '', $host) ?: 'localhost';
+    $scheme = request_is_secure() ? 'wss' : 'ws';
+    $port = (int) ($appConfig['chat_websocket_port'] ?? 8080);
+    $path = '/' . ltrim((string) ($appConfig['chat_websocket_path'] ?? '/ws/chat'), '/');
+
+    return sprintf('%s://%s:%d%s', $scheme, $host, $port, $path);
 }
 
 function render(string $view, array $data = []): string

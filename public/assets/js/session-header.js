@@ -36,6 +36,7 @@
       if (role === 'customer') {
         syncCustomerNav(marketSubnav);
         syncCustomerNav(mobileNav);
+        headerState.notificationCount = Number(data.notification_count || 0);
 
         actionsEl.innerHTML = [
           buildIconAction({
@@ -160,6 +161,10 @@
     ordersLink.href = '/customer/orders.php';
     ordersLink.textContent = 'Orders';
 
+    const chatLink = document.createElement('a');
+    chatLink.href = '/customer/chat.php';
+    chatLink.textContent = 'Chat';
+
     const paymentsLink = document.createElement('a');
     paymentsLink.href = '/customer/payments.php';
     paymentsLink.textContent = 'Payments';
@@ -170,10 +175,12 @@
 
     if (helpLink) {
       container.insertBefore(ordersLink, helpLink);
+      container.insertBefore(chatLink, helpLink);
       container.insertBefore(paymentsLink, helpLink);
       container.insertBefore(addressesLink, helpLink);
     } else {
       container.appendChild(ordersLink);
+      container.appendChild(chatLink);
       container.appendChild(paymentsLink);
       container.appendChild(addressesLink);
     }

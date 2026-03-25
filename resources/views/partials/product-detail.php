@@ -18,6 +18,10 @@ $reviewContext = $reviewContext ?? [
     'can_review' => false,
     'requires_sign_in' => true,
 ];
+$isLoggedIn = !empty($_SESSION['user_id']);
+$isCustomer = $isLoggedIn && ($_SESSION['user_role'] ?? '') === 'customer';
+$chatUrl = '/customer/chat.php?seller=' . urlencode((string) $product['seller_id']) . '&product=' . urlencode((string) $product['id']);
+$chatLoginUrl = '/login.php?redirect=' . rawurlencode($chatUrl);
 
 if ($mediaItems === []) {
     $mediaItems = [
@@ -178,6 +182,9 @@ foreach ($mediaItems as $index => $media) {
             </form>
 
             <div class="product-detail__actions">
+                <a class="btn btn-brand-outline" href="<?= e($isCustomer ? $chatUrl : $chatLoginUrl) ?>">
+                    Chat with seller
+                </a>
                 <a class="product-detail__secondary-link" href="<?= e($categoryUrl) ?>">Back to
                     <?= e($product['category_name']) ?></a>
             </div>
