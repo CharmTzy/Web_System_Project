@@ -94,7 +94,7 @@ declare(strict_types=1);
                         <strong><?= e($cart['grand_total_formatted']) ?></strong>
                     </div>
                 </div>
-                <button class="btn btn-brand w-100" type="button" disabled>Checkout coming soon</button>
+                <a class="btn btn-brand w-100" href="/customer/checkout.php">Continue to checkout</a>
                 <p class="summary-card__note">Shipping is free once the cart subtotal reaches
                     <?= e(money($cart['free_shipping_threshold'])) ?>.</p>
             </aside>

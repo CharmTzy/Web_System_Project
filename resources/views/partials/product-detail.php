@@ -12,6 +12,12 @@ $mediaItems = array_values(array_filter(
     $product['media'] ?? [],
     static fn(mixed $media): bool => is_array($media) && !empty($media['url'])
 ));
+$reviewContext = $reviewContext ?? [
+    'reviews' => [],
+    'existing_review' => null,
+    'can_review' => false,
+    'requires_sign_in' => true,
+];
 
 if ($mediaItems === []) {
     $mediaItems = [
@@ -185,4 +191,9 @@ foreach ($mediaItems as $index => $media) {
         </div>
         <p><?= nl2br(e($product['description'])) ?></p>
     </section>
+
+    <?= render('partials/product-reviews', [
+        'product' => $product,
+        'reviewContext' => $reviewContext,
+    ]) ?>
 </article>

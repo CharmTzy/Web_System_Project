@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use PDO;
 use PDOException;
+use RuntimeException;
 
 final class ProductRepository implements CatalogRepositoryInterface
 {
@@ -235,6 +236,26 @@ final class ProductRepository implements CatalogRepositoryInterface
         $statement = $this->connection->prepare('DELETE FROM products WHERE id = :id');
 
         return $statement->execute(['id' => $id]);
+    }
+
+    public function reduceStock(int $productId, int $quantity): void
+    {
+        $statement = $this->connection->prepare(
+            <<<SQL
+            UPDATE products
+            SET stock_quantity = stock_quantity - :quantity
+            WHERE id = :id
+              AND stock_quantity >= :quantity
+            SQL
+        );
+        $statement->execute([
+            'id' => $productId,
+            'quantity' => $quantity,
+        ]);
+
+        if ($statement->rowCount() < 1) {
+            throw new RuntimeException('One or more cart items no longer have enough stock.');
+        }
     }
 
     private function baseProductQuery(array $filters): array

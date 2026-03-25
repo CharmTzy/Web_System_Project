@@ -35,6 +35,8 @@ $marketNavLinks = [
 
 if ($isCustomer) {
     $marketNavLinks[] = ['label' => 'Coupons', 'href' => '/customer/coupons.php', 'active' => $currentPath === '/customer/coupons.php'];
+    $marketNavLinks[] = ['label' => 'Orders', 'href' => '/customer/orders.php', 'active' => $currentPath === '/customer/orders.php'];
+    $marketNavLinks[] = ['label' => 'Payments', 'href' => '/customer/payments.php', 'active' => $currentPath === '/customer/payments.php'];
     $marketNavLinks[] = ['label' => 'Addresses', 'href' => '/customer/addresses.php', 'active' => $currentPath === '/customer/addresses.php'];
 } else {
     $profileShortcut = ['label' => 'Registry', 'href' => '/register.php', 'active' => $currentPath === '/register.php'];
@@ -277,13 +279,12 @@ $renderHeaderIcon = static function (string $icon): string {
         <div class="offcanvas-body">
             <nav class="mobile-drawer__nav" aria-label="Mobile site navigation">
                 <?php foreach ($marketNavLinks as $link): ?>
-                    <a href="<?= e((string) $link['href']) ?>"
-                        data-bs-dismiss="offcanvas"><?= e((string) $link['label']) ?></a>
+                    <a href="<?= e((string) $link['href']) ?>"><?= e((string) $link['label']) ?></a>
                 <?php endforeach; ?>
             </nav>
             <div class="mobile-drawer__links">
                 <?php foreach ($mobileAccountLinks as $link): ?>
-                    <a href="<?= e((string) $link['href']) ?>" <?= ((string) $link['label']) !== 'Cart' ? ' data-bs-dismiss="offcanvas"' : '' ?>><?= e((string) $link['label']) ?></a>
+                    <a href="<?= e((string) $link['href']) ?>"><?= e((string) $link['label']) ?></a>
                 <?php endforeach; ?>
             </div>
         </div>

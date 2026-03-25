@@ -6,6 +6,7 @@
   }
 
   const detailHost = document.querySelector("[data-product-detail-host]");
+  const storefront = window.Storefront || {};
 
   if (!detailHost) {
     return;
@@ -89,6 +90,58 @@
       detailHost.classList.remove("is-loading");
     }
   };
+
+  document.addEventListener("submit", async (event) => {
+    const form = event.target.closest("[data-review-form]");
+
+    if (!form) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const submitter = event.submitter || form.querySelector('button[type="submit"]');
+
+    if (submitter) {
+      submitter.setAttribute("disabled", "disabled");
+    }
+
+    try {
+      const formData = new FormData(form);
+
+      if (submitter?.hasAttribute("data-review-delete")) {
+        formData.set("action", "delete");
+      }
+
+      const response = await fetch("/api/reviews.php", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+        },
+        body: formData,
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok) {
+        if (payload.login_url) {
+          window.location.href = payload.login_url;
+          return;
+        }
+
+        throw new Error(payload.message || "Unable to save your review.");
+      }
+
+      await loadProduct();
+      storefront.flashMessage?.(payload.message || "Review updated.");
+    } catch (error) {
+      storefront.flashMessage?.(error.message || "Unable to update your review.", "error");
+    } finally {
+      if (submitter) {
+        submitter.removeAttribute("disabled");
+      }
+    }
+  });
 
   loadProduct();
 })();

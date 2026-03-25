@@ -6,8 +6,22 @@ header('Content-Type: application/json');
 
 try {
     $config = require dirname(__DIR__, 2) . '/bootstrap.php';
-    $services = \App\Support\AppFactory::storefront($config);
-    $catalog = $services['catalog'];
+    $database = new \App\Support\Database($config['database']);
+    $connection = $database->connection();
+
+    if (!$connection) {
+        respond([
+            'ok' => false,
+            'message' => service_unavailable_message(),
+        ], 503);
+    }
+
+    $catalogRepository = new \App\Repositories\ProductRepository($connection);
+    $catalog = new \App\Services\CatalogService($catalogRepository, 'mysql');
+    $reviewService = new \App\Services\ReviewService(
+        new \App\Repositories\ReviewRepository($connection),
+        new \App\Repositories\OrderRepository($connection),
+    );
 
     $productId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
     $slug = trim((string) ($_GET['slug'] ?? ''));
@@ -37,7 +51,15 @@ try {
     respond([
         'ok' => true,
         'title' => $product['name'] . ' | NovaMarket',
-        'html' => render('partials/product-detail', ['product' => $product]),
+        'html' => render('partials/product-detail', [
+            'product' => $product,
+            'reviewContext' => $reviewService->forProduct(
+                (int) $product['id'],
+                !empty($_SESSION['user_id']) && ($_SESSION['user_role'] ?? '') === 'customer'
+                    ? (int) $_SESSION['user_id']
+                    : null
+            ),
+        ]),
     ]);
 } catch (Throwable $exception) {
     report_exception($exception, 'api.product');
