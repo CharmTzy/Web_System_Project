@@ -13,9 +13,7 @@ $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
 
 if (!$connection) {
-    http_response_code(503);
-    echo 'Database connection required.';
-    exit;
+    render_error_page(503, 'Service temporarily unavailable', service_unavailable_message());
 }
 
 $service = new \App\Services\ProductManagementService(
@@ -38,7 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('seller_products_notice', 'Product deleted successfully.');
         }
     } catch (\Throwable $exception) {
-        flash('seller_products_error', $exception->getMessage());
+        report_exception($exception, 'seller.products');
+        flash('seller_products_error', safe_exception_message($exception, 'We could not update the product right now.'));
     }
 
     header('Location: /seller/products.php');

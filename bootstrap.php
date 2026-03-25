@@ -2,13 +2,17 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/app/Support/helpers.php';
+
+load_env(__DIR__ . '/.env');
+
+bootstrap_session_security();
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require __DIR__ . '/app/Support/helpers.php';
-
-load_env(__DIR__ . '/.env');
+send_security_headers();
 
 spl_autoload_register(static function (string $class): void {
     $prefix = 'App\\';
@@ -30,4 +34,3 @@ return [
     'app' => require __DIR__ . '/config/app.php',
     'database' => require __DIR__ . '/config/database.php',
 ];
-

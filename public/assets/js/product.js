@@ -1,11 +1,11 @@
 (() => {
-  const page = document.querySelector('[data-product-screen]');
+  const page = document.querySelector("[data-product-screen]");
 
   if (!page) {
     return;
   }
 
-  const detailHost = document.querySelector('[data-product-detail-host]');
+  const detailHost = document.querySelector("[data-product-detail-host]");
 
   if (!detailHost) {
     return;
@@ -16,14 +16,14 @@
       <section class="empty-state empty-state--compact">
         <h3>${title}</h3>
         <p>${copy}</p>
-        <a class="btn btn-brand" href="/index.html">Back to shop</a>
+        <a class="btn btn-brand" href="/">Back to shop</a>
       </section>
     `;
   };
 
   const initMediaGallery = (root) => {
-    const panels = [...root.querySelectorAll('[data-product-media-panel]')];
-    const thumbs = [...root.querySelectorAll('[data-product-media-thumb]')];
+    const panels = [...root.querySelectorAll("[data-product-media-panel]")];
+    const thumbs = [...root.querySelectorAll("[data-product-media-thumb]")];
 
     if (panels.length < 2 || thumbs.length < 2) {
       return;
@@ -33,23 +33,23 @@
       panels.forEach((panel) => {
         const isActive = panel.dataset.productMediaPanel === targetId;
         panel.hidden = !isActive;
-        panel.classList.toggle('is-active', isActive);
+        panel.classList.toggle("is-active", isActive);
 
         if (!isActive) {
-          panel.querySelectorAll('video').forEach((video) => video.pause());
+          panel.querySelectorAll("video").forEach((video) => video.pause());
         }
       });
 
       thumbs.forEach((thumb) => {
         const isActive = thumb.dataset.productMediaThumb === targetId;
-        thumb.classList.toggle('is-active', isActive);
-        thumb.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        thumb.classList.toggle("is-active", isActive);
+        thumb.setAttribute("aria-pressed", isActive ? "true" : "false");
       });
     };
 
     thumbs.forEach((thumb) => {
-      thumb.addEventListener('click', () => {
-        setActive(thumb.dataset.productMediaThumb || '0');
+      thumb.addEventListener("click", () => {
+        setActive(thumb.dataset.productMediaThumb || "0");
       });
     });
   };
@@ -57,36 +57,36 @@
   const loadProduct = async () => {
     const params = new URLSearchParams(window.location.search);
 
-    if (!params.get('id') && !params.get('slug')) {
-      renderState('Choose a product first.', 'Open a product from the shop page to view its details.');
+    if (!params.get("id") && !params.get("slug")) {
+      renderState("Choose a product first.", "Open a product from the shop page to view its details.");
       return;
     }
 
-    detailHost.classList.add('is-loading');
+    detailHost.classList.add("is-loading");
 
     try {
       const response = await fetch(`/api/product.php?${params.toString()}`, {
         headers: {
-          Accept: 'application/json',
+          Accept: "application/json",
         },
       });
 
       const payload = await response.json();
 
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.message || 'Unable to load this product.');
+        throw new Error(payload.message || "Unable to load this product.");
       }
 
-      detailHost.innerHTML = payload.html || '';
+      detailHost.innerHTML = payload.html || "";
       initMediaGallery(detailHost);
 
       if (payload.title) {
         document.title = payload.title;
       }
     } catch (error) {
-      renderState('Unable to load this product.', error.message || 'Please try again in a moment.');
+      renderState("Unable to load this product.", error.message || "Please try again in a moment.");
     } finally {
-      detailHost.classList.remove('is-loading');
+      detailHost.classList.remove("is-loading");
     }
   };
 

@@ -29,8 +29,8 @@ if ($isAdmin) {
 }
 
 $marketNavLinks = [
-    ['label' => 'Home Favorites', 'href' => '/index.html?category=home-living', 'active' => false],
-    ['label' => 'Fashion Finds', 'href' => '/index.html?category=lifestyle', 'active' => false],
+    ['label' => 'Home Favorites', 'href' => '/?category=home-living', 'active' => false],
+    ['label' => 'Fashion Finds', 'href' => '/?category=lifestyle', 'active' => false],
 ];
 
 if ($isCustomer) {
@@ -40,7 +40,7 @@ if ($isCustomer) {
     $profileShortcut = ['label' => 'Registry', 'href' => '/register.php', 'active' => $currentPath === '/register.php'];
 
     if ($isSeller) {
-    $profileShortcut = ['label' => 'Store', 'href' => '/seller/store-profile.php', 'active' => $currentPath === '/seller/store-profile.php'];
+        $profileShortcut = ['label' => 'Store', 'href' => '/seller/store-profile.php', 'active' => $currentPath === '/seller/store-profile.php'];
     } elseif ($isAdmin) {
         $profileShortcut = ['label' => 'Dashboard', 'href' => '/admin/', 'active' => str_starts_with($currentPath, '/admin')];
     }
@@ -93,6 +93,7 @@ $renderHeaderIcon = static function (string $icon): string {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -100,10 +101,14 @@ $renderHeaderIcon = static function (string $icon): string {
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
+
 <body class="<?= e($bodyClasses) ?>">
     <?= render('partials/page-skeleton', ['variant' => $pageSkeletonVariant]) ?>
     <script>
@@ -155,19 +160,14 @@ $renderHeaderIcon = static function (string $icon): string {
         <div class="container">
             <div class="site-header__main site-header__main--market">
                 <div class="site-header__start">
-                    <button
-                        class="mobile-menu-toggle"
-                        type="button"
-                        data-bs-toggle="offcanvas"
-                        data-bs-target="#mobileNavDrawer"
-                        aria-controls="mobileNavDrawer"
-                        aria-label="Open navigation menu"
-                    >
+                    <button class="mobile-menu-toggle" type="button" data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileNavDrawer" aria-controls="mobileNavDrawer"
+                        aria-label="Open navigation menu">
                         <span></span>
                         <span></span>
                         <span></span>
                     </button>
-                    <a class="site-nav__brand-link site-nav__brand-link--market" href="/index.html" aria-label="NovaMarket home">
+                    <a class="site-nav__brand-link site-nav__brand-link--market" href="/" aria-label="NovaMarket home">
                         <span class="site-nav__eyebrow">Everyday style. Smart prices.</span>
                         <span class="site-nav__brand-row">
                             <span class="site-nav__brand-mark" aria-hidden="true">NM</span>
@@ -176,17 +176,13 @@ $renderHeaderIcon = static function (string $icon): string {
                     </a>
                 </div>
 
-                <form id="header-search-form" class="header-search header-search--market" action="/index.html" method="get" role="search">
+                <form id="header-search-form" class="header-search header-search--market" action="/" method="get"
+                    role="search">
                     <label class="visually-hidden" for="header-search-input">Search the product catalog</label>
-                    <input
-                        id="header-search-input"
-                        class="header-search__input"
-                        type="search"
-                        name="search"
-                        value="<?= e($headerSearchValue) ?>"
-                        placeholder="Search for anything"
-                    >
-                    <button class="header-search__button header-search__button--market" type="submit" aria-label="Search">&#8981;</button>
+                    <input id="header-search-input" class="header-search__input" type="search" name="search"
+                        value="<?= e($headerSearchValue) ?>" placeholder="Search for anything">
+                    <button class="header-search__button header-search__button--market" type="submit"
+                        aria-label="Search">&#8981;</button>
                 </form>
 
                 <div class="site-header__actions site-header__actions--market">
@@ -201,14 +197,17 @@ $renderHeaderIcon = static function (string $icon): string {
                             <a class="header-icon-action header-icon-action--with-badge" href="<?= e($notificationsUrl) ?>">
                                 <span class="header-icon-action__icon-wrap">
                                     <?= $renderHeaderIcon('notification') ?>
-                                    <strong class="header-icon-action__badge" data-notification-count><?= e((string) $notificationCount) ?></strong>
+                                    <strong class="header-icon-action__badge"
+                                        data-notification-count><?= e((string) $notificationCount) ?></strong>
                                 </span>
                                 <span class="header-icon-action__label">Notification</span>
                             </a>
-                            <a class="header-icon-action header-icon-action--with-badge" href="/cart.html" data-open-cart-drawer="true" aria-controls="cartDrawer" aria-haspopup="dialog">
+                            <a class="header-icon-action header-icon-action--with-badge" href="/cart.html"
+                                data-open-cart-drawer="true" aria-controls="cartDrawer" aria-haspopup="dialog">
                                 <span class="header-icon-action__icon-wrap">
                                     <?= $renderHeaderIcon('cart') ?>
-                                    <strong class="header-icon-action__badge" data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>
+                                    <strong class="header-icon-action__badge"
+                                        data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>
                                 </span>
                                 <span class="header-icon-action__label">Cart</span>
                             </a>
@@ -222,16 +221,19 @@ $renderHeaderIcon = static function (string $icon): string {
                             <a class="header-action-link" href="<?= e($dashboardUrl) ?>"><?= e($sessionName) ?></a>
                             <span class="header-action-badge"><?= e(ucfirst($sessionRole)) ?></span>
                             <a class="header-action-link" href="/logout.php">Sign out</a>
-                            <a class="header-cart-link header-cart-link--market" href="/cart.html" data-open-cart-drawer="true" aria-controls="cartDrawer" aria-haspopup="dialog">
+                            <a class="header-cart-link header-cart-link--market" href="/cart.html" data-open-cart-drawer="true"
+                                aria-controls="cartDrawer" aria-haspopup="dialog">
                                 <span>Cart</span>
                                 <strong data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>
                             </a>
                         <?php endif; ?>
                     <?php else: ?>
-                        <a class="header-icon-action header-icon-action--with-badge" href="<?= e($guestCartUrl) ?>" data-open-cart-drawer="true" aria-controls="cartDrawer" aria-haspopup="dialog">
+                        <a class="header-icon-action header-icon-action--with-badge" href="<?= e($guestCartUrl) ?>"
+                            data-open-cart-drawer="true" aria-controls="cartDrawer" aria-haspopup="dialog">
                             <span class="header-icon-action__icon-wrap">
                                 <?= $renderHeaderIcon('cart') ?>
-                                <strong class="header-icon-action__badge" data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>
+                                <strong class="header-icon-action__badge"
+                                    data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>
                             </span>
                             <span class="header-icon-action__label">Cart</span>
                         </a>
@@ -246,7 +248,7 @@ $renderHeaderIcon = static function (string $icon): string {
             </div>
             <nav class="market-subnav" aria-label="Featured links">
                 <?php foreach ($marketNavLinks as $link): ?>
-                    <a href="<?= e((string) $link['href']) ?>"<?= !empty($link['active']) ? ' aria-current="page"' : '' ?>><?= e((string) $link['label']) ?></a>
+                    <a href="<?= e((string) $link['href']) ?>" <?= !empty($link['active']) ? ' aria-current="page"' : '' ?>><?= e((string) $link['label']) ?></a>
                 <?php endforeach; ?>
             </nav>
         </div>
@@ -263,7 +265,8 @@ $renderHeaderIcon = static function (string $icon): string {
         <div class="offcanvas-body" data-cart-drawer></div>
     </div>
 
-    <div class="offcanvas offcanvas-start mobile-drawer" tabindex="-1" id="mobileNavDrawer" aria-labelledby="mobileNavDrawerLabel">
+    <div class="offcanvas offcanvas-start mobile-drawer" tabindex="-1" id="mobileNavDrawer"
+        aria-labelledby="mobileNavDrawerLabel">
         <div class="offcanvas-header">
             <div>
                 <span class="hero-section__eyebrow">Browse menu</span>
@@ -274,12 +277,13 @@ $renderHeaderIcon = static function (string $icon): string {
         <div class="offcanvas-body">
             <nav class="mobile-drawer__nav" aria-label="Mobile site navigation">
                 <?php foreach ($marketNavLinks as $link): ?>
-                    <a href="<?= e((string) $link['href']) ?>" data-bs-dismiss="offcanvas"><?= e((string) $link['label']) ?></a>
+                    <a href="<?= e((string) $link['href']) ?>"
+                        data-bs-dismiss="offcanvas"><?= e((string) $link['label']) ?></a>
                 <?php endforeach; ?>
             </nav>
             <div class="mobile-drawer__links">
                 <?php foreach ($mobileAccountLinks as $link): ?>
-                    <a href="<?= e((string) $link['href']) ?>"<?= ((string) $link['label']) !== 'Cart' ? ' data-bs-dismiss="offcanvas"' : '' ?>><?= e((string) $link['label']) ?></a>
+                    <a href="<?= e((string) $link['href']) ?>" <?= ((string) $link['label']) !== 'Cart' ? ' data-bs-dismiss="offcanvas"' : '' ?>><?= e((string) $link['label']) ?></a>
                 <?php endforeach; ?>
             </div>
         </div>

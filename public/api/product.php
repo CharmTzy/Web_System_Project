@@ -40,9 +40,10 @@ try {
         'html' => render('partials/product-detail', ['product' => $product]),
     ]);
 } catch (Throwable $exception) {
+    report_exception($exception, 'api.product');
     respond([
         'ok' => false,
-        'message' => $exception->getMessage() !== '' ? $exception->getMessage() : 'Unable to load this product right now.',
+        'message' => 'Unable to load this product right now.',
     ], 500);
 }
 

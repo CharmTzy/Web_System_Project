@@ -13,9 +13,7 @@ $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
 
 if (!$connection) {
-    http_response_code(503);
-    echo 'Database connection required.';
-    exit;
+    render_error_page(503, 'Service temporarily unavailable', service_unavailable_message());
 }
 
 $service = new \App\Services\AdminCouponService(
@@ -36,7 +34,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('admin_coupons_notice', 'Coupon deleted successfully.');
         }
     } catch (\Throwable $exception) {
-        flash('admin_coupons_error', $exception->getMessage());
+        report_exception($exception, 'admin.coupons');
+        flash('admin_coupons_error', safe_exception_message($exception, 'We could not update the coupon right now.'));
     }
 
     header('Location: /admin/coupons.php');

@@ -13,9 +13,7 @@ $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
 
 if (!$connection) {
-    http_response_code(503);
-    echo 'Database connection required.';
-    exit;
+    render_error_page(503, 'Service temporarily unavailable', service_unavailable_message());
 }
 
 $service = new \App\Services\ProductManagementService(
@@ -47,7 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: /seller/product-edit.php?id=' . $savedProduct['id']);
             exit;
         } catch (\Throwable $exception) {
-            $formError = $exception->getMessage();
+            report_exception($exception, 'seller.product_edit');
+            $formError = safe_exception_message($exception, 'We could not save the product right now.');
         }
     }
 }

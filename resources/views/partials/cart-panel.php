@@ -11,7 +11,7 @@ $requiresLoginForFullCart = !empty($cart['requires_login_for_full_cart']);
     <div class="empty-state empty-state--compact">
         <h3>Your cart is empty.</h3>
         <p>Start exploring NovaMarket and add your favorite picks here.</p>
-        <a class="btn btn-brand" href="/index.html">Browse products</a>
+        <a class="btn btn-brand" href="/">Browse products</a>
     </div>
 <?php else: ?>
     <div class="cart-panel">

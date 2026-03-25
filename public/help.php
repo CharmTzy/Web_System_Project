@@ -40,16 +40,21 @@ $pageTitle = 'Help Center';
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($pageTitle) ?> | <?= e($config['app']['name']) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="/assets/css/app.css">
 </head>
+
 <body class="help-page--market<?= $usePageSkeleton ? ' page-loading' : '' ?>">
     <?php if ($usePageSkeleton): ?>
         <?= render('partials/page-skeleton', ['variant' => 'help']) ?>
@@ -102,7 +107,7 @@ $pageTitle = 'Help Center';
     <header class="site-header site-header--market site-header--help-simple">
         <div class="container">
             <div class="site-header__main--help">
-                <a class="site-nav__brand-link site-nav__brand-link--market" href="/index.html" aria-label="NovaMarket home">
+                <a class="site-nav__brand-link site-nav__brand-link--market" href="/" aria-label="NovaMarket home">
                     <span class="site-nav__eyebrow">Everyday style. Smart prices.</span>
                     <span class="site-nav__brand-row">
                         <span class="site-nav__brand-mark" aria-hidden="true">NM</span>
@@ -137,7 +142,10 @@ $pageTitle = 'Help Center';
     <div class="status-toast" data-status-toast role="status" aria-live="polite"></div>
     <div class="visually-hidden" id="cart-live-region" aria-live="polite"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
     <script src="/assets/js/store.js"></script>
 </body>
+
 </html>

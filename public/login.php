@@ -29,7 +29,7 @@ $authPage = [
     'banner_title' => 'Want to browse first?',
     'banner_copy' => 'The storefront is always open if you want to explore before signing in.',
     'cta_label' => 'Back to storefront',
-    'cta_href' => '/index.html',
+    'cta_href' => '/',
 ];
 
 if ($cartNotice === 'full-cart') {

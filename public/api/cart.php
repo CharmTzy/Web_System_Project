@@ -101,11 +101,18 @@ try {
             ? render('partials/cart-signin-prompt', guest_full_cart_prompt())
             : render('partials/cart-table', ['cart' => $summary]),
     ]);
-} catch (Throwable $exception) {
+} catch (\InvalidArgumentException | \RuntimeException $exception) {
+    report_exception($exception, 'api.cart.expected');
     respond([
         'ok' => false,
         'message' => $exception->getMessage(),
     ], 422);
+} catch (Throwable $exception) {
+    report_exception($exception, 'api.cart.unexpected');
+    respond([
+        'ok' => false,
+        'message' => service_unavailable_message(),
+    ], 500);
 }
 
 function respond(array $payload, int $status = 200): never

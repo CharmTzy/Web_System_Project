@@ -2,5 +2,5 @@
 
 declare(strict_types=1);
 
-header('Location: /index.html', true, 302);
+require_once __DIR__ . '/../bootstrap.php';
 exit;
