@@ -34,8 +34,8 @@
 
       // Update desktop header
       if (role === 'customer') {
-        syncCustomerNav(marketSubnav, false);
-        syncCustomerNav(mobileNav, true);
+        syncCustomerNav(marketSubnav);
+        syncCustomerNav(mobileNav);
 
         actionsEl.innerHTML = [
           buildIconAction({
@@ -81,15 +81,15 @@
       if (mobileLinksEl) {
         if (role === 'customer') {
           mobileLinksEl.innerHTML =
-            '<a href="' + dashboardUrl + '" data-bs-dismiss="offcanvas">Account</a>' +
-            '<a href="' + notificationsUrl + '" data-bs-dismiss="offcanvas">Notification</a>' +
+            '<a href="' + dashboardUrl + '">Account</a>' +
+            '<a href="' + notificationsUrl + '">Notification</a>' +
             '<a href="/cart.html">Cart</a>' +
-            '<a href="/logout.php" data-bs-dismiss="offcanvas">Sign out</a>';
+            '<a href="/logout.php">Sign out</a>';
         } else {
           mobileLinksEl.innerHTML =
-            '<a href="' + dashboardUrl + '" data-bs-dismiss="offcanvas">' + escHtml(user.name) + ' (' + escHtml(capitalize(role)) + ')</a>' +
-            '<a href="/profile.php" data-bs-dismiss="offcanvas">Profile</a>' +
-            '<a href="/logout.php" data-bs-dismiss="offcanvas">Sign out</a>' +
+            '<a href="' + dashboardUrl + '">' + escHtml(user.name) + ' (' + escHtml(capitalize(role)) + ')</a>' +
+            '<a href="/profile.php">Profile</a>' +
+            '<a href="/logout.php">Sign out</a>' +
             '<a href="/cart.html">Cart</a>';
         }
       }
@@ -141,7 +141,7 @@
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  function syncCustomerNav(container, dismissOffcanvas) {
+  function syncCustomerNav(container) {
     if (!container) return;
 
     const registerLink = container.querySelector('a[href="/register.php"]');
@@ -159,10 +159,6 @@
     const addressesLink = document.createElement('a');
     addressesLink.href = '/customer/addresses.php';
     addressesLink.textContent = 'Addresses';
-
-    if (dismissOffcanvas) {
-      addressesLink.setAttribute('data-bs-dismiss', 'offcanvas');
-    }
 
     if (helpLink) {
       container.insertBefore(addressesLink, helpLink);
