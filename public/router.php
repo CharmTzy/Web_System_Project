@@ -10,28 +10,18 @@ if ($uri !== '/' && $filePath !== false && str_starts_with($filePath, $publicDir
     return false;
 }
 
-if ($uri === '/') {
-    header('Location: /index.html', true, 302);
-    return true;
-}
-
-if ($uri === '/index.php') {
+if ($uri === '/' || $uri === '/index.php') {
     header('Location: /index.html', true, 302);
     return true;
 }
 
 if ($uri === '/cart.php') {
+    if (empty($_SESSION['user_id'])) {
+        header('Location: /login.php?redirect=%2Fcart.html&cart_notice=full-cart', true, 302);
+        return true;
+    }
+
     header('Location: /cart.html', true, 302);
-    return true;
-}
-
-if ($uri === '/index.html') {
-    require $publicDir . '/index.php';
-    return true;
-}
-
-if ($uri === '/cart.html') {
-    require $publicDir . '/cart.php';
     return true;
 }
 

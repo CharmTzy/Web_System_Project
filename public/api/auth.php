@@ -25,6 +25,7 @@ if (!verify_csrf($_POST['csrf_token'] ?? null)) {
 }
 
 $action = (string) ($_POST['action'] ?? '');
+$requestedRedirect = trim((string) ($_POST['redirect'] ?? ''));
 
 try {
     $result = match ($action) {
@@ -36,11 +37,30 @@ try {
         default => throw new \InvalidArgumentException('Unknown action.'),
     };
 
+    // Seller registration: pending approval, don't redirect to dashboard
+    if (!empty($result['pending_approval'])) {
+        respond([
+            'ok' => true,
+            'pending_approval' => true,
+            'message' => 'Your seller account has been created and is pending admin approval. You will be able to sign in once approved.',
+            'redirect' => '/login.php',
+            'user' => [
+                'id' => $result['id'],
+                'name' => $result['name'],
+                'role' => $result['role'],
+            ],
+        ]);
+    }
+
     $redirect = match ($result['role']) {
         'admin' => '/admin/',
         'seller' => '/seller/',
         default => '/',
     };
+
+    if ($requestedRedirect !== '' && str_starts_with($requestedRedirect, '/') && !str_starts_with($requestedRedirect, '//')) {
+        $redirect = $requestedRedirect;
+    }
 
     respond([
         'ok' => true,

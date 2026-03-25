@@ -89,6 +89,16 @@ function asset(string $path): string
     return '/assets/' . ltrim($path, '/');
 }
 
+function product_url(array $product): string
+{
+    $params = http_build_query([
+        'id' => (string) ($product['id'] ?? ''),
+        'slug' => (string) ($product['slug'] ?? ''),
+    ]);
+
+    return '/product.html' . ($params !== '' ? '?' . $params : '');
+}
+
 function render(string $view, array $data = []): string
 {
     $file = dirname(__DIR__, 2) . '/resources/views/' . $view . '.php';
@@ -132,54 +142,23 @@ function bool_from_input(mixed $value): bool
     return $normalized ?? false;
 }
 
-function product_manager_seed_products(?string $sellerName = null): array
+function flash(string $key, mixed $value = null): mixed
 {
-    $products = \App\Support\SampleCatalog::products();
-
-    if ($sellerName !== null && $sellerName !== '') {
-        $products = array_values(array_filter(
-            $products,
-            static fn (array $product): bool => $product['seller_name'] === $sellerName
-        ));
+    if (!isset($_SESSION['_flash']) || !is_array($_SESSION['_flash'])) {
+        $_SESSION['_flash'] = [];
     }
 
-    return array_map(static function (array $product): array {
-        return [
-            'id' => 'catalog-' . (string) $product['id'],
-            'name' => $product['name'],
-            'category' => $product['category_name'],
-            'price' => (float) $product['price'],
-            'stock' => (int) $product['stock_quantity'],
-            'sku' => $product['sku'],
-            'status' => !$product['is_active']
-                ? 'Draft'
-                : ($product['stock_quantity'] > 0 ? 'Active' : 'Out of Stock'),
-            'featured' => (bool) $product['is_featured'],
-            'image' => $product['image_url'],
-            'description' => $product['short_description'] ?: $product['description'],
-            'updated_at' => $product['created_at'],
-            'seller_name' => $product['seller_name'],
-        ];
-    }, $products);
-}
-
-function product_manager_categories(?string $sellerName = null): array
-{
-    $products = product_manager_seed_products($sellerName);
-
-    if ($products === []) {
-        $categories = array_map(
-            static fn (array $category): string => $category['name'],
-            \App\Support\SampleCatalog::categories()
-        );
-    } else {
-        $categories = array_values(array_unique(array_map(
-            static fn (array $product): string => $product['category'],
-            $products
-        )));
+    if (func_num_args() > 1) {
+        $_SESSION['_flash'][$key] = $value;
+        return null;
     }
 
-    sort($categories);
+    if (!array_key_exists($key, $_SESSION['_flash'])) {
+        return null;
+    }
 
-    return $categories;
+    $stored = $_SESSION['_flash'][$key];
+    unset($_SESSION['_flash'][$key]);
+
+    return $stored;
 }

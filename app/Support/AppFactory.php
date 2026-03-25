@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Repositories\ProductRepository;
-use App\Repositories\SampleProductRepository;
+use App\Repositories\CartRepository;
 use App\Services\CartService;
 use App\Services\CatalogService;
+use RuntimeException;
 
 final class AppFactory
 {
@@ -15,12 +16,17 @@ final class AppFactory
     {
         $database = new Database($config['database']);
         $connection = $database->connection();
-        $repository = $connection ? new ProductRepository($connection) : new SampleProductRepository();
+
+        if (!$connection) {
+            throw new RuntimeException('Database connection required.');
+        }
+
+        $repository = new ProductRepository($connection);
+        $cartRepository = new CartRepository($connection);
 
         return [
-            'catalog' => new CatalogService($repository, $connection ? 'mysql' : 'sample'),
-            'cart' => new CartService($repository, $config['app']),
+            'catalog' => new CatalogService($repository, 'mysql'),
+            'cart' => new CartService($repository, $config['app'], $cartRepository),
         ];
     }
 }
-

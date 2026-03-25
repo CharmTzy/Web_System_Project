@@ -61,6 +61,74 @@ CREATE TABLE products (
         ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE product_media (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT UNSIGNED NOT NULL,
+    media_type ENUM('image', 'video') NOT NULL DEFAULT 'image',
+    media_url VARCHAR(500) NOT NULL,
+    thumbnail_url VARCHAR(500) DEFAULT NULL,
+    alt_text VARCHAR(255) DEFAULT NULL,
+    sort_order INT UNSIGNED NOT NULL DEFAULT 1,
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_product_media_product (product_id),
+    UNIQUE KEY uq_product_media_product_sort (product_id, sort_order),
+    CONSTRAINT fk_product_media_product
+        FOREIGN KEY (product_id) REFERENCES products(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE help_categories (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    slug VARCHAR(120) NOT NULL UNIQUE,
+    description VARCHAR(255) DEFAULT NULL,
+    icon_key VARCHAR(40) NOT NULL DEFAULT 'general',
+    sort_order INT UNSIGNED NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE help_questions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    category_id BIGINT UNSIGNED NOT NULL,
+    question VARCHAR(255) NOT NULL,
+    answer TEXT NOT NULL,
+    is_hot TINYINT(1) NOT NULL DEFAULT 0,
+    sort_order INT UNSIGNED NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_help_questions_category (category_id),
+    INDEX idx_help_questions_hot (is_hot),
+    CONSTRAINT fk_help_questions_category
+        FOREIGN KEY (category_id) REFERENCES help_categories(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE coupons (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(40) NOT NULL UNIQUE,
+    title VARCHAR(160) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    coupon_type ENUM('limited_time', 'free_shipping', 'shop') NOT NULL,
+    discount_type ENUM('percentage', 'fixed_amount', 'shipping') NOT NULL,
+    discount_value DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    minimum_spend DECIMAL(10, 2) DEFAULT NULL,
+    seller_id BIGINT UNSIGNED DEFAULT NULL,
+    starts_at DATETIME NOT NULL,
+    ends_at DATETIME NOT NULL,
+    is_featured TINYINT(1) NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_coupons_type (coupon_type),
+    INDEX idx_coupons_active_window (is_active, starts_at, ends_at),
+    CONSTRAINT fk_coupons_seller
+        FOREIGN KEY (seller_id) REFERENCES users(id)
+        ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE carts (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     customer_id BIGINT UNSIGNED DEFAULT NULL,
@@ -89,4 +157,3 @@ CREATE TABLE cart_items (
         FOREIGN KEY (product_id) REFERENCES products(id)
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-

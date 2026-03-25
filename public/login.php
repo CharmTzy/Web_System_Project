@@ -4,25 +4,40 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__) . '/bootstrap.php';
 
+$redirectCandidate = trim((string) ($_GET['redirect'] ?? ''));
+$authRedirect = (
+    $redirectCandidate !== ''
+    && str_starts_with($redirectCandidate, '/')
+    && !str_starts_with($redirectCandidate, '//')
+) ? $redirectCandidate : '';
+$cartNotice = trim((string) ($_GET['cart_notice'] ?? ''));
+
 if (!empty($_SESSION['user_id'])) {
-    header('Location: /profile.php');
+    header('Location: ' . ($authRedirect !== '' ? $authRedirect : '/profile.php'));
     exit;
 }
 
 $pageTitle = 'Sign In';
 $appName = $config['app']['name'];
 $pageScript = 'auth.js';
-$cartSummary = ['total_items' => 0];
+$bodyClass = 'auth-page auth-page--login';
+$authFormView = 'auth/login-form';
+$authPage = [
+    'title' => 'Welcome back to your shopping space',
+    'copy' => 'Sign in to review saved details, manage your cart, and jump back into the latest NovaMarket finds.',
+    'utility_links' => [],
+    'banner_title' => 'Want to browse first?',
+    'banner_copy' => 'The storefront is always open if you want to explore before signing in.',
+    'cta_label' => 'Back to storefront',
+    'cta_href' => '/index.html',
+];
 
-require dirname(__DIR__) . '/resources/views/layouts/header.php';
-?>
-<main>
-    <section class="auth-section">
-        <div class="container">
-            <div class="auth-wrapper">
-                <?= render('auth/login-form') ?>
-            </div>
-        </div>
-    </section>
-</main>
-<?php require dirname(__DIR__) . '/resources/views/layouts/footer.php'; ?>
+if ($cartNotice === 'full-cart') {
+    $authPage['modal_notice'] = [
+        'title' => 'The full cart can only be accessed after login.',
+        'copy' => 'Sign in to open your full cart. Any items you added as a guest will be kept and added to your account cart after you sign in.',
+        'button_label' => 'Continue to sign in',
+    ];
+}
+
+require dirname(__DIR__) . '/resources/views/layouts/auth-page.php';

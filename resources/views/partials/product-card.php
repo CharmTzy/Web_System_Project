@@ -6,19 +6,25 @@ $onSale = $product['compare_price'] !== null && $product['compare_price'] > $pro
 $discountPercentage = $onSale
     ? (int) round((1 - ($product['price'] / $product['compare_price'])) * 100)
     : 0;
+$detailUrl = product_url($product);
+$maxQuantity = max(1, (int) $product['stock_quantity']);
 ?>
 <article class="product-card h-100">
-    <div class="product-card__media">
-        <img src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>" loading="lazy">
-        <div class="product-card__badges">
-            <?php if ($onSale): ?>
-                <span class="pill-badge pill-badge--accent"><?= e((string) $discountPercentage) ?>% off</span>
-            <?php endif; ?>
+    <a class="product-card__media-link" href="<?= e($detailUrl) ?>">
+        <div class="product-card__media">
+            <img src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>" loading="lazy">
+            <div class="product-card__badges">
+                <?php if ($onSale): ?>
+                    <span class="pill-badge pill-badge--accent"><?= e((string) $discountPercentage) ?>% off</span>
+                <?php endif; ?>
+            </div>
         </div>
-    </div>
+    </a>
     <div class="product-card__body">
         <p class="product-card__seller"><?= e($product['seller_name']) ?></p>
-        <h3 class="product-card__title"><?= e($product['name']) ?></h3>
+        <h3 class="product-card__title">
+            <a class="product-card__title-link" href="<?= e($detailUrl) ?>"><?= e($product['name']) ?></a>
+        </h3>
         <div class="product-card__rating">
             <span class="product-card__rating-stars">&#9733; <?= e(number_format((float) $product['rating'], 1)) ?></span>
             <span>(<?= e((string) $product['review_count']) ?>)</span>
@@ -53,7 +59,7 @@ $discountPercentage = $onSale
                         name="quantity"
                         value="1"
                         min="1"
-                        max="<?= e((string) $product['stock_quantity']) ?>"
+                        max="<?= e((string) $maxQuantity) ?>"
                         inputmode="numeric"
                         data-quantity-input
                     >
@@ -62,7 +68,7 @@ $discountPercentage = $onSale
                     </button>
                 </div>
 
-                <button class="btn btn-brand product-card__submit" type="submit">
+                <button class="btn btn-brand product-card__submit" type="submit" <?= $product['stock_quantity'] < 1 ? 'disabled' : '' ?>>
                     Add to cart
                 </button>
             </div>

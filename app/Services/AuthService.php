@@ -21,6 +21,8 @@ final class AuthService
         $phone = trim((string) ($input['phone'] ?? '')) ?: null;
         $password = (string) ($input['password'] ?? '');
         $passwordConfirm = (string) ($input['password_confirm'] ?? '');
+        $accountType = (string) ($input['account_type'] ?? 'customer');
+        $storeName = trim((string) ($input['store_name'] ?? ''));
 
         if ($name === '' || mb_strlen($name) > 120) {
             throw new InvalidArgumentException('Name is required (max 120 characters).');
@@ -42,20 +44,49 @@ final class AuthService
             throw new RuntimeException('An account with this email already exists.');
         }
 
+        $isSeller = $accountType === 'seller';
+
+        if ($isSeller && ($storeName === '' || mb_strlen($storeName) > 120)) {
+            throw new InvalidArgumentException('Store name is required for seller accounts (max 120 characters).');
+        }
+
+        // Sellers are created as inactive (pending admin approval)
         $userId = $this->userRepository->create([
             'name' => $name,
             'email' => $email,
             'phone' => $phone,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-            'role' => 'customer',
-            'is_active' => 1,
+            'role' => $isSeller ? 'seller' : 'customer',
+            'is_active' => $isSeller ? 0 : 1,
         ]);
+
+        // Create seller profile if registering as seller
+        if ($isSeller) {
+            $this->userRepository->upsertSellerProfile($userId, [
+                'store_name' => $storeName,
+                'store_slug' => $this->slugify($storeName),
+                'support_email' => $email,
+            ]);
+        }
 
         $user = $this->userRepository->findById($userId);
 
-        $this->setSession($user);
+        // Only auto-login customers; sellers must wait for approval
+        if (!$isSeller) {
+            $this->setSession($user);
+        }
+
+        $user['pending_approval'] = $isSeller;
 
         return $user;
+    }
+
+    private function slugify(string $text): string
+    {
+        $slug = mb_strtolower(trim($text));
+        $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug) ?? $slug;
+        $slug = preg_replace('/[\s-]+/', '-', $slug) ?? $slug;
+        return trim($slug, '-');
     }
 
     public function login(string $email, string $password): array

@@ -18,22 +18,38 @@ if (!$connection) {
     exit;
 }
 
-$userService = new \App\Services\UserService(
-    new \App\Repositories\UserRepository($connection)
+$service = new \App\Services\ProductManagementService(
+    new \App\Repositories\ProductRepository($connection)
 );
 
-$profile = $userService->getProfile((int) $_SESSION['user_id']);
-$storeName = trim((string) ($profile['seller_profile']['store_name'] ?? $profile['name'] ?? ''));
-$seedProducts = product_manager_seed_products($storeName);
-$categoryOptions = product_manager_categories($storeName);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verify_csrf($_POST['csrf_token'] ?? null)) {
+        flash('seller_products_error', 'Session expired. Please refresh and try again.');
+        header('Location: /seller/products.php');
+        exit;
+    }
 
-$pageTitle = 'Seller Products';
+    try {
+        if (($_POST['action'] ?? '') === 'delete') {
+            $service->deleteForSeller(
+                (int) ($_POST['product_id'] ?? 0),
+                (int) $_SESSION['user_id']
+            );
+            flash('seller_products_notice', 'Product deleted successfully.');
+        }
+    } catch (\Throwable $exception) {
+        flash('seller_products_error', $exception->getMessage());
+    }
+
+    header('Location: /seller/products.php');
+    exit;
+}
+
+$products = $service->listSellerProducts((int) $_SESSION['user_id']);
+
+$pageTitle = 'Manage Products';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
-$pageScript = 'product-manager.js';
-$storageKey = 'product-manager-seller-v3-' . (string) ($_SESSION['user_id'] ?? 'guest');
-$roleLabel = 'Seller';
-$scopeLabel = $storeName !== '' ? $storeName : 'Your store';
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 ?>
@@ -41,18 +57,16 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     <section class="hero-section hero-section--compact">
         <div class="container">
             <span class="hero-section__eyebrow">Seller panel</span>
-            <h1 class="hero-section__title" style="max-width:20ch;">Manage Your Store Products</h1>
-            <p class="hero-section__copy">Organize your listings, update pricing and stock, and keep your catalog tidy without waiting on backend setup.</p>
+            <h1 class="hero-section__title" style="max-width:20ch;">Manage Products</h1>
+            <p class="hero-section__copy">Create new listings, update pricing, and remove products that are no longer available.</p>
         </div>
     </section>
     <section class="catalog-section">
         <div class="container">
-            <?= render('partials/product-manager', [
-                'seedProducts' => $seedProducts,
-                'categoryOptions' => $categoryOptions,
-                'storageKey' => $storageKey,
-                'roleLabel' => $roleLabel,
-                'scopeLabel' => $scopeLabel,
+            <?= render('seller/product-list', [
+                'products' => $products,
+                'notice' => flash('seller_products_notice'),
+                'error' => flash('seller_products_error'),
             ]) ?>
         </div>
     </section>

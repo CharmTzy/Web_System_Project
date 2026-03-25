@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use PDO;
+use PDOException;
 
 final class ProductRepository implements CatalogRepositoryInterface
 {
@@ -60,7 +61,18 @@ final class ProductRepository implements CatalogRepositoryInterface
         $statement->execute(['id' => $id]);
         $row = $statement->fetch();
 
-        return is_array($row) ? $this->normalizeProduct($row) : null;
+        return is_array($row) ? $this->enrichProductWithMedia($this->normalizeProduct($row)) : null;
+    }
+
+    public function findBySlug(string $slug): ?array
+    {
+        $statement = $this->connection->prepare(
+            $this->baseSelect() . ' WHERE p.is_active = 1 AND p.slug = :slug LIMIT 1'
+        );
+        $statement->execute(['slug' => $slug]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? $this->enrichProductWithMedia($this->normalizeProduct($row)) : null;
     }
 
     public function findByIds(array $ids): array
@@ -87,14 +99,156 @@ final class ProductRepository implements CatalogRepositoryInterface
         return $products;
     }
 
+    public function listManagedProducts(?int $sellerId = null): array
+    {
+        $sql = $this->baseSelect();
+        $params = [];
+        $conditions = [];
+
+        if ($sellerId !== null) {
+            $conditions[] = 'p.seller_id = :seller_id';
+            $params['seller_id'] = $sellerId;
+        }
+
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+
+        $sql .= ' ORDER BY p.created_at DESC, p.id DESC';
+
+        $statement = $this->connection->prepare($sql);
+        $statement->execute($params);
+
+        return array_map([$this, 'normalizeProduct'], $statement->fetchAll());
+    }
+
+    public function findManagedById(int $id): ?array
+    {
+        $statement = $this->connection->prepare(
+            $this->baseSelect() . ' WHERE p.id = :id LIMIT 1'
+        );
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? $this->normalizeProduct($row) : null;
+    }
+
+    public function createManagedProduct(array $data): int
+    {
+        $statement = $this->connection->prepare(
+            <<<SQL
+            INSERT INTO products (
+                seller_id,
+                category_id,
+                sku,
+                name,
+                slug,
+                short_description,
+                description,
+                price,
+                compare_price,
+                stock_quantity,
+                image_url,
+                average_rating,
+                review_count,
+                is_active,
+                is_featured
+            ) VALUES (
+                :seller_id,
+                :category_id,
+                :sku,
+                :name,
+                :slug,
+                :short_description,
+                :description,
+                :price,
+                :compare_price,
+                :stock_quantity,
+                :image_url,
+                :average_rating,
+                :review_count,
+                :is_active,
+                :is_featured
+            )
+            SQL
+        );
+        $statement->execute([
+            'seller_id' => $data['seller_id'],
+            'category_id' => $data['category_id'],
+            'sku' => $data['sku'],
+            'name' => $data['name'],
+            'slug' => $data['slug'],
+            'short_description' => $data['short_description'],
+            'description' => $data['description'],
+            'price' => $data['price'],
+            'compare_price' => $data['compare_price'],
+            'stock_quantity' => $data['stock_quantity'],
+            'image_url' => $data['image_url'],
+            'average_rating' => $data['average_rating'] ?? 0,
+            'review_count' => $data['review_count'] ?? 0,
+            'is_active' => $data['is_active'] ?? 1,
+            'is_featured' => $data['is_featured'] ?? 0,
+        ]);
+
+        return (int) $this->connection->lastInsertId();
+    }
+
+    public function updateManagedProduct(int $id, array $data): bool
+    {
+        $fields = [];
+        $params = ['id' => $id];
+
+        foreach ([
+            'seller_id',
+            'category_id',
+            'sku',
+            'name',
+            'slug',
+            'short_description',
+            'description',
+            'price',
+            'compare_price',
+            'stock_quantity',
+            'image_url',
+            'is_active',
+            'is_featured',
+        ] as $column) {
+            if (array_key_exists($column, $data)) {
+                $fields[] = $column . ' = :' . $column;
+                $params[$column] = $data[$column];
+            }
+        }
+
+        if ($fields === []) {
+            return false;
+        }
+
+        $statement = $this->connection->prepare(
+            'UPDATE products SET ' . implode(', ', $fields) . ' WHERE id = :id'
+        );
+
+        return $statement->execute($params);
+    }
+
+    public function deleteManagedProduct(int $id): bool
+    {
+        $statement = $this->connection->prepare('DELETE FROM products WHERE id = :id');
+
+        return $statement->execute(['id' => $id]);
+    }
+
     private function baseProductQuery(array $filters): array
     {
         $conditions = ['p.is_active = 1'];
         $params = [];
 
         if ($filters['search'] !== '') {
-            $conditions[] = '(p.name LIKE :search OR p.short_description LIKE :search OR c.name LIKE :search OR COALESCE(sp.store_name, u.name) LIKE :search)';
-            $params['search'] = '%' . $filters['search'] . '%';
+            $conditions[] = '(p.name LIKE :search_name OR p.short_description LIKE :search_description OR c.name LIKE :search_category OR COALESCE(sp.store_name, u.name) LIKE :search_seller)';
+            $searchPattern = '%' . $filters['search'] . '%';
+            $params['search_name'] = $searchPattern;
+            $params['search_description'] = $searchPattern;
+            $params['search_category'] = $searchPattern;
+            $params['search_seller'] = $searchPattern;
         }
 
         if ($filters['category'] !== '') {
@@ -188,6 +342,90 @@ final class ProductRepository implements CatalogRepositoryInterface
             'is_active' => (bool) $row['is_active'],
             'is_featured' => (bool) $row['is_featured'],
             'created_at' => (string) $row['created_at'],
+        ];
+    }
+
+    private function enrichProductWithMedia(array $product): array
+    {
+        $product['media'] = $this->fetchMediaForProduct(
+            $product['id'],
+            $product['image_url'],
+            $product['name']
+        );
+
+        foreach ($product['media'] as $media) {
+            if (($media['type'] ?? 'image') !== 'image') {
+                continue;
+            }
+
+            $product['image_url'] = $media['url'];
+            break;
+        }
+
+        return $product;
+    }
+
+    private function fetchMediaForProduct(int $productId, string $fallbackUrl, string $fallbackAlt): array
+    {
+        try {
+            $statement = $this->connection->prepare(
+                <<<SQL
+                SELECT
+                    id,
+                    media_type,
+                    media_url,
+                    thumbnail_url,
+                    alt_text,
+                    sort_order,
+                    is_primary
+                FROM product_media
+                WHERE product_id = :product_id
+                ORDER BY is_primary DESC, sort_order ASC, id ASC
+                SQL
+            );
+            $statement->execute(['product_id' => $productId]);
+            $rows = $statement->fetchAll();
+        } catch (PDOException) {
+            return [$this->fallbackMediaItem($fallbackUrl, $fallbackAlt)];
+        }
+
+        if ($rows === []) {
+            return [$this->fallbackMediaItem($fallbackUrl, $fallbackAlt)];
+        }
+
+        $media = array_map(function (array $row) use ($fallbackUrl, $fallbackAlt): array {
+            $type = ($row['media_type'] ?? 'image') === 'video' ? 'video' : 'image';
+            $url = (string) ($row['media_url'] ?: $fallbackUrl);
+            $thumbnail = (string) ($row['thumbnail_url'] ?: ($type === 'image' ? $url : $fallbackUrl));
+
+            return [
+                'id' => (int) $row['id'],
+                'type' => $type,
+                'url' => $url,
+                'thumbnail_url' => $thumbnail,
+                'alt_text' => (string) ($row['alt_text'] ?: $fallbackAlt),
+                'sort_order' => (int) $row['sort_order'],
+                'is_primary' => (bool) $row['is_primary'],
+            ];
+        }, $rows);
+
+        if (!array_filter($media, static fn (array $item): bool => $item['is_primary'])) {
+            $media[0]['is_primary'] = true;
+        }
+
+        return $media;
+    }
+
+    private function fallbackMediaItem(string $fallbackUrl, string $fallbackAlt): array
+    {
+        return [
+            'id' => 0,
+            'type' => 'image',
+            'url' => $fallbackUrl,
+            'thumbnail_url' => $fallbackUrl,
+            'alt_text' => $fallbackAlt,
+            'sort_order' => 1,
+            'is_primary' => true,
         ];
     }
 }

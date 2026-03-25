@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 ?>
-<?php if ($cart['is_empty']): ?>
+<?php if (!empty($cart['requires_sign_in'])): ?>
+    <?= render('partials/cart-signin-prompt', ['login_url' => $cart['login_url'] ?? '/login.php?redirect=%2Fcart.html&cart_notice=full-cart']) ?>
+<?php elseif ($cart['is_empty']): ?>
     <section class="empty-state">
         <h3>Your cart is ready.</h3>
         <p>Add products from NovaMarket to see your selected items, quantities, and totals here.</p>
@@ -14,13 +16,16 @@ declare(strict_types=1);
             <div class="cart-lines">
                 <?php foreach ($cart['items'] as $item): ?>
                     <?php $product = $item['product']; ?>
+                    <?php $detailUrl = product_url($product); ?>
                     <article class="cart-line">
-                        <img class="cart-line__image" src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>" loading="lazy">
+                        <a class="cart-line__image-link" href="<?= e($detailUrl) ?>">
+                            <img class="cart-line__image" src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>" loading="lazy">
+                        </a>
                         <div class="cart-line__content">
                             <div class="cart-line__header">
                                 <div>
                                     <span class="pill-badge pill-badge--soft"><?= e($product['category_name']) ?></span>
-                                    <h3><?= e($product['name']) ?></h3>
+                                    <h3><a class="cart-line__title-link" href="<?= e($detailUrl) ?>"><?= e($product['name']) ?></a></h3>
                                 </div>
                                 <strong><?= e($item['line_total_formatted']) ?></strong>
                             </div>

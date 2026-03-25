@@ -1,0 +1,63 @@
+<?php
+declare(strict_types=1);
+$isEdit = isset($editQuestion) && is_array($editQuestion);
+?>
+<div class="profile-card">
+    <span class="hero-section__eyebrow"><?= $isEdit ? 'Edit help question' : 'Create help question' ?></span>
+    <h2 class="auth-card__title"><?= $isEdit ? e((string) $editQuestion['question']) : 'New help question' ?></h2>
+
+    <?php if (!empty($notice)): ?>
+        <div class="alert alert-success" role="alert"><?= e((string) $notice) ?></div>
+    <?php endif; ?>
+
+    <?php if (!empty($formError)): ?>
+        <div class="alert alert-danger" role="alert"><?= e((string) $formError) ?></div>
+    <?php endif; ?>
+
+    <form class="auth-form" method="post" action="/admin/help-question-edit.php<?= $isEdit ? '?id=' . e((string) $editQuestion['id']) : '' ?>">
+        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+        <?php if ($isEdit): ?>
+            <input type="hidden" name="question_id" value="<?= e((string) $editQuestion['id']) ?>">
+        <?php endif; ?>
+
+        <div class="form-group">
+            <label for="help-category">Category</label>
+            <select id="help-category" class="form-select" name="category_id" required>
+                <option value="">Select category</option>
+                <?php foreach ($categories as $category): ?>
+                    <option value="<?= e((string) $category['id']) ?>" <?= (string) $formValues['category_id'] === (string) $category['id'] ? 'selected' : '' ?>>
+                        <?= e((string) $category['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="help-question">Question</label>
+            <input id="help-question" class="form-control" type="text" name="question" value="<?= e((string) $formValues['question']) ?>" required maxlength="255">
+        </div>
+
+        <div class="form-group">
+            <label for="help-answer">Answer</label>
+            <textarea id="help-answer" class="form-control" name="answer" rows="6" required><?= e((string) $formValues['answer']) ?></textarea>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-6 form-group">
+                <label for="help-sort-order">Sort order</label>
+                <input id="help-sort-order" class="form-control" type="number" name="sort_order" value="<?= e((string) $formValues['sort_order']) ?>" min="1" step="1" required>
+            </div>
+            <div class="col-md-6 form-group">
+                <label class="toggle-field" for="help-is-hot">
+                    <input type="hidden" name="is_hot" value="0">
+                    <input id="help-is-hot" type="checkbox" name="is_hot" value="1" <?= !empty($formValues['is_hot']) ? 'checked' : '' ?>>
+                    <span>Show as hot question</span>
+                </label>
+            </div>
+        </div>
+
+        <button class="btn btn-brand w-100" type="submit"><?= $isEdit ? 'Save question' : 'Create question' ?></button>
+    </form>
+
+    <p class="auth-card__footer"><a href="/admin/help-questions.php">Back to help center list</a></p>
+</div>

@@ -22,6 +22,29 @@ $userService = new \App\Services\UserService(
     new \App\Repositories\UserRepository($connection)
 );
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verify_csrf($_POST['csrf_token'] ?? null)) {
+        flash('admin_users_error', 'Session expired. Please refresh and try again.');
+        header('Location: /admin/users.php');
+        exit;
+    }
+
+    try {
+        if (($_POST['action'] ?? '') === 'delete') {
+            $userService->adminDeleteUser(
+                (int) ($_POST['user_id'] ?? 0),
+                (int) $_SESSION['user_id']
+            );
+            flash('admin_users_notice', 'User deleted successfully.');
+        }
+    } catch (\Throwable $exception) {
+        flash('admin_users_error', $exception->getMessage());
+    }
+
+    header('Location: /admin/users.php');
+    exit;
+}
+
 $filters = [
     'search' => trim((string) ($_GET['search'] ?? '')),
     'role' => trim((string) ($_GET['role'] ?? '')),
@@ -45,7 +68,13 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     </section>
     <section class="catalog-section">
         <div class="container">
-            <?= render('admin/user-list', ['users' => $users, 'filters' => $filters]) ?>
+            <?= render('admin/user-list', [
+                'users' => $users,
+                'filters' => $filters,
+                'actingUserId' => (int) $_SESSION['user_id'],
+                'notice' => flash('admin_users_notice'),
+                'error' => flash('admin_users_error'),
+            ]) ?>
         </div>
     </section>
 </main>

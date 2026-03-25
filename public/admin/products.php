@@ -9,16 +9,43 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
     exit;
 }
 
-$seedProducts = product_manager_seed_products();
-$categoryOptions = product_manager_categories();
+$database = new \App\Support\Database($config['database']);
+$connection = $database->connection();
 
-$pageTitle = 'Admin Products';
+if (!$connection) {
+    http_response_code(503);
+    echo 'Database connection required.';
+    exit;
+}
+
+$service = new \App\Services\AdminProductService(
+    new \App\Repositories\ProductRepository($connection),
+    new \App\Repositories\UserRepository($connection)
+);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verify_csrf($_POST['csrf_token'] ?? null)) {
+        flash('admin_products_error', 'Session expired. Please refresh and try again.');
+        header('Location: /admin/products.php');
+        exit;
+    }
+
+    try {
+        if (($_POST['action'] ?? '') === 'delete') {
+            $service->delete((int) ($_POST['product_id'] ?? 0));
+            flash('admin_products_notice', 'Product deleted successfully.');
+        }
+    } catch (\Throwable $exception) {
+        flash('admin_products_error', $exception->getMessage());
+    }
+
+    header('Location: /admin/products.php');
+    exit;
+}
+
+$pageTitle = 'Manage Products';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
-$pageScript = 'product-manager.js';
-$storageKey = 'product-manager-admin-v2-' . (string) ($_SESSION['user_id'] ?? 'guest');
-$roleLabel = 'Admin';
-$scopeLabel = 'All sellers';
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 ?>
@@ -26,18 +53,16 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     <section class="hero-section hero-section--compact">
         <div class="container">
             <span class="hero-section__eyebrow">Admin panel</span>
-            <h1 class="hero-section__title" style="max-width:20ch;">Manage Marketplace Products</h1>
-            <p class="hero-section__copy">Add, edit, and remove products in a polished admin workspace while backend APIs are still pending.</p>
+            <h1 class="hero-section__title" style="max-width:20ch;">Manage Seller Products</h1>
+            <p class="hero-section__copy">View and manage every storefront listing across all seller accounts.</p>
         </div>
     </section>
     <section class="catalog-section">
         <div class="container">
-            <?= render('partials/product-manager', [
-                'seedProducts' => $seedProducts,
-                'categoryOptions' => $categoryOptions,
-                'storageKey' => $storageKey,
-                'roleLabel' => $roleLabel,
-                'scopeLabel' => $scopeLabel,
+            <?= render('admin/product-list', [
+                'products' => $service->listProducts(),
+                'notice' => flash('admin_products_notice'),
+                'error' => flash('admin_products_error'),
             ]) ?>
         </div>
     </section>
