@@ -36,6 +36,7 @@ $marketNavLinks = [
 if ($isCustomer) {
     $marketNavLinks[] = ['label' => 'Coupons', 'href' => '/customer/coupons.php', 'active' => $currentPath === '/customer/coupons.php'];
     $marketNavLinks[] = ['label' => 'Orders', 'href' => '/customer/orders.php', 'active' => $currentPath === '/customer/orders.php'];
+    $marketNavLinks[] = ['label' => 'Chat', 'href' => '/customer/chat.php', 'active' => $currentPath === '/customer/chat.php'];
     $marketNavLinks[] = ['label' => 'Payments', 'href' => '/customer/payments.php', 'active' => $currentPath === '/customer/payments.php'];
     $marketNavLinks[] = ['label' => 'Addresses', 'href' => '/customer/addresses.php', 'active' => $currentPath === '/customer/addresses.php'];
 } else {
@@ -48,6 +49,12 @@ if ($isCustomer) {
     }
 
     $marketNavLinks[] = $profileShortcut;
+
+    if ($isSeller) {
+        $marketNavLinks[] = ['label' => 'Chat', 'href' => '/seller/chat.php', 'active' => $currentPath === '/seller/chat.php'];
+    } elseif ($isAdmin) {
+        $marketNavLinks[] = ['label' => 'Chat', 'href' => '/admin/chat.php', 'active' => $currentPath === '/admin/chat.php'];
+    }
 }
 
 $marketNavLinks[] = ['label' => 'Help', 'href' => '/help.php', 'active' => $currentPath === '/help.php'];

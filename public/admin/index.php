@@ -53,6 +53,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
             <div class="d-flex gap-3 flex-wrap">
                 <a class="btn btn-brand" href="/admin/users.php">Manage users</a>
                 <a class="btn btn-brand-outline" href="/admin/products.php">Manage products</a>
+                <a class="btn btn-brand-outline" href="/admin/chat.php">Monitor chat</a>
                 <a class="btn btn-brand-outline" href="/admin/addresses.php">Manage addresses</a>
                 <a class="btn btn-brand-outline" href="/admin/coupons.php">Manage coupons</a>
                 <a class="btn btn-brand-outline" href="/admin/help-questions.php">Manage help center</a>
