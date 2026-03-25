@@ -152,17 +152,29 @@
       registerLink.textContent = 'Coupons';
     }
 
-    if (container.querySelector('a[href="/customer/addresses.php"]')) {
+    if (container.querySelector('a[href="/customer/orders.php"]')) {
       return;
     }
+
+    const ordersLink = document.createElement('a');
+    ordersLink.href = '/customer/orders.php';
+    ordersLink.textContent = 'Orders';
+
+    const paymentsLink = document.createElement('a');
+    paymentsLink.href = '/customer/payments.php';
+    paymentsLink.textContent = 'Payments';
 
     const addressesLink = document.createElement('a');
     addressesLink.href = '/customer/addresses.php';
     addressesLink.textContent = 'Addresses';
 
     if (helpLink) {
+      container.insertBefore(ordersLink, helpLink);
+      container.insertBefore(paymentsLink, helpLink);
       container.insertBefore(addressesLink, helpLink);
     } else {
+      container.appendChild(ordersLink);
+      container.appendChild(paymentsLink);
       container.appendChild(addressesLink);
     }
   }

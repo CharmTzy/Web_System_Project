@@ -166,6 +166,11 @@ final class CartService
         ];
     }
 
+    public function clear(): void
+    {
+        $this->storeCart([]);
+    }
+
     private function sessionCart(): array
     {
         $cart = $_SESSION[self::SESSION_KEY] ?? [];

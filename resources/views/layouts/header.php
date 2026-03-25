@@ -35,6 +35,8 @@ $marketNavLinks = [
 
 if ($isCustomer) {
     $marketNavLinks[] = ['label' => 'Coupons', 'href' => '/customer/coupons.php', 'active' => $currentPath === '/customer/coupons.php'];
+    $marketNavLinks[] = ['label' => 'Orders', 'href' => '/customer/orders.php', 'active' => $currentPath === '/customer/orders.php'];
+    $marketNavLinks[] = ['label' => 'Payments', 'href' => '/customer/payments.php', 'active' => $currentPath === '/customer/payments.php'];
     $marketNavLinks[] = ['label' => 'Addresses', 'href' => '/customer/addresses.php', 'active' => $currentPath === '/customer/addresses.php'];
 } else {
     $profileShortcut = ['label' => 'Registry', 'href' => '/register.php', 'active' => $currentPath === '/register.php'];
