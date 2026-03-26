@@ -189,7 +189,7 @@ final class OrderRepository
                     ON o.id = oi.order_id
                 WHERE o.customer_id = :customer_id
                   AND oi.product_id = :product_id
-                  AND o.status IN ('paid', 'shipped', 'delivered')
+                  AND o.status IN ('pending', 'paid', 'shipped', 'delivered')
                 SQL
             );
             $statement->execute([

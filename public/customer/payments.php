@@ -46,23 +46,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             if ($action === 'set_default') {
                 $paymentService->setDefault((int) ($_POST['card_id'] ?? 0), $userId);
-                flash('payments_notice', 'Default payment method updated.');
+                flash('payments_notice', 'Default legacy card updated.');
                 header('Location: /customer/payments.php');
                 exit;
             }
 
             if ($action === 'delete') {
                 $paymentService->delete((int) ($_POST['card_id'] ?? 0), $userId);
-                flash('payments_notice', 'Payment method removed.');
+                flash('payments_notice', 'Legacy card removed.');
                 header('Location: /customer/payments.php');
                 exit;
             }
 
-            $formValues = array_merge($formValues, $_POST);
-            $paymentService->create($userId, $_POST);
-            flash('payments_notice', 'Payment method saved successfully.');
-            header('Location: /customer/payments.php');
-            exit;
+            $formError = 'Online card saving is disabled until a verified payment processor is integrated.';
         } catch (\Throwable $exception) {
             report_exception($exception, 'customer.payments');
             $formError = safe_exception_message($exception, 'We could not update your payment methods right now.');
@@ -71,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $cards = $paymentService->listForUser($userId);
-$pageTitle = 'My Payments';
+$pageTitle = 'Payment Safety';
 $appName = $config['app']['name'];
 $cartSummary = $cartService->summary();
 
@@ -80,9 +76,9 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 <main>
     <section class="hero-section hero-section--compact">
         <div class="container">
-            <span class="hero-section__eyebrow">Saved payment methods</span>
-            <h1 class="hero-section__title" style="max-width:18ch;">My Payments</h1>
-            <p class="hero-section__copy">Save a card for faster checkout and choose which one to use by default.</p>
+            <span class="hero-section__eyebrow">Payment safety</span>
+            <h1 class="hero-section__title" style="max-width:18ch;">Card payments are disabled</h1>
+            <p class="hero-section__copy">NovaMarket no longer collects card details directly. Use this page only to remove older demo cards from your account.</p>
         </div>
     </section>
     <section class="catalog-section">

@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 $cart = $cart ?? ['items' => [], 'is_empty' => true];
 $addresses = $addresses ?? [];
-$paymentCards = $paymentCards ?? [];
 $formError = $formError ?? null;
 $selectedAddressId = (int) ($selectedAddressId ?? 0);
-$selectedPaymentCardId = (int) ($selectedPaymentCardId ?? 0);
 ?>
-<?php if ($addresses === [] || $paymentCards === []): ?>
+<?php if ($addresses === []): ?>
     <div class="customer-grid customer-grid--checkout">
         <section class="customer-panel">
             <div class="customer-panel__header">
@@ -19,15 +17,10 @@ $selectedPaymentCardId = (int) ($selectedPaymentCardId ?? 0);
                 </div>
             </div>
             <section class="empty-state empty-state--compact customer-panel__empty">
-                <h3>You need one address and one payment method.</h3>
-                <p>Checkout is ready once your account has both a saved delivery address and at least one card.</p>
+                <h3>You need one delivery address.</h3>
+                <p>Online card payment is disabled. Add a delivery address first, then place your order for manual confirmation.</p>
                 <div class="d-flex flex-wrap gap-3 justify-content-center">
-                    <?php if ($addresses === []): ?>
-                        <a class="btn btn-brand" href="/customer/addresses.php">Add address</a>
-                    <?php endif; ?>
-                    <?php if ($paymentCards === []): ?>
-                        <a class="btn btn-brand-outline" href="/customer/payments.php">Add payment method</a>
-                    <?php endif; ?>
+                    <a class="btn btn-brand" href="/customer/addresses.php">Add address</a>
                 </div>
             </section>
         </section>
@@ -60,14 +53,19 @@ $selectedPaymentCardId = (int) ($selectedPaymentCardId ?? 0);
         <section class="customer-panel">
             <div class="customer-panel__header">
                 <div>
-                    <span class="hero-section__eyebrow">Complete payment</span>
-                    <h2 class="customer-panel__title">Choose your delivery and payment details</h2>
+                    <span class="hero-section__eyebrow">Manual order flow</span>
+                    <h2 class="customer-panel__title">Choose your delivery details</h2>
                 </div>
             </div>
 
             <?php if (!empty($formError)): ?>
                 <div class="alert alert-danger" role="alert"><?= e((string) $formError) ?></div>
             <?php endif; ?>
+
+            <div class="alert alert-warning" role="alert">
+                <strong>No online payment is collected on this site.</strong>
+                <span class="d-block mt-2">Submitting this form creates a pending order only. Any real payment processing must happen through a verified external provider.</span>
+            </div>
 
             <form class="customer-form" method="post" action="/customer/checkout.php">
                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -93,33 +91,13 @@ $selectedPaymentCardId = (int) ($selectedPaymentCardId ?? 0);
                     </div>
                 </div>
 
-                <div class="checkout-group">
-                    <div class="checkout-group__heading">
-                        <span class="hero-section__eyebrow">Payment method</span>
-                        <a href="/customer/payments.php">Manage</a>
-                    </div>
-                    <div class="checkout-choice-grid">
-                        <?php foreach ($paymentCards as $card): ?>
-                            <?php $isSelected = $selectedPaymentCardId === (int) $card['id']; ?>
-                            <label class="checkout-choice<?= $isSelected ? ' is-selected' : '' ?>">
-                                <input type="radio" name="payment_card_id" value="<?= e((string) $card['id']) ?>" <?= $isSelected ? 'checked' : '' ?>>
-                                <span class="checkout-choice__body">
-                                    <strong><?= e((string) $card['label']) ?><?= $card['is_default'] ? ' · Default' : '' ?></strong>
-                                    <span><?= e(strtoupper((string) $card['card_brand'])) ?> ending in <?= e((string) $card['card_last_four']) ?></span>
-                                    <span>Expires <?= e(sprintf('%02d/%d', (int) $card['expiry_month'], (int) $card['expiry_year'])) ?></span>
-                                </span>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-
-                <button class="btn btn-brand w-100" type="submit">Pay <?= e((string) $cart['grand_total_formatted']) ?> and place order</button>
+                <button class="btn btn-brand w-100" type="submit">Place order request</button>
             </form>
         </section>
 
         <aside class="summary-card summary-card--checkout">
             <span class="summary-card__eyebrow">Order summary</span>
-            <h3>What you’re paying for</h3>
+            <h3>What you’re ordering</h3>
             <div class="summary-card__rows">
                 <?php foreach ($cart['items'] as $item): ?>
                     <div class="summary-row summary-row--item">
@@ -140,7 +118,7 @@ $selectedPaymentCardId = (int) ($selectedPaymentCardId ?? 0);
                     <strong><?= e((string) $cart['grand_total_formatted']) ?></strong>
                 </div>
             </div>
-            <p class="summary-card__note">Orders placed here are marked as paid immediately using your saved card.</p>
+            <p class="summary-card__note">This total is shown for reference only. Orders placed here stay pending until you confirm payment through a verified external process.</p>
         </aside>
     </div>
 <?php endif; ?>
