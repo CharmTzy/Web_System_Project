@@ -12,8 +12,14 @@ $authRedirect = (
 ) ? $redirectCandidate : '';
 $cartNotice = trim((string) ($_GET['cart_notice'] ?? ''));
 
+$defaultAuthenticatedRedirect = match ($_SESSION['user_role'] ?? '') {
+    'admin' => '/admin/',
+    'seller' => '/seller/',
+    default => '/profile.php',
+};
+
 if (!empty($_SESSION['user_id'])) {
-    header('Location: ' . ($authRedirect !== '' ? $authRedirect : '/profile.php'));
+    header('Location: ' . ($authRedirect !== '' ? $authRedirect : $defaultAuthenticatedRedirect));
     exit;
 }
 

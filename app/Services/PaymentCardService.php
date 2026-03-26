@@ -24,27 +24,9 @@ final class PaymentCardService
 
     public function create(int $userId, array $input): array
     {
-        $count = $this->paymentCardRepository->countByUser($userId);
+        unset($userId, $input);
 
-        if ($count >= self::MAX_CARDS) {
-            throw new RuntimeException('You can save up to ' . self::MAX_CARDS . ' payment cards.');
-        }
-
-        $data = $this->validateCard($input);
-        $data['user_id'] = $userId;
-
-        if ($count === 0) {
-            $data['is_default'] = 1;
-        }
-
-        $cardId = $this->paymentCardRepository->create($data);
-
-        if (!empty($data['is_default'])) {
-            $this->paymentCardRepository->setDefault($cardId, $userId);
-        }
-
-        return $this->paymentCardRepository->findById($cardId)
-            ?? throw new RuntimeException('Unable to load the saved payment card.');
+        throw new RuntimeException('Online card saving is disabled until a verified payment processor is integrated.');
     }
 
     public function delete(int $cardId, int $userId): void

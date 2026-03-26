@@ -18,7 +18,7 @@ $error = $error ?? null;
 <?php if ($orders === []): ?>
     <section class="empty-state">
         <h3>No orders yet.</h3>
-        <p>Once you place your first order, it will appear here with its items and payment snapshot.</p>
+        <p>Once you place your first order, it will appear here with its items, delivery details, and current status.</p>
         <a class="btn btn-brand" href="/">Start shopping</a>
     </section>
 <?php else: ?>

@@ -5,7 +5,12 @@ declare(strict_types=1);
 $config = require dirname(__DIR__) . '/bootstrap.php';
 
 if (!empty($_SESSION['user_id'])) {
-    header('Location: /profile.php');
+    $redirect = match ($_SESSION['user_role'] ?? '') {
+        'admin' => '/admin/',
+        'seller' => '/seller/',
+        default => '/profile.php',
+    };
+    header('Location: ' . $redirect);
     exit;
 }
 

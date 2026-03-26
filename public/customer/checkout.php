@@ -24,13 +24,9 @@ $cartService = new \App\Services\CartService(
 $addressService = new \App\Services\AddressService(
     new \App\Repositories\AddressRepository($connection)
 );
-$paymentService = new \App\Services\PaymentCardService(
-    new \App\Repositories\PaymentCardRepository($connection)
-);
 $checkoutService = new \App\Services\CheckoutService(
     $cartService,
     new \App\Repositories\AddressRepository($connection),
-    new \App\Repositories\PaymentCardRepository($connection),
     new \App\Repositories\OrderRepository($connection),
     new \App\Repositories\ProductRepository($connection),
 );
@@ -45,10 +41,8 @@ if (!empty($cartSummary['is_empty'])) {
 }
 
 $addresses = $addressService->listForUser($userId);
-$paymentCards = $paymentService->listForUser($userId);
 $formError = null;
 $selectedAddressId = (int) ($_POST['address_id'] ?? ($addresses[0]['id'] ?? 0));
-$selectedPaymentCardId = (int) ($_POST['payment_card_id'] ?? ($paymentCards[0]['id'] ?? 0));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf($_POST['csrf_token'] ?? null)) {
@@ -57,10 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $order = $checkoutService->checkout(
                 $userId,
-                $selectedAddressId,
-                $selectedPaymentCardId
+                $selectedAddressId
             );
-            flash('orders_notice', 'Order ' . $order['order_number'] . ' was placed successfully.');
+            flash('orders_notice', 'Order ' . $order['order_number'] . ' was placed for manual confirmation. No online payment was processed.');
             header('Location: /customer/orders.php');
             exit;
         } catch (\Throwable $exception) {
@@ -78,9 +71,9 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 <main>
     <section class="hero-section hero-section--compact">
         <div class="container">
-            <span class="hero-section__eyebrow">Checkout</span>
-            <h1 class="hero-section__title" style="max-width:18ch;">Review before payment</h1>
-            <p class="hero-section__copy">Choose a delivery address and saved card, then place your order securely.</p>
+            <span class="hero-section__eyebrow">Order review</span>
+            <h1 class="hero-section__title" style="max-width:18ch;">Review before placing your order</h1>
+            <p class="hero-section__copy">Choose a delivery address and submit your order for manual confirmation. No card payment is collected on this site.</p>
         </div>
     </section>
     <section class="catalog-section">
@@ -88,9 +81,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
             <?= render('customer/checkout-center', [
                 'cart' => $cartSummary,
                 'addresses' => $addresses,
-                'paymentCards' => $paymentCards,
                 'selectedAddressId' => $selectedAddressId,
-                'selectedPaymentCardId' => $selectedPaymentCardId,
                 'formError' => $formError,
             ]) ?>
         </div>

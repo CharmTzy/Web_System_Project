@@ -46,7 +46,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
         <div class="container">
             <span class="hero-section__eyebrow">Order history</span>
             <h1 class="hero-section__title" style="max-width:18ch;">My Orders</h1>
-            <p class="hero-section__copy">Track completed purchases, review what you ordered, and jump back to items you want to rate.</p>
+            <p class="hero-section__copy">Track placed orders, review what you requested, and jump back to items you want to rate.</p>
         </div>
     </section>
     <section class="catalog-section">
