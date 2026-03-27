@@ -7,6 +7,8 @@
   }
 
   let payload = {};
+  const charts = [];
+  let resizeFrame = 0;
 
   try {
     payload = JSON.parse(payloadNode.textContent || "{}");
@@ -27,7 +29,17 @@
       return;
     }
 
-    new window.Chart(context, config);
+    const chart = new window.Chart(context, config);
+    charts.push(chart);
+  };
+
+  const scheduleChartResize = () => {
+    window.cancelAnimationFrame(resizeFrame);
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = window.requestAnimationFrame(() => {
+        charts.forEach((chart) => chart.resize());
+      });
+    });
   };
 
   const baseOptions = {
@@ -202,4 +214,8 @@
       },
     },
   });
+
+  window.addEventListener("resize", scheduleChartResize, { passive: true });
+  window.addEventListener("orientationchange", scheduleChartResize);
+  document.addEventListener("novamarket:admin-layout-sync", scheduleChartResize);
 })();

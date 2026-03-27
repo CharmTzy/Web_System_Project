@@ -9,8 +9,11 @@
 
   const collapsedClass = "admin-sidebar-collapsed";
   const openClass = "admin-sidebar-open";
+  const syncingClass = "admin-layout-syncing";
   const storageKey = "novamarket-admin-sidebar-collapsed";
   const mobileQuery = window.matchMedia("(max-width: 991.98px)");
+  let syncFrame = 0;
+  let syncTimeout = 0;
 
   const setExpandedState = () => {
     const isExpanded = mobileQuery.matches
@@ -47,6 +50,35 @@
     setExpandedState();
   };
 
+  const emitLayoutSync = () => {
+    document.dispatchEvent(
+      new CustomEvent("novamarket:admin-layout-sync", {
+        detail: {
+          mobile: mobileQuery.matches,
+        },
+      }),
+    );
+  };
+
+  const runViewportSync = () => {
+    window.cancelAnimationFrame(syncFrame);
+    body.classList.add(syncingClass);
+    syncFrame = window.requestAnimationFrame(() => {
+      syncFrame = window.requestAnimationFrame(() => {
+        syncLayoutMode();
+        emitLayoutSync();
+        window.requestAnimationFrame(() => {
+          body.classList.remove(syncingClass);
+        });
+      });
+    });
+  };
+
+  const scheduleViewportSync = () => {
+    window.clearTimeout(syncTimeout);
+    syncTimeout = window.setTimeout(runViewportSync, 40);
+  };
+
   toggleButton.addEventListener("click", () => {
     if (mobileQuery.matches) {
       body.classList.toggle(openClass);
@@ -73,10 +105,20 @@
   });
 
   if (typeof mobileQuery.addEventListener === "function") {
-    mobileQuery.addEventListener("change", syncLayoutMode);
+    mobileQuery.addEventListener("change", scheduleViewportSync);
   } else if (typeof mobileQuery.addListener === "function") {
-    mobileQuery.addListener(syncLayoutMode);
+    mobileQuery.addListener(scheduleViewportSync);
   }
 
-  syncLayoutMode();
+  window.addEventListener("resize", scheduleViewportSync, { passive: true });
+  window.addEventListener("orientationchange", scheduleViewportSync);
+  window.addEventListener("pageshow", scheduleViewportSync);
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", scheduleViewportSync, {
+      passive: true,
+    });
+  }
+
+  scheduleViewportSync();
 })();
