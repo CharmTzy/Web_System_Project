@@ -8,7 +8,7 @@ if (!empty($_SESSION['user_id'])) {
     $redirect = match ($_SESSION['user_role'] ?? '') {
         'admin' => '/admin/',
         'seller' => '/seller/',
-        default => '/profile.php',
+        default => '/index.html',
     };
     header('Location: ' . $redirect);
     exit;
