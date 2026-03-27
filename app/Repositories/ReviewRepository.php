@@ -31,9 +31,75 @@ final class ReviewRepository
             );
             $statement->execute(['product_id' => $productId]);
 
-            return array_map(fn (array $row): array => $this->normalize($row), $statement->fetchAll());
+            $reviews = array_map(fn (array $row): array => $this->normalize($row), $statement->fetchAll());
+
+            foreach ($reviews as &$review) {
+                $review['media'] = $this->listMediaByReviewId($review['id']);
+            }
+
+            return $reviews;
         } catch (PDOException) {
             return [];
+        }
+    }
+
+    public function listAllByProduct(int $productId): array
+    {
+        try {
+            $statement = $this->connection->prepare(
+                <<<SQL
+                SELECT
+                    pr.*,
+                    u.name AS user_name
+                FROM product_reviews pr
+                INNER JOIN users u
+                    ON u.id = pr.user_id
+                WHERE pr.product_id = :product_id
+                ORDER BY pr.updated_at DESC, pr.id DESC
+                SQL
+            );
+            $statement->execute(['product_id' => $productId]);
+
+            $reviews = array_map(fn (array $row): array => $this->normalize($row), $statement->fetchAll());
+
+            foreach ($reviews as &$review) {
+                $review['media'] = $this->listMediaByReviewId($review['id']);
+            }
+
+            return $reviews;
+        } catch (PDOException) {
+            return [];
+        }
+    }
+
+    public function findById(int $reviewId): ?array
+    {
+        try {
+            $statement = $this->connection->prepare(
+                <<<SQL
+                SELECT
+                    pr.*,
+                    u.name AS user_name
+                FROM product_reviews pr
+                INNER JOIN users u
+                    ON u.id = pr.user_id
+                WHERE pr.id = :review_id
+                LIMIT 1
+                SQL
+            );
+            $statement->execute(['review_id' => $reviewId]);
+            $row = $statement->fetch();
+
+            if (!is_array($row)) {
+                return null;
+            }
+
+            $review = $this->normalize($row);
+            $review['media'] = $this->listMediaByReviewId($review['id']);
+
+            return $review;
+        } catch (PDOException) {
+            return null;
         }
     }
 
@@ -59,7 +125,14 @@ final class ReviewRepository
             ]);
             $row = $statement->fetch();
 
-            return is_array($row) ? $this->normalize($row) : null;
+            if (!is_array($row)) {
+                return null;
+            }
+
+            $review = $this->normalize($row);
+            $review['media'] = $this->listMediaByReviewId($review['id']);
+
+            return $review;
         } catch (PDOException) {
             return null;
         }
@@ -86,7 +159,7 @@ final class ReviewRepository
         }
     }
 
-    public function save(int $productId, int $userId, array $data): void
+    public function save(int $productId, int $userId, array $data): int
     {
         $existing = $this->findByProductAndUser($productId, $userId);
 
@@ -99,14 +172,22 @@ final class ReviewRepository
                     rating,
                     title,
                     comment,
-                    is_visible
+                    seller_reply,
+                    is_visible,
+                    is_flagged,
+                    flagged_reason,
+                    moderated_by
                 ) VALUES (
                     :product_id,
                     :user_id,
                     :rating,
                     :title,
                     :comment,
-                    1
+                    NULL,
+                    1,
+                    0,
+                    NULL,
+                    NULL
                 )
                 SQL
             );
@@ -117,6 +198,8 @@ final class ReviewRepository
                 'title' => $data['title'],
                 'comment' => $data['comment'],
             ]);
+
+            $reviewId = (int) $this->connection->lastInsertId();
         } else {
             $statement = $this->connection->prepare(
                 <<<SQL
@@ -124,7 +207,10 @@ final class ReviewRepository
                 SET rating = :rating,
                     title = :title,
                     comment = :comment,
-                    is_visible = 1
+                    is_visible = 1,
+                    is_flagged = 0,
+                    flagged_reason = NULL,
+                    moderated_by = NULL
                 WHERE product_id = :product_id
                   AND user_id = :user_id
                 SQL
@@ -136,9 +222,13 @@ final class ReviewRepository
                 'title' => $data['title'],
                 'comment' => $data['comment'],
             ]);
+
+            $reviewId = (int) $existing['id'];
         }
 
         $this->refreshProductStats($productId);
+
+        return $reviewId;
     }
 
     public function delete(int $productId, int $userId): void
@@ -152,6 +242,188 @@ final class ReviewRepository
         ]);
 
         $this->refreshProductStats($productId);
+    }
+
+    public function deleteById(int $reviewId): ?int
+    {
+        $review = $this->findById($reviewId);
+
+        if ($review === null) {
+            return null;
+        }
+
+        $statement = $this->connection->prepare(
+            'DELETE FROM product_reviews WHERE id = :id'
+        );
+        $statement->execute(['id' => $reviewId]);
+
+        $this->refreshProductStats($review['product_id']);
+
+        return (int) $review['product_id'];
+    }
+
+    public function replyAsSeller(int $reviewId, string $reply): bool
+    {
+        try {
+            $statement = $this->connection->prepare(
+                <<<SQL
+                UPDATE product_reviews
+                SET seller_reply = :seller_reply
+                WHERE id = :review_id
+                SQL
+            );
+            $statement->execute([
+                'seller_reply' => $reply,
+                'review_id' => $reviewId,
+            ]);
+
+            return $statement->rowCount() > 0;
+        } catch (PDOException) {
+            return false;
+        }
+    }
+
+    public function flag(int $reviewId, int $flaggedBy, string $reason): bool
+    {
+        try {
+            $this->connection->beginTransaction();
+
+            $flagStatement = $this->connection->prepare(
+                <<<SQL
+                INSERT INTO product_review_flags (
+                    review_id,
+                    flagged_by,
+                    reason
+                ) VALUES (
+                    :review_id,
+                    :flagged_by,
+                    :reason
+                )
+                SQL
+            );
+            $flagStatement->execute([
+                'review_id' => $reviewId,
+                'flagged_by' => $flaggedBy,
+                'reason' => $reason,
+            ]);
+
+            $reviewStatement = $this->connection->prepare(
+                <<<SQL
+                UPDATE product_reviews
+                SET is_flagged = 1,
+                    flagged_reason = :flagged_reason
+                WHERE id = :review_id
+                SQL
+            );
+            $reviewStatement->execute([
+                'flagged_reason' => $reason,
+                'review_id' => $reviewId,
+            ]);
+
+            $this->connection->commit();
+
+            return true;
+        } catch (PDOException) {
+            if ($this->connection->inTransaction()) {
+                $this->connection->rollBack();
+            }
+
+            return false;
+        }
+    }
+
+    public function hide(int $reviewId, ?int $moderatedBy = null, ?string $reason = null): bool
+    {
+        try {
+            $review = $this->findById($reviewId);
+
+            if ($review === null) {
+                return false;
+            }
+
+            $statement = $this->connection->prepare(
+                <<<SQL
+                UPDATE product_reviews
+                SET is_visible = 0,
+                    is_flagged = 1,
+                    flagged_reason = :flagged_reason,
+                    moderated_by = :moderated_by
+                WHERE id = :review_id
+                SQL
+            );
+            $statement->execute([
+                'flagged_reason' => $reason,
+                'moderated_by' => $moderatedBy,
+                'review_id' => $reviewId,
+            ]);
+
+            $this->refreshProductStats((int) $review['product_id']);
+
+            return true;
+        } catch (PDOException) {
+            return false;
+        }
+    }
+
+    public function addMedia(int $reviewId, string $mediaType, string $filePath): ?int
+    {
+        try {
+            $statement = $this->connection->prepare(
+                <<<SQL
+                INSERT INTO product_review_media (
+                    review_id,
+                    media_type,
+                    file_path
+                ) VALUES (
+                    :review_id,
+                    :media_type,
+                    :file_path
+                )
+                SQL
+            );
+            $statement->execute([
+                'review_id' => $reviewId,
+                'media_type' => $mediaType,
+                'file_path' => $filePath,
+            ]);
+
+            return (int) $this->connection->lastInsertId();
+        } catch (PDOException) {
+            return null;
+        }
+    }
+
+    public function listMediaByReviewId(int $reviewId): array
+    {
+        try {
+            $statement = $this->connection->prepare(
+                <<<SQL
+                SELECT
+                    id,
+                    review_id,
+                    media_type,
+                    file_path,
+                    created_at
+                FROM product_review_media
+                WHERE review_id = :review_id
+                ORDER BY id ASC
+                SQL
+            );
+            $statement->execute(['review_id' => $reviewId]);
+
+            return array_map(
+                static fn(array $row): array => [
+                    'id' => (int) $row['id'],
+                    'review_id' => (int) $row['review_id'],
+                    'media_type' => (string) $row['media_type'],
+                    'file_path' => (string) $row['file_path'],
+                    'created_at' => (string) $row['created_at'],
+                ],
+                $statement->fetchAll()
+            );
+        } catch (PDOException) {
+            return [];
+        }
     }
 
     private function refreshProductStats(int $productId): void
@@ -191,7 +463,17 @@ final class ReviewRepository
             'rating' => (int) $row['rating'],
             'title' => $row['title'] !== null ? (string) $row['title'] : null,
             'comment' => (string) $row['comment'],
+            'seller_reply' => isset($row['seller_reply']) && $row['seller_reply'] !== null
+                ? (string) $row['seller_reply']
+                : null,
             'is_visible' => (bool) $row['is_visible'],
+            'is_flagged' => isset($row['is_flagged']) ? (bool) $row['is_flagged'] : false,
+            'flagged_reason' => isset($row['flagged_reason']) && $row['flagged_reason'] !== null
+                ? (string) $row['flagged_reason']
+                : null,
+            'moderated_by' => isset($row['moderated_by']) && $row['moderated_by'] !== null
+                ? (int) $row['moderated_by']
+                : null,
             'created_at' => (string) $row['created_at'],
             'updated_at' => (string) $row['updated_at'],
         ];
