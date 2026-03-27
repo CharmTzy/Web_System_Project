@@ -72,7 +72,7 @@ try {
     $redirect = match ($result['role']) {
         'admin' => '/admin/',
         'seller' => '/seller/',
-        default => '/profile.php',
+        default => '/index.html',
     };
 
     if ($requestedRedirect !== '' && str_starts_with($requestedRedirect, '/') && !str_starts_with($requestedRedirect, '//')) {

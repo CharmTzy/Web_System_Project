@@ -15,7 +15,7 @@ $cartNotice = trim((string) ($_GET['cart_notice'] ?? ''));
 $defaultAuthenticatedRedirect = match ($_SESSION['user_role'] ?? '') {
     'admin' => '/admin/',
     'seller' => '/seller/',
-    default => '/profile.php',
+    default => '/index.html',
 };
 
 if (!empty($_SESSION['user_id'])) {
