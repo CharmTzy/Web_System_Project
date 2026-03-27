@@ -7,14 +7,6 @@ header('Content-Type: application/json');
 try {
     $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-    if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'customer') {
-        respond([
-            'ok' => false,
-            'message' => 'Sign in with a customer account to review products.',
-            'login_url' => '/login.php?redirect=' . rawurlencode((string) ($_SERVER['HTTP_REFERER'] ?? '/product.html')),
-        ], 403);
-    }
-
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respond([
             'ok' => false,
@@ -29,6 +21,14 @@ try {
         ], 419);
     }
 
+    if (empty($_SESSION['user_id']) || empty($_SESSION['user_role'])) {
+        respond([
+            'ok' => false,
+            'message' => 'Please sign in first.',
+            'login_url' => '/login.php?redirect=' . rawurlencode((string) ($_SERVER['HTTP_REFERER'] ?? '/product.html')),
+        ], 403);
+    }
+
     $database = new \App\Support\Database($config['database']);
     $connection = $database->connection();
 
@@ -40,37 +40,196 @@ try {
     }
 
     $productRepository = new \App\Repositories\ProductRepository($connection);
-    $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT) ?: 0;
-    $product = $productRepository->findById($productId);
-
-    if ($product === null) {
-        respond([
-            'ok' => false,
-            'message' => 'Product not found.',
-        ], 404);
-    }
+    $reviewRepository = new \App\Repositories\ReviewRepository($connection);
+    $orderRepository = new \App\Repositories\OrderRepository($connection);
 
     $service = new \App\Services\ReviewService(
-        new \App\Repositories\ReviewRepository($connection),
-        new \App\Repositories\OrderRepository($connection),
+        $reviewRepository,
+        $orderRepository,
+        $productRepository,
     );
 
+    $userId = (int) $_SESSION['user_id'];
+    $userRole = (string) $_SESSION['user_role'];
     $action = (string) ($_POST['action'] ?? 'save');
 
-    if ($action === 'delete') {
-        $service->deleteForUser($productId, (int) $_SESSION['user_id']);
-        respond([
-            'ok' => true,
-            'message' => 'Your review was removed.',
-        ]);
+    switch ($action) {
+        case 'save':
+            if ($userRole !== 'customer') {
+                respond([
+                    'ok' => false,
+                    'message' => 'Sign in with a customer account to review products.',
+                ], 403);
+            }
+
+            $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT) ?: 0;
+            $product = $productRepository->findById($productId);
+
+            if ($product === null) {
+                respond([
+                    'ok' => false,
+                    'message' => 'Product not found.',
+                ], 404);
+            }
+
+            $result = $service->saveForUser($productId, $userId, $_POST);
+
+            respond([
+                'ok' => true,
+                'message' => 'Thanks for sharing your review.',
+                'data' => $result,
+            ]);
+            break;
+
+        case 'delete':
+            if ($userRole !== 'customer') {
+                respond([
+                    'ok' => false,
+                    'message' => 'Only customers can delete their own reviews.',
+                ], 403);
+            }
+
+            $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT) ?: 0;
+            $product = $productRepository->findById($productId);
+
+            if ($product === null) {
+                respond([
+                    'ok' => false,
+                    'message' => 'Product not found.',
+                ], 404);
+            }
+
+            $result = $service->deleteForUser($productId, $userId);
+
+            respond([
+                'ok' => true,
+                'message' => 'Your review was removed.',
+                'data' => $result,
+            ]);
+            break;
+
+        case 'reply':
+            if ($userRole !== 'seller') {
+                respond([
+                    'ok' => false,
+                    'message' => 'Only sellers can reply to reviews.',
+                ], 403);
+            }
+
+            $reviewId = filter_input(INPUT_POST, 'review_id', FILTER_VALIDATE_INT) ?: 0;
+
+            if ($reviewId <= 0) {
+                respond([
+                    'ok' => false,
+                    'message' => 'Invalid review.',
+                ], 422);
+            }
+
+            $result = $service->replyAsSeller(
+                $reviewId,
+                $userId,
+                (string) ($_POST['seller_reply'] ?? '')
+            );
+
+            respond([
+                'ok' => true,
+                'message' => 'Reply added successfully.',
+                'data' => $result,
+            ]);
+            break;
+
+        case 'flag':
+            if ($userRole !== 'admin') {
+                respond([
+                    'ok' => false,
+                    'message' => 'Only admins can flag reviews.',
+                ], 403);
+            }
+
+            $reviewId = filter_input(INPUT_POST, 'review_id', FILTER_VALIDATE_INT) ?: 0;
+
+            if ($reviewId <= 0) {
+                respond([
+                    'ok' => false,
+                    'message' => 'Invalid review.',
+                ], 422);
+            }
+
+            $result = $service->flagAsAdmin(
+                $reviewId,
+                $userId,
+                (string) ($_POST['reason'] ?? '')
+            );
+
+            respond([
+                'ok' => true,
+                'message' => 'Review flagged successfully.',
+                'data' => $result,
+            ]);
+            break;
+
+        case 'hide':
+            if ($userRole !== 'admin') {
+                respond([
+                    'ok' => false,
+                    'message' => 'Only admins can hide reviews.',
+                ], 403);
+            }
+
+            $reviewId = filter_input(INPUT_POST, 'review_id', FILTER_VALIDATE_INT) ?: 0;
+
+            if ($reviewId <= 0) {
+                respond([
+                    'ok' => false,
+                    'message' => 'Invalid review.',
+                ], 422);
+            }
+
+            $result = $service->hideAsAdmin(
+                $reviewId,
+                $userId,
+                isset($_POST['reason']) ? (string) $_POST['reason'] : null
+            );
+
+            respond([
+                'ok' => true,
+                'message' => 'Review hidden successfully.',
+                'data' => $result,
+            ]);
+            break;
+
+        case 'admin-delete':
+            if ($userRole !== 'admin') {
+                respond([
+                    'ok' => false,
+                    'message' => 'Only admins can delete reviews.',
+                ], 403);
+            }
+
+            $reviewId = filter_input(INPUT_POST, 'review_id', FILTER_VALIDATE_INT) ?: 0;
+
+            if ($reviewId <= 0) {
+                respond([
+                    'ok' => false,
+                    'message' => 'Invalid review.',
+                ], 422);
+            }
+
+            $result = $service->deleteAsAdmin($reviewId);
+
+            respond([
+                'ok' => true,
+                'message' => 'Review deleted successfully.',
+                'data' => $result,
+            ]);
+            break;
+
+        default:
+            respond([
+                'ok' => false,
+                'message' => 'Unknown action.',
+            ], 400);
     }
-
-    $service->saveForUser($productId, (int) $_SESSION['user_id'], $_POST);
-
-    respond([
-        'ok' => true,
-        'message' => 'Thanks for sharing your review.',
-    ]);
 } catch (\InvalidArgumentException | \RuntimeException $exception) {
     report_exception($exception, 'api.reviews.expected');
     respond([
