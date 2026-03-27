@@ -35,7 +35,7 @@ $userId = (int) $_SESSION['user_id'];
 $cartSummary = $cartService->summary();
 
 if (!empty($cartSummary['is_empty'])) {
-    flash('checkout_error', 'Add something to your cart before you check out.');
+    flash('checkout_error', 'Add something to your cart before checkout.');
     header('Location: /cart.html');
     exit;
 }
@@ -53,12 +53,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $userId,
                 $selectedAddressId
             );
-            flash('orders_notice', 'Order ' . $order['order_number'] . ' was placed for manual confirmation. No online payment was processed.');
+            flash('orders_notice', 'Your order ' . $order['order_number'] . ' has been placed successfully.');
             header('Location: /customer/orders.php');
             exit;
         } catch (\Throwable $exception) {
             report_exception($exception, 'customer.checkout');
-            $formError = safe_exception_message($exception, 'We could not complete the checkout right now.');
+            $formError = safe_exception_message($exception, 'We could not place your order right now.');
         }
     }
 }
@@ -71,9 +71,9 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 <main>
     <section class="hero-section hero-section--compact">
         <div class="container">
-            <span class="hero-section__eyebrow">Order review</span>
-            <h1 class="hero-section__title" style="max-width:18ch;">Review before placing your order</h1>
-            <p class="hero-section__copy">Choose a delivery address and submit your order for manual confirmation. No card payment is collected on this site.</p>
+            <span class="hero-section__eyebrow">Checkout</span>
+            <h1 class="hero-section__title" style="max-width:18ch;">Review your order before checkout</h1>
+            <p class="hero-section__copy">Choose a delivery address and confirm your items before placing your order.</p>
         </div>
     </section>
     <section class="catalog-section">

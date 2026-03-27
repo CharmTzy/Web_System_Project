@@ -1,5 +1,5 @@
 -- Migration: Product Reviews
--- Run this AFTER migration_payment_cards.sql
+-- Run this AFTER the orders migration so purchase checks can read orders and order_items
 
 CREATE TABLE IF NOT EXISTS product_reviews (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

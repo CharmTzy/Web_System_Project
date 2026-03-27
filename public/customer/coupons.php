@@ -16,6 +16,7 @@ $pageTitle = 'My Coupons';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
 $pageSkeletonVariant = 'panel';
+$robotsMeta = 'noindex, nofollow, noarchive';
 
 try {
     if (!$connection) {

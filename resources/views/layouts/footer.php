@@ -4,7 +4,7 @@ declare(strict_types=1);
 ?>
     <footer class="site-footer">
         <div class="container">
-            <p class="mb-0">Copyright &copy; 2026 NovaMarket. All rights reserved.</p>
+            <p class="site-footer__copyright mb-0">Copyright &copy; 2026 NovaMarket. All rights reserved.</p>
         </div>
     </footer>
 

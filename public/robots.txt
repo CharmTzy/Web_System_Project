@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /seller/
+Disallow: /customer/
+Disallow: /profile.php
+Disallow: /login.php
+Disallow: /register.php
+Disallow: /api/
+

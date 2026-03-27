@@ -6,6 +6,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $pageTitle = $pageTitle ?? 'Shop';
 $appName = $appName ?? 'NovaMarket';
 $headerSearchValue = $headerSearchValue ?? '';
+$robotsMeta = trim((string) ($robotsMeta ?? ''));
 $cartSummary = $cartSummary ?? [
     'total_items' => 0,
 ];
@@ -98,6 +99,22 @@ $renderHeaderIcon = static function (string $icon): string {
         default => '',
     };
 };
+
+if (
+    $robotsMeta === ''
+    && (
+        str_starts_with($currentPath, '/customer/')
+        || str_starts_with($currentPath, '/seller/')
+        || str_starts_with($currentPath, '/admin/')
+        || $currentPath === '/profile.php'
+    )
+) {
+    $robotsMeta = 'noindex, nofollow, noarchive';
+}
+
+if ($robotsMeta !== '' && !headers_sent()) {
+    header('X-Robots-Tag: ' . $robotsMeta);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -106,6 +123,9 @@ $renderHeaderIcon = static function (string $icon): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+    <?php if ($robotsMeta !== ''): ?>
+        <meta name="robots" content="<?= e($robotsMeta) ?>">
+    <?php endif; ?>
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

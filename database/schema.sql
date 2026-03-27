@@ -158,25 +158,6 @@ CREATE TABLE cart_items (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE payment_cards (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,
-    label VARCHAR(50) NOT NULL DEFAULT 'My Card',
-    cardholder_name VARCHAR(120) NOT NULL,
-    card_last_four CHAR(4) NOT NULL,
-    card_brand ENUM('visa', 'mastercard', 'amex', 'discover', 'other') NOT NULL DEFAULT 'visa',
-    expiry_month TINYINT UNSIGNED NOT NULL,
-    expiry_year SMALLINT UNSIGNED NOT NULL,
-    is_default TINYINT(1) NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_payment_cards_user (user_id),
-    INDEX idx_payment_cards_user_default (user_id, is_default),
-    CONSTRAINT fk_payment_cards_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
-        ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE orders (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     customer_id BIGINT UNSIGNED NOT NULL,
@@ -190,8 +171,6 @@ CREATE TABLE orders (
     shipping_postal_code VARCHAR(20) NOT NULL,
     shipping_country VARCHAR(80) NOT NULL DEFAULT 'Singapore',
     shipping_phone VARCHAR(30) DEFAULT NULL,
-    payment_card_brand ENUM('visa', 'mastercard', 'amex', 'discover', 'other') DEFAULT NULL,
-    payment_card_last_four CHAR(4) DEFAULT NULL,
     subtotal DECIMAL(10, 2) NOT NULL,
     shipping_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     total DECIMAL(10, 2) NOT NULL,

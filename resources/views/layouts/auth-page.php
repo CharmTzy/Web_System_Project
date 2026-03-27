@@ -8,6 +8,7 @@ $pageScript = $pageScript ?? null;
 $bodyClass = $bodyClass ?? 'auth-page';
 $authFormView = $authFormView ?? '';
 $authPage = $authPage ?? [];
+$robotsMeta = trim((string) ($robotsMeta ?? 'noindex, nofollow, noarchive'));
 
 $highlights = is_array($authPage['highlights'] ?? null) ? $authPage['highlights'] : [];
 $utilityLinks = is_array($authPage['utility_links'] ?? null) ? $authPage['utility_links'] : [
@@ -16,6 +17,10 @@ $utilityLinks = is_array($authPage['utility_links'] ?? null) ? $authPage['utilit
 ];
 $contextNotice = is_array($authPage['context_notice'] ?? null) ? $authPage['context_notice'] : [];
 $modalNotice = is_array($authPage['modal_notice'] ?? null) ? $authPage['modal_notice'] : [];
+
+if ($robotsMeta !== '' && !headers_sent()) {
+    header('X-Robots-Tag: ' . $robotsMeta);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,6 +29,9 @@ $modalNotice = is_array($authPage['modal_notice'] ?? null) ? $authPage['modal_no
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+    <?php if ($robotsMeta !== ''): ?>
+        <meta name="robots" content="<?= e($robotsMeta) ?>">
+    <?php endif; ?>
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

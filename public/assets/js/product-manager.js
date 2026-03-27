@@ -16,7 +16,7 @@
   const errorBox = root.querySelector('[data-product-error]');
   const successBox = root.querySelector('[data-product-success]');
 
-  const storageKey = root.dataset.storageKey || 'product-manager-demo';
+  const storageKey = root.dataset.storageKey || 'product-manager-public';
   const roleLabel = root.dataset.roleLabel || 'Admin';
   const currency = root.dataset.currency || 'USD';
   const seedProducts = parseJson(seedNode?.textContent, []);
@@ -247,7 +247,7 @@
     const product = products.find((item) => item.id === productId);
     if (!product) return;
 
-    const confirmed = window.confirm(`Delete "${product.name}"? This only removes it from the frontend demo list.`);
+    const confirmed = window.confirm(`Delete "${product.name}"? This only removes it from this browser workspace.`);
     if (!confirmed) return;
 
     products = products.filter((item) => item.id !== productId);
@@ -256,7 +256,7 @@
       resetForm();
     }
     renderProducts();
-    showMessage('success', 'Product deleted from the local demo workspace.');
+    showMessage('success', 'Product deleted from this workspace.');
   }
 
   form.addEventListener('submit', (event) => {

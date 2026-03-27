@@ -15,7 +15,7 @@ $hasCoupons = $featured !== []
         <span class="hero-section__eyebrow">Rewards wallet</span>
         <h1 class="hero-section__title" style="max-width:16ch;">My Coupons</h1>
         <p class="hero-section__copy coupon-hero__copy">Keep your limited-time discounts, shipping perks, and shop
-            offers in one place before checkout.</p>
+            offers in one place while you browse the catalog.</p>
     </div>
 </section>
 
@@ -76,7 +76,7 @@ $hasCoupons = $featured !== []
                                 </div>
                                 <div class="coupon-card__footer">
                                     <code><?= e($coupon['code']) ?></code>
-                                    <a class="btn btn-brand btn-sm" href="/cart.html">Use at checkout</a>
+                                    <a class="btn btn-brand btn-sm" href="/cart.html">View cart preview</a>
                                 </div>
                             </article>
                         </div>
