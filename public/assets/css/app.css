@@ -6055,6 +6055,18 @@ body.auth-modal-open {
     height: 280px !important;
 }
 
+.admin-chart-card--donut {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-chart--donut {
+    width: min(100%, 420px);
+    height: auto !important;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+}
+
 .admin-insight-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);

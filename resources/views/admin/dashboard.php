@@ -40,14 +40,14 @@ $chartPayload = json_encode($chartData ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
     </section>
 
     <section class="admin-chart-grid">
-        <article class="section-block admin-chart-card">
+        <article class="section-block admin-chart-card admin-chart-card--donut">
             <div class="section-block__header">
                 <div>
                     <span class="results-header__eyebrow">Audience split</span>
                     <h2>User role distribution</h2>
                 </div>
             </div>
-            <canvas class="admin-chart" data-users-chart aria-label="User role distribution chart"></canvas>
+            <canvas class="admin-chart admin-chart--donut" data-users-chart aria-label="User role distribution chart"></canvas>
         </article>
 
         <article class="section-block admin-chart-card">
@@ -60,14 +60,14 @@ $chartPayload = json_encode($chartData ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
             <canvas class="admin-chart" data-category-chart aria-label="Product category chart"></canvas>
         </article>
 
-        <article class="section-block admin-chart-card">
+        <article class="section-block admin-chart-card admin-chart-card--donut">
             <div class="section-block__header">
                 <div>
                     <span class="results-header__eyebrow">Order pipeline</span>
                     <h2>Order status mix</h2>
                 </div>
             </div>
-            <canvas class="admin-chart" data-order-status-chart aria-label="Order status chart"></canvas>
+            <canvas class="admin-chart admin-chart--donut" data-order-status-chart aria-label="Order status chart"></canvas>
         </article>
 
         <article class="section-block admin-chart-card">

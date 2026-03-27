@@ -1,5 +1,5 @@
 Options -Indexes
-DirectoryIndex index.html index.php
+DirectoryIndex index.php index.html
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -15,6 +15,10 @@ DirectoryIndex index.html index.php
     RewriteCond %{REQUEST_URI} (^|/)(?:vendor|phpunit|xmlrpc|wp-config|phpinfo|info|test|adminer)\.php$ [NC,OR]
     RewriteCond %{QUERY_STRING} (?:allow_url_include|auto_prepend_file|php://|data://|expect://|pearcmd|think(?:\\|%5C)app|call_user_func_array|/bin/sh|\.\./|%2e%2e) [NC]
     RewriteRule ^ - [F,L]
+
+    # Route storefront-only static pages through a PHP guard first.
+    RewriteRule ^product\.html$ /storefront-page.php?page=product.html [L,QSA]
+    RewriteRule ^cart\.html$ /storefront-page.php?page=cart.html [L,QSA]
 
     # Keep the homepage canonical at `/` instead of `/index.html`.
     RewriteRule ^index\.html$ / [R=301,L]

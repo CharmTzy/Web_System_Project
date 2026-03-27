@@ -58,6 +58,12 @@
     },
   };
 
+  const doughnutOptions = {
+    ...baseOptions,
+    maintainAspectRatio: true,
+    aspectRatio: 1,
+  };
+
   makeChart("[data-users-chart]", {
     type: "doughnut",
     data: {
@@ -72,7 +78,7 @@
       ],
     },
     options: {
-      ...baseOptions,
+      ...doughnutOptions,
       cutout: "68%",
     },
   });
@@ -139,7 +145,7 @@
       ],
     },
     options: {
-      ...baseOptions,
+      ...doughnutOptions,
       cutout: "64%",
     },
   });
