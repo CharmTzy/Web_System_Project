@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-require_role('seller');
+require_role('admin');
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
@@ -17,11 +17,18 @@ $userService = new \App\Services\UserService(
     new \App\Repositories\UserRepository($connection)
 );
 
-$profile = $userService->getProfile((int) $_SESSION['user_id']);
+$user = $userService->getProfile((int) $_SESSION['user_id']);
 
-$pageTitle = 'Store Profile';
+if ($user === null) {
+    $_SESSION = [];
+    header('Location: /login.php');
+    exit;
+}
+
+$pageTitle = 'Admin Profile';
 $appName = $config['app']['name'];
-$pageScript = 'seller-store.js';
+$pageScript = 'profile.js';
+$pageSkeletonVariant = 'admin-form';
 $cartSummary = ['total_items' => 0];
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
@@ -30,7 +37,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     <section class="auth-section">
         <div class="container">
             <div class="auth-wrapper">
-                <?= render('seller/store-form', ['profile' => $profile]) ?>
+                <?= render('profile/profile-form', ['user' => $user]) ?>
             </div>
         </div>
     </section>

@@ -37,11 +37,11 @@ INSERT INTO coupons (
     is_active
 ) VALUES
     (1, 'FLASH15', 'Weekend flash markdown', 'Save on selected favorites before the campaign closes this week.', 'limited_time', 'percentage', 15.00, 80.00, NULL, '2026-03-20 00:00:00', '2026-03-28 23:59:59', 1, 1),
-    (2, 'SAVE12NOW', 'Checkout bonus for today', 'Use this fixed discount on a qualifying order during the current promo window.', 'limited_time', 'fixed_amount', 12.00, 100.00, NULL, '2026-03-19 00:00:00', '2026-03-31 23:59:59', 0, 1),
+    (2, 'SAVE12NOW', 'Today-only order bonus', 'Use this fixed discount on a qualifying order request during the current promo window.', 'limited_time', 'fixed_amount', 12.00, 100.00, NULL, '2026-03-19 00:00:00', '2026-03-31 23:59:59', 0, 1),
     (3, 'SHIPFREE60', 'Free shipping for basket top-ups', 'Unlock delivery savings once your basket reaches the minimum spend.', 'free_shipping', 'shipping', 0.00, 60.00, NULL, '2026-03-15 00:00:00', '2026-04-12 23:59:59', 1, 1),
     (4, 'HARBORSHIP', 'Harbor Home delivery perk', 'Get free standard shipping on eligible home living picks from Harbor Home.', 'free_shipping', 'shipping', 0.00, 35.00, 4, '2026-03-18 00:00:00', '2026-04-18 23:59:59', 0, 1),
     (5, 'HARBOR10', 'Harbor Home shop voucher', 'Take 10% off comfort-first essentials from the Harbor Home shop.', 'shop', 'percentage', 10.00, 50.00, 4, '2026-03-17 00:00:00', '2026-04-15 23:59:59', 1, 1),
-    (6, 'SUMMIT18', 'Summit Office workspace deal', 'Get a fixed checkout discount on workday gear from Summit Office.', 'shop', 'fixed_amount', 18.00, 120.00, 3, '2026-03-16 00:00:00', '2026-04-08 23:59:59', 0, 1)
+    (6, 'SUMMIT18', 'Summit Office workspace deal', 'Get a fixed cart discount on workday gear from Summit Office.', 'shop', 'fixed_amount', 18.00, 120.00, 3, '2026-03-16 00:00:00', '2026-04-08 23:59:59', 0, 1)
 ON DUPLICATE KEY UPDATE
     title = VALUES(title),
     description = VALUES(description),

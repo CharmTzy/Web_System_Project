@@ -12,13 +12,13 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
         <section class="customer-panel">
             <div class="customer-panel__header">
                 <div>
-                    <span class="hero-section__eyebrow">Setup required</span>
-                    <h2 class="customer-panel__title">Finish your checkout setup</h2>
+                    <span class="hero-section__eyebrow">Delivery details required</span>
+                    <h2 class="customer-panel__title">Add a delivery address</h2>
                 </div>
             </div>
             <section class="empty-state empty-state--compact customer-panel__empty">
-                <h3>You need one delivery address.</h3>
-                <p>Online card payment is disabled. Add a delivery address first, then place your order for manual confirmation.</p>
+                <h3>You need at least one delivery address.</h3>
+                <p>Add a delivery address first, then continue to checkout.</p>
                 <div class="d-flex flex-wrap gap-3 justify-content-center">
                     <a class="btn btn-brand" href="/customer/addresses.php">Add address</a>
                 </div>
@@ -53,7 +53,7 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
         <section class="customer-panel">
             <div class="customer-panel__header">
                 <div>
-                    <span class="hero-section__eyebrow">Manual order flow</span>
+                    <span class="hero-section__eyebrow">Checkout</span>
                     <h2 class="customer-panel__title">Choose your delivery details</h2>
                 </div>
             </div>
@@ -61,11 +61,6 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
             <?php if (!empty($formError)): ?>
                 <div class="alert alert-danger" role="alert"><?= e((string) $formError) ?></div>
             <?php endif; ?>
-
-            <div class="alert alert-warning" role="alert">
-                <strong>No online payment is collected on this site.</strong>
-                <span class="d-block mt-2">Submitting this form creates a pending order only. Any real payment processing must happen through a verified external provider.</span>
-            </div>
 
             <form class="customer-form" method="post" action="/customer/checkout.php">
                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -91,13 +86,13 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
                     </div>
                 </div>
 
-                <button class="btn btn-brand w-100" type="submit">Place order request</button>
+                <button class="btn btn-brand w-100" type="submit">Place order</button>
             </form>
         </section>
 
         <aside class="summary-card summary-card--checkout">
             <span class="summary-card__eyebrow">Order summary</span>
-            <h3>What you’re ordering</h3>
+            <h3>Your items</h3>
             <div class="summary-card__rows">
                 <?php foreach ($cart['items'] as $item): ?>
                     <div class="summary-row summary-row--item">
@@ -118,7 +113,7 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
                     <strong><?= e((string) $cart['grand_total_formatted']) ?></strong>
                 </div>
             </div>
-            <p class="summary-card__note">This total is shown for reference only. Orders placed here stay pending until you confirm payment through a verified external process.</p>
+            <p class="summary-card__note">Review your totals carefully before placing the order.</p>
         </aside>
     </div>
 <?php endif; ?>

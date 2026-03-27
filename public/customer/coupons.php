@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'customer') {
-    header('Location: /login.php');
-    exit;
-}
+require_role('customer');
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
@@ -16,6 +13,7 @@ $pageTitle = 'My Coupons';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
 $pageSkeletonVariant = 'panel';
+$robotsMeta = 'noindex, nofollow, noarchive';
 
 try {
     if (!$connection) {

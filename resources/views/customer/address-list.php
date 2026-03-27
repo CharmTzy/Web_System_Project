@@ -15,7 +15,7 @@
     <?php if ($addresses === []): ?>
         <div class="empty-state">
             <h3>No addresses yet.</h3>
-            <p>Add a shipping address to speed up your checkout experience.</p>
+            <p>Add a delivery address to keep your account details organized.</p>
             <button class="btn btn-brand" type="button" data-address-add>Add your first address</button>
         </div>
     <?php else: ?>

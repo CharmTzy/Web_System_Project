@@ -3,7 +3,7 @@
     <div class="section-block__header">
         <div>
             <span class="results-header__eyebrow">Seller catalog management</span>
-            <h2><?= e((string) count($products)) ?> products</h2>
+            <h2><?= e((string) ($pagination['total_items'] ?? count($products))) ?> products</h2>
         </div>
         <a class="btn btn-brand" href="/admin/product-edit.php">Create product</a>
     </div>
@@ -74,5 +74,6 @@
                 </tbody>
             </table>
         </div>
+        <?= render('partials/pagination', ['pagination' => $pagination ?? null]) ?>
     <?php endif; ?>
 </div>

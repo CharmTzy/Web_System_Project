@@ -60,8 +60,6 @@ final class CheckoutService
                 'shipping_postal_code' => $address['postal_code'],
                 'shipping_country' => $address['country'],
                 'shipping_phone' => $address['phone'],
-                'payment_card_brand' => null,
-                'payment_card_last_four' => null,
                 'subtotal' => $summary['subtotal'],
                 'shipping_fee' => $summary['shipping'],
                 'total' => $summary['grand_total'],

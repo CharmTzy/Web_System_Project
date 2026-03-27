@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: /login.php');
-    exit;
-}
+require_role('admin');
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
@@ -42,7 +39,7 @@ try {
 $pageTitle = 'Chat Monitor';
 $appName = $config['app']['name'];
 $pageScript = 'chat.js';
-$pageSkeletonVariant = 'panel';
+$pageSkeletonVariant = 'admin-chat';
 $cartSummary = ['total_items' => 0];
 $chatWebSocketUrl = chat_websocket_url($config['app']);
 
