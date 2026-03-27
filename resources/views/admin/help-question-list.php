@@ -3,7 +3,7 @@
     <div class="section-block__header">
         <div>
             <span class="results-header__eyebrow">Help center management</span>
-            <h2><?= e((string) count($questions)) ?> questions</h2>
+            <h2><?= e((string) ($pagination['total_items'] ?? count($questions))) ?> questions</h2>
         </div>
         <a class="btn btn-brand" href="/admin/help-question-edit.php">Add question</a>
     </div>
@@ -79,5 +79,6 @@
                 </tbody>
             </table>
         </div>
+        <?= render('partials/pagination', ['pagination' => $pagination ?? null]) ?>
     <?php endif; ?>
 </div>

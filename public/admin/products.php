@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: /login.php');
-    exit;
-}
+require_role('admin');
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
@@ -42,6 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+$page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
+$pagination = paginate_items($service->listProducts(), $page, 10);
+
 $pageTitle = 'Manage Products';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
@@ -59,7 +59,8 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     <section class="catalog-section">
         <div class="container">
             <?= render('admin/product-list', [
-                'products' => $service->listProducts(),
+                'products' => $pagination['items'],
+                'pagination' => $pagination,
                 'notice' => flash('admin_products_notice'),
                 'error' => flash('admin_products_error'),
             ]) ?>

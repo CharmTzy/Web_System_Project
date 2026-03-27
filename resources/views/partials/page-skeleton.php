@@ -5,7 +5,105 @@ declare(strict_types=1);
 $variant = (string) ($variant ?? 'panel');
 ?>
 <div class="page-skeleton page-skeleton--<?= e($variant) ?>" data-page-skeleton aria-hidden="true">
-    <?php if ($variant === 'help'): ?>
+    <?php if (str_starts_with($variant, 'admin-')): ?>
+        <div class="page-skeleton__admin-shell">
+            <aside class="page-skeleton__admin-sidebar">
+                <div class="page-skeleton__admin-brand">
+                    <span class="page-skeleton__admin-brand-mark skeleton-shimmer"></span>
+                    <div class="page-skeleton__admin-brand-copy">
+                        <span class="page-skeleton__admin-brand-line page-skeleton__admin-brand-line--title skeleton-shimmer"></span>
+                        <span class="page-skeleton__admin-brand-line skeleton-shimmer"></span>
+                    </div>
+                </div>
+
+                <span class="page-skeleton__admin-profile skeleton-shimmer"></span>
+
+                <div class="page-skeleton__admin-nav">
+                    <?php for ($i = 0; $i < 7; $i++): ?>
+                        <span class="page-skeleton__admin-nav-item skeleton-shimmer"></span>
+                    <?php endfor; ?>
+                </div>
+
+                <div class="page-skeleton__admin-meta">
+                    <span class="page-skeleton__admin-meta-item skeleton-shimmer"></span>
+                    <span class="page-skeleton__admin-meta-item skeleton-shimmer"></span>
+                </div>
+            </aside>
+
+            <div class="page-skeleton__admin-content">
+                <?php if ($variant === 'admin-dashboard'): ?>
+                    <section class="page-skeleton__admin-hero">
+                        <span class="page-skeleton__section-kicker skeleton-shimmer"></span>
+                        <span class="page-skeleton__section-title skeleton-shimmer"></span>
+                        <span class="page-skeleton__section-copy skeleton-shimmer"></span>
+                    </section>
+
+                    <div class="page-skeleton__admin-metrics">
+                        <?php for ($i = 0; $i < 6; $i++): ?>
+                            <span class="page-skeleton__admin-metric-card skeleton-shimmer"></span>
+                        <?php endfor; ?>
+                    </div>
+
+                    <div class="page-skeleton__admin-charts">
+                        <?php for ($i = 0; $i < 4; $i++): ?>
+                            <span class="page-skeleton__admin-chart-card skeleton-shimmer"></span>
+                        <?php endfor; ?>
+                    </div>
+                <?php elseif ($variant === 'admin-form'): ?>
+                    <section class="page-skeleton__admin-hero">
+                        <span class="page-skeleton__section-kicker skeleton-shimmer"></span>
+                        <span class="page-skeleton__section-title page-skeleton__section-title--medium skeleton-shimmer"></span>
+                        <span class="page-skeleton__section-copy skeleton-shimmer"></span>
+                    </section>
+
+                    <section class="page-skeleton__admin-form-card">
+                        <div class="page-skeleton__field-stack">
+                            <span class="page-skeleton__field skeleton-shimmer"></span>
+                            <span class="page-skeleton__field skeleton-shimmer"></span>
+                            <span class="page-skeleton__field skeleton-shimmer"></span>
+                            <div class="page-skeleton__field-row">
+                                <span class="page-skeleton__field skeleton-shimmer"></span>
+                                <span class="page-skeleton__field skeleton-shimmer"></span>
+                            </div>
+                            <span class="page-skeleton__field skeleton-shimmer"></span>
+                            <span class="page-skeleton__button skeleton-shimmer"></span>
+                        </div>
+                    </section>
+                <?php elseif ($variant === 'admin-chat'): ?>
+                    <section class="page-skeleton__admin-hero">
+                        <span class="page-skeleton__section-kicker skeleton-shimmer"></span>
+                        <span class="page-skeleton__section-title skeleton-shimmer"></span>
+                        <span class="page-skeleton__section-copy skeleton-shimmer"></span>
+                    </section>
+
+                    <div class="page-skeleton__admin-chat-shell">
+                        <span class="page-skeleton__admin-chat-list skeleton-shimmer"></span>
+                        <span class="page-skeleton__admin-chat-panel skeleton-shimmer"></span>
+                    </div>
+                <?php else: ?>
+                    <section class="page-skeleton__admin-hero">
+                        <span class="page-skeleton__section-kicker skeleton-shimmer"></span>
+                        <span class="page-skeleton__section-title page-skeleton__section-title--medium skeleton-shimmer"></span>
+                        <span class="page-skeleton__section-copy skeleton-shimmer"></span>
+                    </section>
+
+                    <div class="page-skeleton__admin-toolbar">
+                        <span class="page-skeleton__admin-toolbar-control page-skeleton__admin-toolbar-control--wide skeleton-shimmer"></span>
+                        <div class="page-skeleton__admin-toolbar-actions">
+                            <span class="page-skeleton__admin-toolbar-control skeleton-shimmer"></span>
+                            <span class="page-skeleton__admin-toolbar-control skeleton-shimmer"></span>
+                        </div>
+                    </div>
+
+                    <section class="page-skeleton__admin-table-card">
+                        <?php for ($i = 0; $i < 6; $i++): ?>
+                            <span class="page-skeleton__admin-table-row skeleton-shimmer"></span>
+                        <?php endfor; ?>
+                    </section>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php elseif ($variant === 'help'): ?>
         <div class="page-skeleton__help-header">
             <div class="container">
                 <div class="page-skeleton__help-brand-group">

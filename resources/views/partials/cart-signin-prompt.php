@@ -5,7 +5,7 @@ declare(strict_types=1);
 $compact = (bool) ($compact ?? false);
 $loginUrl = (string) ($login_url ?? '/login.php?redirect=%2Fcart.html&cart_notice=full-cart');
 $title = (string) ($title ?? 'Sign in to view your cart.');
-$copy = (string) ($copy ?? 'Save items to your account, review your cart, and continue to checkout after signing in.');
+$copy = (string) ($copy ?? 'Review your cart and continue with your order after signing in.');
 $ctaLabel = (string) ($cta_label ?? 'Go to sign in');
 ?>
 <div class="empty-state<?= $compact ? ' empty-state--compact' : '' ?>">

@@ -21,7 +21,7 @@ INSERT INTO categories (id, name, slug, description) VALUES
 
 INSERT INTO help_categories (id, name, slug, description, icon_key, sort_order) VALUES
     (1, 'Shop with NovaMarket', 'shop-with-novamarket', 'Buying basics, gift options, and everyday marketplace support.', 'shop', 1),
-    (2, 'Deals & Rewards', 'deals-rewards', 'Promo codes, vouchers, reward points, and campaign deals.', 'tag', 2),
+    (2, 'Deals & Promotions', 'deals-rewards', 'Promo codes, coupons, and campaign offers.', 'tag', 2),
     (3, 'Order Requests', 'order-requests', 'Cart, address checks, and order-request issues.', 'document', 3),
     (4, 'Orders & Shipping', 'orders-shipping', 'Order tracking, delivery timing, address edits, and shipping issues.', 'truck', 4),
     (5, 'Returns & Refunds', 'returns-refunds', 'Return requests, refund timing, and damaged-item support.', 'refresh', 5),
@@ -37,7 +37,7 @@ INSERT INTO help_questions (id, category_id, question, answer, is_hot, sort_orde
     (5, 5, 'How do I request a return or refund?', 'Open the order, choose the return or refund option, describe the issue clearly, and attach supporting photos if needed. Requests are reviewed based on the seller''s return window and NovaMarket policy.', 1, 5),
     (6, 3, 'Why can''t I save my order request?', 'Order requests can fail if your cart is empty, the selected shipping address is incomplete, stock changed before submission, or your session expired. Refresh the page, review your cart, and try again with a valid delivery address.', 1, 6),
     (7, 7, 'What items are not eligible for return?', 'Used personal-care goods, customized products, digital items, and products marked as non-returnable are usually excluded unless they arrive damaged or incorrect. Always check the product listing and policy notes before purchase.', 1, 7),
-    (8, 2, 'How do I use a promo code or reward voucher?', 'Apply the promo code from your coupon wallet while reviewing your cart or order request. Some rewards require a minimum spend, a valid campaign period, or specific product eligibility, so check the promotion terms if the discount is not applied.', 1, 8);
+    (8, 2, 'How do I use a promo code or coupon?', 'Apply the promo code from your coupon center while reviewing your cart or order. Some offers require a minimum spend, a valid campaign period, or specific product eligibility, so check the promotion terms if the discount is not applied.', 1, 8);
 
 INSERT INTO coupons (
     id,

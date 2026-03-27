@@ -8,6 +8,7 @@
   const mobileLinksEl = document.querySelector('.mobile-drawer__links');
   const marketSubnav = document.querySelector('.market-subnav');
   const mobileNav = document.querySelector('.mobile-drawer__nav');
+  const isStorefrontCustomerScreen = document.body?.matches?.('[data-catalog-page], [data-product-screen], [data-cart-screen]') ?? false;
   const headerState = (window.__novaHeaderState = window.__novaHeaderState || {
     cartCount: 0,
     notificationCount: 0,
@@ -25,6 +26,12 @@
 
       const user = data.user;
       const role = user.role;
+
+      if (role === 'admin' && isStorefrontCustomerScreen) {
+        window.location.replace('/admin/');
+        return;
+      }
+
       const notificationsUrl = '/profile.php#notifications';
 
       let dashboardUrl = '/profile.php';

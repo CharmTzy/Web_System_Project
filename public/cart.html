@@ -20,6 +20,11 @@
         })
           .then((response) => response.json())
           .then((payload) => {
+            if (payload.ok && payload.logged_in && payload.user?.role === "admin") {
+              window.location.replace("/admin/");
+              return;
+            }
+
             if (!payload.ok || payload.logged_in) {
               return;
             }

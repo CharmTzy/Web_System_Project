@@ -12,7 +12,7 @@ $hasCoupons = $featured !== []
 ?>
 <section class="hero-section hero-section--compact">
     <div class="container">
-        <span class="hero-section__eyebrow">Rewards wallet</span>
+        <span class="hero-section__eyebrow">Offers & savings</span>
         <h1 class="hero-section__title" style="max-width:16ch;">My Coupons</h1>
         <p class="hero-section__copy coupon-hero__copy">Keep your limited-time discounts, shipping perks, and shop
             offers in one place while you browse the catalog.</p>
@@ -43,7 +43,7 @@ $hasCoupons = $featured !== []
             <div class="section-block">
                 <div class="empty-state">
                     <h3>No coupons available yet.</h3>
-                    <p>Your coupon wallet will appear here once discount campaigns are added to the database.</p>
+                    <p>Your coupon center will appear here once discount campaigns are added to the database.</p>
                     <a class="btn btn-brand" href="/">Continue shopping</a>
                 </div>
             </div>

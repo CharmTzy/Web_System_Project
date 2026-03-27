@@ -21,6 +21,7 @@ $notificationsUrl = '/profile.php#notifications';
 $isCustomer = $isLoggedIn && $sessionRole === 'customer';
 $isSeller = $isLoggedIn && $sessionRole === 'seller';
 $isAdmin = $isLoggedIn && $sessionRole === 'admin';
+$isAdminArea = $isAdmin && str_starts_with($currentPath, '/admin/');
 
 $dashboardUrl = '/profile.php';
 if ($isAdmin) {
@@ -61,11 +62,22 @@ $marketNavLinks[] = ['label' => 'Help', 'href' => '/help.php', 'active' => $curr
 
 $mobileAccountLinks = [];
 $pageSkeletonVariant = $pageSkeletonVariant ?? match (true) {
+    $isAdminArea && ($currentPath === '/admin/' || $currentPath === '/admin/index.php') => 'admin-dashboard',
+    $isAdminArea && in_array($currentPath, [
+        '/admin/profile.php',
+        '/admin/user-edit.php',
+        '/admin/product-edit.php',
+        '/admin/address-edit.php',
+        '/admin/coupon-edit.php',
+        '/admin/help-question-edit.php',
+    ], true) => 'admin-form',
+    $isAdminArea && $currentPath === '/admin/chat.php' => 'admin-chat',
+    $isAdminArea => 'admin-table',
     $currentPath === '/profile.php',
-    $currentPath === '/seller/store-profile.php',
-    $currentPath === '/admin/user-edit.php' => 'form',
+    $currentPath === '/seller/store-profile.php' => 'form',
     default => 'panel',
 };
+$bodyClasses = trim($bodyClasses . ($isAdminArea ? ' admin-body' : ''));
 
 if ($isLoggedIn) {
     if ($isCustomer) {
@@ -184,6 +196,28 @@ if ($robotsMeta !== '' && !headers_sent()) {
             window.addEventListener('load', scheduleReveal, { once: true });
         })();
     </script>
+    <?php if ($isAdminArea): ?>
+        <div class="admin-shell">
+            <?= render('layouts/admin-sidebar', [
+                'currentPath' => $currentPath,
+                'appName' => $appName,
+                'sessionName' => $sessionName,
+                'sessionRole' => $sessionRole,
+            ]) ?>
+            <button class="admin-shell__backdrop" type="button" data-admin-sidebar-close aria-label="Close admin sidebar"></button>
+            <div class="admin-shell__content">
+                <div class="admin-topbar">
+                    <button class="admin-shell__toggle" type="button" data-admin-sidebar-toggle aria-controls="adminSidebar" aria-expanded="true" aria-label="Toggle admin sidebar">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div class="admin-topbar__titles">
+                        <span class="admin-topbar__eyebrow">Admin console</span>
+                        <strong><?= e($pageTitle) ?></strong>
+                    </div>
+                </div>
+    <?php else: ?>
     <header class="site-header site-header--market">
         <div class="container">
             <div class="site-header__main site-header__main--market">
@@ -315,3 +349,4 @@ if ($robotsMeta !== '' && !headers_sent()) {
             </div>
         </div>
     </div>
+    <?php endif; ?>

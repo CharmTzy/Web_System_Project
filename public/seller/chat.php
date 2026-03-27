@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'seller') {
-    header('Location: /login.php');
-    exit;
-}
+require_role('seller');
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
