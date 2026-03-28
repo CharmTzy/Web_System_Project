@@ -91,6 +91,29 @@
     }
   };
 
+  const submitReviewRequest = async (formData) => {
+    const response = await fetch("/api/reviews.php", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      body: formData,
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok || !payload.ok) {
+      if (payload.login_url) {
+        window.location.href = payload.login_url;
+        return null;
+      }
+
+      throw new Error(payload.message || "Unable to update your review.");
+    }
+
+    return payload;
+  };
+
   document.addEventListener("submit", async (event) => {
     const form = event.target.closest("[data-review-form]");
 
@@ -109,27 +132,10 @@
     try {
       const formData = new FormData(form);
 
-      if (submitter?.hasAttribute("data-review-delete")) {
-        formData.set("action", "delete");
-      }
+      const payload = await submitReviewRequest(formData);
 
-      const response = await fetch("/api/reviews.php", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-        },
-        body: formData,
-      });
-
-      const payload = await response.json();
-
-      if (!response.ok || !payload.ok) {
-        if (payload.login_url) {
-          window.location.href = payload.login_url;
-          return;
-        }
-
-        throw new Error(payload.message || "Unable to save your review.");
+      if (!payload) {
+        return;
       }
 
       await loadProduct();
@@ -140,6 +146,48 @@
       if (submitter) {
         submitter.removeAttribute("disabled");
       }
+    }
+  });
+
+  document.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-review-delete]");
+
+    if (!button) {
+      return;
+    }
+
+    const form = button.closest("[data-review-form]");
+
+    if (!form) {
+      return;
+    }
+
+    const confirmed = window.confirm("Are you sure you want to delete your review?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    button.setAttribute("disabled", "disabled");
+
+    try {
+      const formData = new FormData();
+      formData.set("csrf_token", form.querySelector('[name="csrf_token"]')?.value || "");
+      formData.set("product_id", form.querySelector('[name="product_id"]')?.value || "");
+      formData.set("action", "delete");
+
+      const payload = await submitReviewRequest(formData);
+
+      if (!payload) {
+        return;
+      }
+
+      await loadProduct();
+      storefront.flashMessage?.(payload.message || "Review removed.");
+    } catch (error) {
+      storefront.flashMessage?.(error.message || "Unable to delete your review.", "error");
+    } finally {
+      button.removeAttribute("disabled");
     }
   });
 

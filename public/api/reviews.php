@@ -74,6 +74,13 @@ try {
 
             $result = $service->saveForUser($productId, $userId, $_POST);
 
+            $existingReview = $reviewRepository->findByProductAndUser($productId, $userId);
+
+            if ($existingReview !== null) {
+                handleReviewMediaUpload($reviewRepository, (int) $existingReview['id']);
+                $result = $service->forProduct($productId, $userId);
+            }
+
             respond([
                 'ok' => true,
                 'message' => 'Thanks for sharing your review.',
@@ -242,6 +249,75 @@ try {
         'ok' => false,
         'message' => service_unavailable_message(),
     ], 500);
+}
+
+function handleReviewMediaUpload(\App\Repositories\ReviewRepository $reviewRepository, int $reviewId): void
+{
+    $uploadMap = [
+        'photo' => [
+            'field' => 'photo',
+            'extensions' => ['jpg', 'jpeg', 'png', 'webp'],
+            'max_size' => 3 * 1024 * 1024,
+            'directory' => dirname(__DIR__) . '/uploads/reviews/photos',
+        ],
+        'video' => [
+            'field' => 'video',
+            'extensions' => ['mp4', 'webm'],
+            'max_size' => 15 * 1024 * 1024,
+            'directory' => dirname(__DIR__) . '/uploads/reviews/videos',
+        ],
+    ];
+
+    foreach ($uploadMap as $mediaType => $config) {
+        $field = $config['field'];
+
+        if (!isset($_FILES[$field]) || !is_array($_FILES[$field])) {
+            continue;
+        }
+
+        $file = $_FILES[$field];
+
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+
+        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            continue;
+        }
+
+        if (($file['size'] ?? 0) > $config['max_size']) {
+            continue;
+        }
+
+        $originalName = (string) ($file['name'] ?? '');
+        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+        if (!in_array($extension, $config['extensions'], true)) {
+            continue;
+        }
+
+        if (!is_dir($config['directory'])) {
+            mkdir($config['directory'], 0775, true);
+        }
+
+        $filename = sprintf(
+            '%s_%s.%s',
+            $mediaType,
+            bin2hex(random_bytes(12)),
+            $extension
+        );
+
+        $destination = $config['directory'] . DIRECTORY_SEPARATOR . $filename;
+
+        if (!move_uploaded_file((string) $file['tmp_name'], $destination)) {
+            continue;
+        }
+
+        $publicPath = str_replace(dirname(__DIR__), '', $destination);
+        $publicPath = str_replace('\\', '/', $publicPath);
+
+        $reviewRepository->addMedia($reviewId, $mediaType, $publicPath);
+    }
 }
 
 function respond(array $payload, int $status = 200): never
