@@ -20,6 +20,10 @@ $cartService = new \App\Services\CartService(
 );
 $orderRepository = new \App\Repositories\OrderRepository($connection);
 $reviewRepository = new \App\Repositories\ReviewRepository($connection);
+$returnRequestService = new \App\Services\OrderReturnRequestService(
+    new \App\Repositories\OrderReturnRequestRepository($connection),
+    $orderRepository
+);
 
 $orders = $orderRepository->listByCustomer((int) $_SESSION['user_id']);
 $page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
@@ -33,6 +37,7 @@ foreach ($pagination['items'] as $order) {
 }
 
 $reviewedProductIds = $reviewRepository->reviewedProductIdsForUser((int) $_SESSION['user_id'], $productIds);
+$returnRequestsByPackage = $returnRequestService->requestsByPackageForCustomer((int) $_SESSION['user_id']);
 
 $pageTitle = 'My Orders';
 $appName = $config['app']['name'];
@@ -54,8 +59,10 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
                 'orders' => $pagination['items'],
                 'pagination' => $pagination,
                 'reviewedProductIds' => $reviewedProductIds,
+                'returnRequestsByPackage' => $returnRequestsByPackage,
+                'returnRequestsEnabled' => $returnRequestService->isAvailable(),
                 'notice' => flash('orders_notice'),
-                'error' => flash('checkout_error'),
+                'error' => flash('orders_error') ?: flash('checkout_error'),
             ]) ?>
         </div>
     </section>

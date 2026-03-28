@@ -28,6 +28,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
+        if (isset($_POST['quick_status'])) {
+            $existingFulfillment = $orderManagementService->findForSeller($fulfillmentId, $sellerId);
+
+            if ($existingFulfillment !== null) {
+                $_POST['status'] = (string) $_POST['quick_status'];
+                $_POST['courier_name'] = (string) ($existingFulfillment['courier_name'] ?? '');
+                $_POST['tracking_number'] = (string) ($existingFulfillment['tracking_number'] ?? '');
+                $_POST['estimated_delivery_date'] = (string) ($existingFulfillment['estimated_delivery_date'] ?? '');
+                $_POST['status_note'] = (string) ($existingFulfillment['status_note'] ?? '');
+            }
+        }
+
         $orderManagementService->updateForSeller($fulfillmentId, $sellerId, $_POST);
         flash('seller_order_notice', 'Delivery package updated successfully.');
     } catch (\Throwable $exception) {
@@ -68,6 +80,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
                 'viewer' => 'seller',
                 'fulfillment' => $fulfillment,
                 'statusOptions' => $orderManagementService->sellerStatusOptions(),
+                'quickActions' => $orderManagementService->sellerQuickActions($fulfillment),
                 'notice' => flash('seller_order_notice'),
                 'error' => flash('seller_order_error'),
             ]) ?>

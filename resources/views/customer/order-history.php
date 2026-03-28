@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 $orders = $orders ?? [];
 $reviewedProductIds = array_map('intval', $reviewedProductIds ?? []);
+$returnRequestsByPackage = $returnRequestsByPackage ?? [];
+$returnRequestsEnabled = $returnRequestsEnabled ?? false;
 $notice = $notice ?? null;
 $error = $error ?? null;
 $pagination = $pagination ?? null;
@@ -59,6 +61,16 @@ $pagination = $pagination ?? null;
 
                 <div class="order-card__fulfillments">
                     <?php foreach (($order['fulfillments'] ?? []) as $fulfillment): ?>
+                        <?php
+                        $returnRequestKey = (int) ($fulfillment['order_id'] ?? 0) . ':' . (int) ($fulfillment['seller_id'] ?? 0);
+                        $linkedReturnRequest = $returnRequestsByPackage[$returnRequestKey] ?? null;
+                        $canOpenReturnRequest = $returnRequestsEnabled
+                            && (string) ($fulfillment['status'] ?? '') === 'delivered'
+                            && !(
+                                is_array($linkedReturnRequest)
+                                && in_array((string) ($linkedReturnRequest['status'] ?? ''), ['pending', 'approved', 'received'], true)
+                            );
+                        ?>
                         <section class="order-fulfillment">
                             <div class="order-fulfillment__header">
                                 <div>
@@ -110,9 +122,16 @@ $pagination = $pagination ?? null;
                                         </div>
                                         <div class="order-card__item-actions">
                                             <strong><?= e((string) $item['line_total_formatted']) ?></strong>
-                                            <a class="btn btn-brand-outline btn-sm" href="<?= e($productLink) ?>#product-reviews">
-                                                <?= $isReviewed ? 'Update review' : 'Write review' ?>
-                                            </a>
+                                            <div class="order-card__item-actions-row">
+                                                <?php if ($returnRequestsEnabled && (is_array($linkedReturnRequest) || $canOpenReturnRequest)): ?>
+                                                    <a class="btn btn-brand-outline btn-sm" href="/customer/return-request.php?order_id=<?= e((string) $order['id']) ?>&seller_id=<?= e((string) $fulfillment['seller_id']) ?>">
+                                                        <?= is_array($linkedReturnRequest) ? 'View return / refund' : 'Return / refund' ?>
+                                                    </a>
+                                                <?php endif; ?>
+                                                <a class="btn btn-brand-outline btn-sm" href="<?= e($productLink) ?>#product-reviews">
+                                                    <?= $isReviewed ? 'Update review' : 'Write review' ?>
+                                                </a>
+                                            </div>
                                         </div>
                                     </article>
                                 <?php endforeach; ?>

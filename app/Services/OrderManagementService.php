@@ -64,6 +64,40 @@ final class OrderManagementService
         return $this->buildStatusOptions(self::SELLER_STATUSES);
     }
 
+    public function sellerQuickActions(array $fulfillment): array
+    {
+        $status = (string) ($fulfillment['status'] ?? '');
+
+        return match ($status) {
+            'pending', 'paid' => [[
+                'value' => 'processing',
+                'label' => 'Approve order',
+                'description' => 'Confirm the order is accepted and ready for store handling.',
+            ]],
+            'processing' => [[
+                'value' => 'packed',
+                'label' => 'Mark as packed',
+                'description' => 'Confirm the package is packed and ready for courier handoff.',
+            ]],
+            'packed' => [[
+                'value' => 'shipped',
+                'label' => 'Mark as shipped',
+                'description' => 'Use this once the parcel is handed to the courier.',
+            ]],
+            'shipped' => [[
+                'value' => 'out_for_delivery',
+                'label' => 'Mark out for delivery',
+                'description' => 'Show the buyer the courier is completing the final delivery leg.',
+            ]],
+            'out_for_delivery' => [[
+                'value' => 'delivered',
+                'label' => 'Mark as delivered',
+                'description' => 'Confirm the package has reached the customer.',
+            ]],
+            default => [],
+        };
+    }
+
     public function summarize(array $fulfillments): array
     {
         $summary = [

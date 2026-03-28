@@ -194,6 +194,21 @@ final class OrderRepository
         return $orders[0] ?? null;
     }
 
+    public function findById(int $orderId): ?array
+    {
+        $statement = $this->connection->prepare('SELECT * FROM orders WHERE id = :id LIMIT 1');
+        $statement->execute(['id' => $orderId]);
+        $row = $statement->fetch();
+
+        if (!is_array($row)) {
+            return null;
+        }
+
+        $orders = $this->attachOrderRelations([$this->normalizeOrder($row)]);
+
+        return $orders[0] ?? null;
+    }
+
     public function markPaidByOrderNumber(string $orderNumber): bool
     {
         $statement = $this->connection->prepare(
@@ -332,6 +347,30 @@ final class OrderRepository
         }
 
         return $this->findFulfillment($fulfillmentId, $sellerId);
+    }
+
+    public function findPackageForCustomer(int $orderId, int $customerId, int $sellerId): ?array
+    {
+        $order = $this->findByIdForCustomer($orderId, $customerId);
+
+        return $this->packageFromOrder($order, $sellerId);
+    }
+
+    public function findPackageForSellerOrder(int $orderId, int $sellerId): ?array
+    {
+        $order = $this->findById($orderId);
+        $package = $this->packageFromOrder($order, $sellerId);
+
+        if ($package === null || (int) ($package['seller_id'] ?? 0) !== $sellerId) {
+            return null;
+        }
+
+        return $package;
+    }
+
+    public function findPackageForAdminOrder(int $orderId, int $sellerId): ?array
+    {
+        return $this->packageFromOrder($this->findById($orderId), $sellerId);
     }
 
     public function updateFulfillment(int $fulfillmentId, array $attributes): ?array
@@ -500,6 +539,21 @@ final class OrderRepository
         }
 
         return $this->orderItemSignature($order['items'] ?? []) === $this->orderItemSignature($items);
+    }
+
+    private function packageFromOrder(?array $order, int $sellerId): ?array
+    {
+        if (!is_array($order) || $sellerId < 1) {
+            return null;
+        }
+
+        foreach (($order['fulfillments'] ?? []) as $fulfillment) {
+            if ((int) ($fulfillment['seller_id'] ?? 0) === $sellerId) {
+                return $fulfillment;
+            }
+        }
+
+        return null;
     }
 
     private function orderItemSignature(array $items): array

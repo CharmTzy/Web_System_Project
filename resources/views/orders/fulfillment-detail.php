@@ -5,6 +5,7 @@ declare(strict_types=1);
 $fulfillment = $fulfillment ?? null;
 $viewer = (string) ($viewer ?? 'admin');
 $statusOptions = $statusOptions ?? [];
+$quickActions = $quickActions ?? [];
 $notice = $notice ?? null;
 $error = $error ?? null;
 $isAdmin = $viewer === 'admin';
@@ -44,23 +45,44 @@ $isEditable = !empty($fulfillment['is_editable']);
 
             <div class="delivery-meta-grid">
                 <article class="delivery-meta-card">
-                    <span class="results-header__eyebrow">Package</span>
-                    <strong><?= e((string) $fulfillment['item_count']) ?> items / <?= e((string) $fulfillment['item_quantity']) ?> units</strong>
-                    <p>Seller subtotal <?= e((string) $fulfillment['seller_subtotal_formatted']) ?></p>
+                    <span class="delivery-meta-card__label">Package overview</span>
+                    <strong class="delivery-meta-card__value"><?= e((string) $fulfillment['item_count']) ?> items / <?= e((string) $fulfillment['item_quantity']) ?> units</strong>
+                    <p class="delivery-meta-card__hint">Seller subtotal <?= e((string) $fulfillment['seller_subtotal_formatted']) ?></p>
                 </article>
 
                 <article class="delivery-meta-card">
-                    <span class="results-header__eyebrow">Seller</span>
-                    <strong><?= e((string) $fulfillment['seller_name']) ?></strong>
-                    <p><?= e((string) ($fulfillment['courier_name'] ?: 'Courier not assigned yet')) ?></p>
+                    <span class="delivery-meta-card__label">Store handling this package</span>
+                    <strong class="delivery-meta-card__value"><?= e((string) $fulfillment['seller_name']) ?></strong>
+                    <p class="delivery-meta-card__hint"><?= e((string) ($fulfillment['courier_name'] ?: 'Courier not assigned yet')) ?></p>
                 </article>
 
                 <article class="delivery-meta-card">
-                    <span class="results-header__eyebrow">Customer</span>
-                    <strong><?= e((string) ($fulfillment['customer_name'] ?: $fulfillment['shipping_recipient'])) ?></strong>
-                    <p><?= e((string) ($fulfillment['customer_email'] ?: $fulfillment['shipping_phone'] ?: 'Customer contact available in shipping address')) ?></p>
+                    <span class="delivery-meta-card__label">Customer contact</span>
+                    <strong class="delivery-meta-card__value"><?= e((string) ($fulfillment['customer_name'] ?: $fulfillment['shipping_recipient'])) ?></strong>
+                    <p class="delivery-meta-card__hint"><?= e((string) ($fulfillment['customer_email'] ?: $fulfillment['shipping_phone'] ?: 'Customer contact available in shipping address')) ?></p>
                 </article>
             </div>
+
+            <?php if (!$isAdmin && $isEditable && $quickActions !== []): ?>
+                <div class="delivery-action-bar">
+                    <div>
+                        <span class="delivery-action-bar__eyebrow">Seller quick actions</span>
+                        <h3>Approve the next delivery step</h3>
+                    </div>
+                    <div class="delivery-action-bar__actions">
+                        <?php foreach ($quickActions as $action): ?>
+                            <form method="post">
+                                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                <input type="hidden" name="quick_status" value="<?= e((string) $action['value']) ?>">
+                                <button class="btn btn-brand" type="submit"><?= e((string) $action['label']) ?></button>
+                            </form>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php if (!empty($quickActions[0]['description'])): ?>
+                        <p class="delivery-action-bar__copy"><?= e((string) $quickActions[0]['description']) ?></p>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
             <?php if ($isEditable): ?>
                 <form class="delivery-update-form" method="post">
@@ -119,15 +141,21 @@ $isEditable = !empty($fulfillment['is_editable']);
                     </div>
                 </div>
                 <div class="delivery-address-card">
-                    <strong><?= e((string) $fulfillment['shipping_recipient']) ?></strong>
-                    <p><?= e((string) $fulfillment['shipping_line_1']) ?></p>
-                    <?php if (!empty($fulfillment['shipping_line_2'])): ?>
-                        <p><?= e((string) $fulfillment['shipping_line_2']) ?></p>
-                    <?php endif; ?>
-                    <p><?= e(trim((string) ($fulfillment['shipping_city'] . ', ' . $fulfillment['shipping_state'] . ' ' . $fulfillment['shipping_postal_code']))) ?></p>
-                    <p><?= e((string) $fulfillment['shipping_country']) ?></p>
+                    <span class="delivery-address-card__label">Delivery contact</span>
+                    <strong class="delivery-address-card__name"><?= e((string) $fulfillment['shipping_recipient']) ?></strong>
+                    <div class="delivery-address-card__lines">
+                        <p><?= e((string) $fulfillment['shipping_line_1']) ?></p>
+                        <?php if (!empty($fulfillment['shipping_line_2'])): ?>
+                            <p><?= e((string) $fulfillment['shipping_line_2']) ?></p>
+                        <?php endif; ?>
+                        <p><?= e(trim((string) ($fulfillment['shipping_city'] . ', ' . $fulfillment['shipping_state'] . ' ' . $fulfillment['shipping_postal_code']))) ?></p>
+                        <p><?= e((string) $fulfillment['shipping_country']) ?></p>
+                    </div>
                     <?php if (!empty($fulfillment['shipping_phone'])): ?>
-                        <p><?= e((string) $fulfillment['shipping_phone']) ?></p>
+                        <div class="delivery-address-card__contact">
+                            <span>Phone</span>
+                            <strong><?= e((string) $fulfillment['shipping_phone']) ?></strong>
+                        </div>
                     <?php endif; ?>
                 </div>
             </section>
@@ -140,19 +168,19 @@ $isEditable = !empty($fulfillment['is_editable']);
                     </div>
                 </div>
                 <div class="delivery-timeline">
-                    <div>
+                    <div class="delivery-timeline__row">
                         <span>Status</span>
                         <strong><?= e((string) $fulfillment['status_label']) ?></strong>
                     </div>
-                    <div>
+                    <div class="delivery-timeline__row">
                         <span>Courier</span>
                         <strong><?= e((string) ($fulfillment['courier_name'] ?: 'Pending assignment')) ?></strong>
                     </div>
-                    <div>
+                    <div class="delivery-timeline__row">
                         <span>Tracking</span>
                         <strong><?= e((string) ($fulfillment['tracking_number'] ?: 'Pending assignment')) ?></strong>
                     </div>
-                    <div>
+                    <div class="delivery-timeline__row">
                         <span>Estimated delivery</span>
                         <strong><?= e((string) ($fulfillment['estimated_delivery_date_formatted'] ?: 'Not set yet')) ?></strong>
                     </div>
