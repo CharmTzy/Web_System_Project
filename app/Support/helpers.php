@@ -76,6 +76,40 @@ function request_is_secure(): bool
         || $serverPort === '443';
 }
 
+function request_origin(): ?string
+{
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
+
+    if ($host === '') {
+        return null;
+    }
+
+    return (request_is_secure() ? 'https' : 'http') . '://' . $host;
+}
+
+function url_origin(string $url): ?string
+{
+    $parts = parse_url($url);
+
+    if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+        return null;
+    }
+
+    $origin = strtolower((string) $parts['scheme']) . '://' . strtolower((string) $parts['host']);
+    $port = isset($parts['port']) ? (int) $parts['port'] : null;
+
+    if ($port !== null) {
+        $isDefaultPort = ($parts['scheme'] === 'http' && $port === 80)
+            || ($parts['scheme'] === 'https' && $port === 443);
+
+        if (!$isDefaultPort) {
+            $origin .= ':' . $port;
+        }
+    }
+
+    return $origin;
+}
+
 function bootstrap_session_security(): void
 {
     if (session_status() !== PHP_SESSION_NONE) {
@@ -106,10 +140,22 @@ function send_security_headers(): void
         return;
     }
 
+    $formActionSources = ["'self'"];
+
+    foreach ([
+        request_origin(),
+        url_origin((string) env('APP_URL', '')),
+        'https://checkout.stripe.com',
+    ] as $origin) {
+        if ($origin !== null && !in_array($origin, $formActionSources, true)) {
+            $formActionSources[] = $origin;
+        }
+    }
+
     $contentSecurityPolicy = implode('; ', [
         "default-src 'self'",
         "base-uri 'self'",
-        "form-action 'self'",
+        'form-action ' . implode(' ', $formActionSources),
         "frame-ancestors 'none'",
         "object-src 'none'",
         "img-src 'self' data: https://storage.googleapis.com",
@@ -141,6 +187,43 @@ function env(string $key, mixed $default = null): mixed
     }
 
     return $value;
+}
+
+function stripe_mode(?array $appConfig = null): string
+{
+    $keys = [
+        trim((string) ($appConfig['stripe_secret_key'] ?? env('STRIPE_SECRET_KEY', ''))),
+        trim((string) ($appConfig['stripe_publishable_key'] ?? env('STRIPE_PUBLISHABLE_KEY', ''))),
+    ];
+
+    foreach ($keys as $key) {
+        if ($key === '') {
+            continue;
+        }
+
+        if (
+            str_starts_with($key, 'sk_test_')
+            || str_starts_with($key, 'pk_test_')
+            || str_starts_with($key, 'rk_test_')
+        ) {
+            return 'test';
+        }
+
+        if (
+            str_starts_with($key, 'sk_live_')
+            || str_starts_with($key, 'pk_live_')
+            || str_starts_with($key, 'rk_live_')
+        ) {
+            return 'live';
+        }
+    }
+
+    return 'unconfigured';
+}
+
+function payments_use_test_mode(?array $appConfig = null): bool
+{
+    return stripe_mode($appConfig) === 'test';
 }
 
 function e(mixed $value): string
@@ -384,6 +467,100 @@ function flash(string $key, mixed $value = null): mixed
     unset($_SESSION['_flash'][$key]);
 
     return $stored;
+}
+
+function stripe_api_request(string $method, string $path, string $secretKey, array $params = []): array
+{
+    if ($secretKey === '') {
+        throw new RuntimeException('Stripe secret key is not configured.');
+    }
+
+    $url = 'https://api.stripe.com/v1/' . ltrim($path, '/');
+    $curl = curl_init();
+
+    if ($curl === false) {
+        throw new RuntimeException('Failed to initialize Stripe request.');
+    }
+
+    $upperMethod = strtoupper($method);
+    $headers = [
+        'Authorization: Bearer ' . $secretKey,
+    ];
+
+    if ($upperMethod === 'GET' && $params !== []) {
+        $url .= '?' . http_build_query($params);
+    }
+
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_TIMEOUT, 25);
+    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $upperMethod);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+
+    if (in_array($upperMethod, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+        curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($params));
+    }
+
+    $responseBody = curl_exec($curl);
+    $httpCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($curl);
+    curl_close($curl);
+
+    if (!is_string($responseBody)) {
+        throw new RuntimeException($curlError !== '' ? $curlError : 'No response from Stripe API.');
+    }
+
+    $decoded = json_decode($responseBody, true);
+
+    if (!is_array($decoded)) {
+        throw new RuntimeException('Invalid response from Stripe API.');
+    }
+
+    if ($httpCode >= 400 || !empty($decoded['error'])) {
+        $message = (string) ($decoded['error']['message'] ?? 'Stripe API request failed.');
+        throw new RuntimeException($message);
+    }
+
+    return $decoded;
+}
+
+function stripe_verify_webhook_signature(string $payload, string $signatureHeader, string $webhookSecret, int $toleranceSeconds = 300): bool
+{
+    if ($payload === '' || $signatureHeader === '' || $webhookSecret === '') {
+        return false;
+    }
+
+    $parts = [];
+
+    foreach (explode(',', $signatureHeader) as $component) {
+        [$key, $value] = array_pad(explode('=', trim($component), 2), 2, '');
+
+        if ($key !== '') {
+            $parts[$key][] = $value;
+        }
+    }
+
+    $timestamp = isset($parts['t'][0]) ? (int) $parts['t'][0] : 0;
+    $signatures = $parts['v1'] ?? [];
+
+    if ($timestamp <= 0 || $signatures === []) {
+        return false;
+    }
+
+    if (abs(time() - $timestamp) > $toleranceSeconds) {
+        return false;
+    }
+
+    $signedPayload = $timestamp . '.' . $payload;
+    $expected = hash_hmac('sha256', $signedPayload, $webhookSecret);
+
+    foreach ($signatures as $signature) {
+        if (is_string($signature) && hash_equals($expected, $signature)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function role_home_path(?string $role): string

@@ -60,6 +60,9 @@ if ($isCustomer) {
 
 $marketNavLinks[] = ['label' => 'Help', 'href' => '/help.php', 'active' => $currentPath === '/help.php'];
 
+$paymentsInTestMode = payments_use_test_mode(isset($config['app']) ? $config['app'] : null);
+$showPaymentTestModeNotice = !$isAdminArea && $paymentsInTestMode;
+
 $mobileAccountLinks = [];
 $pageSkeletonVariant = $pageSkeletonVariant ?? match (true) {
     $isAdminArea && ($currentPath === '/admin/' || $currentPath === '/admin/index.php') => 'admin-dashboard',
@@ -73,6 +76,7 @@ $pageSkeletonVariant = $pageSkeletonVariant ?? match (true) {
     ], true) => 'admin-form',
     $isAdminArea && $currentPath === '/admin/chat.php' => 'admin-chat',
     $isAdminArea => 'admin-table',
+    in_array($currentPath, ['/privacy.php', '/terms.php', '/contact.php'], true) => 'legal',
     $currentPath === '/profile.php',
     $currentPath === '/seller/store-profile.php' => 'form',
     default => 'panel',
@@ -316,6 +320,12 @@ if ($robotsMeta !== '' && !headers_sent()) {
                     <a href="<?= e((string) $link['href']) ?>" <?= !empty($link['active']) ? ' aria-current="page"' : '' ?>><?= e((string) $link['label']) ?></a>
                 <?php endforeach; ?>
             </nav>
+            <?php if ($showPaymentTestModeNotice): ?>
+                <div class="site-status-banner site-status-banner--warning" role="status">
+                    <strong>Stripe test mode active.</strong>
+                    <span>Use Stripe test cards only. This environment is not processing live charges.</span>
+                </div>
+            <?php endif; ?>
         </div>
     </header>
 

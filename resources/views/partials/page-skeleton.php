@@ -276,6 +276,34 @@ $variant = (string) ($variant ?? 'panel');
                             </div>
                         </section>
                     </div>
+                <?php elseif ($variant === 'legal'): ?>
+                    <section class="page-skeleton__hero-compact">
+                        <span class="page-skeleton__section-kicker skeleton-shimmer"></span>
+                        <span class="page-skeleton__section-title skeleton-shimmer"></span>
+                        <span class="page-skeleton__section-copy skeleton-shimmer"></span>
+                    </section>
+
+                    <div class="page-skeleton__detail-grid">
+                        <section class="page-skeleton__section-card page-skeleton__panel-card page-skeleton__panel-card--primary">
+                            <span class="page-skeleton__section-title page-skeleton__section-title--medium skeleton-shimmer"></span>
+                            <span class="page-skeleton__copy-line skeleton-shimmer"></span>
+                            <span class="page-skeleton__copy-line skeleton-shimmer"></span>
+                            <span class="page-skeleton__copy-line page-skeleton__copy-line--short skeleton-shimmer"></span>
+                            <span class="page-skeleton__detail-card skeleton-shimmer"></span>
+                        </section>
+                        <div class="page-skeleton__field-stack">
+                            <section class="page-skeleton__section-card">
+                                <span class="page-skeleton__section-title page-skeleton__section-title--small skeleton-shimmer"></span>
+                                <span class="page-skeleton__copy-line skeleton-shimmer"></span>
+                                <span class="page-skeleton__copy-line page-skeleton__copy-line--short skeleton-shimmer"></span>
+                            </section>
+                            <section class="page-skeleton__section-card">
+                                <span class="page-skeleton__section-title page-skeleton__section-title--small skeleton-shimmer"></span>
+                                <span class="page-skeleton__copy-line skeleton-shimmer"></span>
+                                <span class="page-skeleton__copy-line page-skeleton__copy-line--short skeleton-shimmer"></span>
+                            </section>
+                        </div>
+                    </div>
                 <?php else: ?>
                     <section class="page-skeleton__hero-compact">
                         <span class="page-skeleton__section-kicker skeleton-shimmer"></span>
