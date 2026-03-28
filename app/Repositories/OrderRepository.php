@@ -10,6 +10,8 @@ use RuntimeException;
 
 final class OrderRepository
 {
+    private const SYNTHETIC_FULFILLMENT_SCALE = 1000000;
+
     private ?bool $fulfillmentsTableAvailable = null;
 
     public function __construct(private readonly PDO $connection)
@@ -244,10 +246,48 @@ final class OrderRepository
         return $this->attachOrderRelations($orders);
     }
 
+    public function findMatchingPendingOrderForCustomer(int $customerId, array $snapshot, array $items): ?array
+    {
+        foreach ($this->pendingOrdersForCustomer($customerId) as $order) {
+            if ($this->orderMatchesSnapshot($order, $snapshot, $items)) {
+                return $order;
+            }
+        }
+
+        return null;
+    }
+
+    public function deleteMatchingPendingOrdersForCustomerExcept(int $customerId, int $keepOrderId, array $snapshot, array $items): void
+    {
+        $duplicateIds = [];
+
+        foreach ($this->pendingOrdersForCustomer($customerId) as $order) {
+            $orderId = (int) ($order['id'] ?? 0);
+
+            if ($orderId === $keepOrderId) {
+                continue;
+            }
+
+            if ($this->orderMatchesSnapshot($order, $snapshot, $items)) {
+                $duplicateIds[] = $orderId;
+            }
+        }
+
+        if ($duplicateIds === []) {
+            return;
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($duplicateIds), '?'));
+        $statement = $this->connection->prepare(
+            "DELETE FROM orders WHERE customer_id = ? AND status = 'pending' AND id IN ($placeholders)"
+        );
+        $statement->execute(array_merge([$customerId], $duplicateIds));
+    }
+
     public function listFulfillmentsForAdmin(): array
     {
         if (!$this->fulfillmentsTableAvailable()) {
-            return [];
+            return $this->listFallbackFulfillments();
         }
 
         $statement = $this->connection->query(
@@ -261,7 +301,7 @@ final class OrderRepository
     public function listFulfillmentsForSeller(int $sellerId): array
     {
         if (!$this->fulfillmentsTableAvailable()) {
-            return [];
+            return $this->listFallbackFulfillments($sellerId);
         }
 
         $statement = $this->connection->prepare(
@@ -274,11 +314,23 @@ final class OrderRepository
 
     public function findFulfillmentForAdmin(int $fulfillmentId): ?array
     {
+        if (!$this->fulfillmentsTableAvailable()) {
+            return $this->findFallbackFulfillmentById($fulfillmentId);
+        }
+
         return $this->findFulfillment($fulfillmentId);
     }
 
     public function findFulfillmentForSeller(int $fulfillmentId, int $sellerId): ?array
     {
+        if (!$this->fulfillmentsTableAvailable()) {
+            $fulfillment = $this->findFallbackFulfillmentById($fulfillmentId);
+
+            return $fulfillment !== null && (int) ($fulfillment['seller_id'] ?? 0) === $sellerId
+                ? $fulfillment
+                : null;
+        }
+
         return $this->findFulfillment($fulfillmentId, $sellerId);
     }
 
@@ -403,6 +455,81 @@ final class OrderRepository
         unset($order);
 
         return $orders;
+    }
+
+    private function pendingOrdersForCustomer(int $customerId): array
+    {
+        $statement = $this->connection->prepare(
+            <<<SQL
+            SELECT *
+            FROM orders
+            WHERE customer_id = :customer_id
+              AND status = 'pending'
+            ORDER BY created_at DESC, id DESC
+            LIMIT 25
+            SQL
+        );
+        $statement->execute(['customer_id' => $customerId]);
+        $orders = array_map(fn (array $row): array => $this->normalizeOrder($row), $statement->fetchAll());
+
+        return $this->attachOrderRelations($orders);
+    }
+
+    private function orderMatchesSnapshot(array $order, array $snapshot, array $items): bool
+    {
+        foreach ([
+            'customer_id',
+            'shipping_recipient',
+            'shipping_line_1',
+            'shipping_line_2',
+            'shipping_city',
+            'shipping_state',
+            'shipping_postal_code',
+            'shipping_country',
+            'shipping_phone',
+        ] as $field) {
+            if ($this->normalizeSnapshotValue($order[$field] ?? null) !== $this->normalizeSnapshotValue($snapshot[$field] ?? null)) {
+                return false;
+            }
+        }
+
+        foreach (['subtotal', 'shipping_fee', 'total'] as $field) {
+            if (!$this->sameMoneyValue($order[$field] ?? 0, $snapshot[$field] ?? 0)) {
+                return false;
+            }
+        }
+
+        return $this->orderItemSignature($order['items'] ?? []) === $this->orderItemSignature($items);
+    }
+
+    private function orderItemSignature(array $items): array
+    {
+        $signature = array_map(
+            static function (array $item): string {
+                return implode(':', [
+                    (int) ($item['product_id'] ?? 0),
+                    (int) ($item['seller_id'] ?? 0),
+                    (int) ($item['quantity'] ?? 0),
+                    number_format((float) ($item['unit_price'] ?? 0), 2, '.', ''),
+                    number_format((float) ($item['line_total'] ?? 0), 2, '.', ''),
+                ]);
+            },
+            $items
+        );
+
+        sort($signature);
+
+        return $signature;
+    }
+
+    private function normalizeSnapshotValue(mixed $value): string
+    {
+        return trim((string) ($value ?? ''));
+    }
+
+    private function sameMoneyValue(mixed $left, mixed $right): bool
+    {
+        return round((float) $left, 2) === round((float) $right, 2);
     }
 
     private function itemsForOrderIds(array $orderIds): array
@@ -693,6 +820,207 @@ final class OrderRepository
         return $items;
     }
 
+    private function listFallbackFulfillments(?int $sellerId = null): array
+    {
+        $sql = $this->fallbackFulfillmentSelectSql();
+        $params = [];
+
+        if ($sellerId !== null) {
+            $sql .= ' WHERE p.seller_id = :seller_id';
+            $params['seller_id'] = $sellerId;
+        }
+
+        $sql .= "\n" . <<<SQL
+            GROUP BY
+                o.id,
+                o.order_number,
+                o.status,
+                o.customer_id,
+                customer.id,
+                customer.name,
+                customer.email,
+                p.seller_id,
+                seller.id,
+                seller.name,
+                sp.store_name,
+                o.shipping_recipient,
+                o.shipping_line_1,
+                o.shipping_line_2,
+                o.shipping_city,
+                o.shipping_state,
+                o.shipping_postal_code,
+                o.shipping_country,
+                o.shipping_phone,
+                o.created_at,
+                o.updated_at
+            ORDER BY o.updated_at DESC, o.created_at DESC, o.id DESC
+            SQL;
+
+        $statement = $this->connection->prepare($sql);
+        $statement->execute($params);
+
+        return array_map(
+            fn (array $row): array => $this->normalizeFallbackFulfillment($row),
+            $statement->fetchAll()
+        );
+    }
+
+    private function findFallbackFulfillmentById(int $fulfillmentId): ?array
+    {
+        $decoded = $this->decodeSyntheticFulfillmentId($fulfillmentId);
+
+        if ($decoded === null) {
+            return null;
+        }
+
+        return $this->findFallbackFulfillment($decoded['order_id'], $decoded['seller_id']);
+    }
+
+    private function findFallbackFulfillment(int $orderId, int $sellerId): ?array
+    {
+        $statement = $this->connection->prepare(
+            $this->fallbackFulfillmentSelectSql()
+                . ' WHERE o.id = :order_id AND p.seller_id = :seller_id'
+                . "\n" . <<<SQL
+                    GROUP BY
+                        o.id,
+                        o.order_number,
+                        o.status,
+                        o.customer_id,
+                        customer.id,
+                        customer.name,
+                        customer.email,
+                        p.seller_id,
+                        seller.id,
+                        seller.name,
+                        sp.store_name,
+                        o.shipping_recipient,
+                        o.shipping_line_1,
+                        o.shipping_line_2,
+                        o.shipping_city,
+                        o.shipping_state,
+                        o.shipping_postal_code,
+                        o.shipping_country,
+                        o.shipping_phone,
+                        o.created_at,
+                        o.updated_at
+                    LIMIT 1
+                    SQL
+        );
+        $statement->execute([
+            'order_id' => $orderId,
+            'seller_id' => $sellerId,
+        ]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? $this->normalizeFallbackFulfillment($row) : null;
+    }
+
+    private function fallbackFulfillmentSelectSql(): string
+    {
+        return <<<SQL
+            SELECT
+                o.id AS order_id,
+                o.order_number,
+                o.status AS order_status,
+                o.customer_id,
+                customer.name AS customer_name,
+                customer.email AS customer_email,
+                p.seller_id,
+                COALESCE(sp.store_name, seller.name) AS seller_name,
+                ROUND(COALESCE(SUM(oi.line_total), 0), 2) AS seller_subtotal,
+                COUNT(oi.id) AS item_count,
+                COALESCE(SUM(oi.quantity), 0) AS item_quantity,
+                o.shipping_recipient,
+                o.shipping_line_1,
+                o.shipping_line_2,
+                o.shipping_city,
+                o.shipping_state,
+                o.shipping_postal_code,
+                o.shipping_country,
+                o.shipping_phone,
+                o.created_at,
+                o.updated_at,
+                o.created_at AS order_created_at
+            FROM orders o
+            INNER JOIN order_items oi
+                ON oi.order_id = o.id
+            INNER JOIN products p
+                ON p.id = oi.product_id
+            INNER JOIN users customer
+                ON customer.id = o.customer_id
+            INNER JOIN users seller
+                ON seller.id = p.seller_id
+            LEFT JOIN seller_profiles sp
+                ON sp.user_id = seller.id
+            SQL;
+    }
+
+    private function normalizeFallbackFulfillment(array $row): array
+    {
+        $normalized = $this->normalizeFulfillment([
+            'id' => $this->encodeSyntheticFulfillmentId((int) $row['order_id'], (int) $row['seller_id']),
+            'order_id' => $row['order_id'],
+            'seller_id' => $row['seller_id'],
+            'status' => $this->fulfillmentStatusFromOrderStatus((string) ($row['order_status'] ?? 'pending')),
+            'seller_subtotal' => $row['seller_subtotal'],
+            'item_count' => $row['item_count'],
+            'item_quantity' => $row['item_quantity'],
+            'courier_name' => null,
+            'tracking_number' => null,
+            'status_note' => null,
+            'estimated_delivery_date' => null,
+            'shipped_at' => null,
+            'out_for_delivery_at' => null,
+            'delivered_at' => null,
+            'created_at' => $row['created_at'],
+            'updated_at' => $row['updated_at'],
+            'order_number' => $row['order_number'],
+            'order_status' => $row['order_status'],
+            'customer_id' => $row['customer_id'],
+            'shipping_recipient' => $row['shipping_recipient'],
+            'shipping_line_1' => $row['shipping_line_1'],
+            'shipping_line_2' => $row['shipping_line_2'],
+            'shipping_city' => $row['shipping_city'],
+            'shipping_state' => $row['shipping_state'],
+            'shipping_postal_code' => $row['shipping_postal_code'],
+            'shipping_country' => $row['shipping_country'],
+            'shipping_phone' => $row['shipping_phone'],
+            'order_created_at' => $row['order_created_at'],
+            'customer_name' => $row['customer_name'],
+            'customer_email' => $row['customer_email'],
+            'seller_name' => $row['seller_name'],
+        ]);
+        $normalized['items'] = $this->itemsForFulfillment((int) $normalized['order_id'], (int) $normalized['seller_id']);
+
+        return $normalized;
+    }
+
+    private function encodeSyntheticFulfillmentId(int $orderId, int $sellerId): int
+    {
+        return -((($orderId * self::SYNTHETIC_FULFILLMENT_SCALE)) + $sellerId);
+    }
+
+    private function decodeSyntheticFulfillmentId(int $fulfillmentId): ?array
+    {
+        if ($fulfillmentId >= 0) {
+            return null;
+        }
+
+        $encoded = abs($fulfillmentId);
+        $sellerId = $encoded % self::SYNTHETIC_FULFILLMENT_SCALE;
+        $orderId = intdiv($encoded, self::SYNTHETIC_FULFILLMENT_SCALE);
+
+        if ($orderId < 1 || $sellerId < 1) {
+            return null;
+        }
+
+        return [
+            'order_id' => $orderId,
+            'seller_id' => $sellerId,
+        ];
+    }
+
     private function findFulfillment(int $fulfillmentId, ?int $sellerId = null): ?array
     {
         if (!$this->fulfillmentsTableAvailable()) {
@@ -964,6 +1292,7 @@ final class OrderRepository
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => (string) ($row['updated_at'] ?? ''),
             'order_created_at' => (string) ($row['order_created_at'] ?? ($row['created_at'] ?? '')),
+            'is_editable' => (int) $row['id'] > 0,
         ];
     }
 

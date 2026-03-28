@@ -68,6 +68,36 @@ if ($order['status'] === 'pending' && $sessionId !== '' && !empty($config['app']
     }
 }
 
+$pendingOrderMarker = (string) ($_SESSION['checkout_pending_order'] ?? '');
+$pendingCartSignature = (string) ($_SESSION['checkout_pending_signature'] ?? '');
+
+if ($pendingOrderMarker === $orderNumber && in_array((string) $order['status'], ['paid', 'shipped', 'delivered'], true)) {
+    $cartSignature = static function (array $items): string {
+        $signature = array_map(
+            static fn (array $item): string => implode(':', [
+                (int) ($item['product_id'] ?? 0),
+                (int) ($item['seller_id'] ?? 0),
+                (int) ($item['quantity'] ?? 0),
+                number_format((float) ($item['unit_price'] ?? 0), 2, '.', ''),
+                number_format((float) ($item['line_total'] ?? 0), 2, '.', ''),
+            ]),
+            $items
+        );
+
+        sort($signature);
+
+        return implode('|', $signature);
+    };
+
+    $currentCart = $cartService->summary();
+
+    if (!empty($currentCart['is_empty']) || ($pendingCartSignature !== '' && $cartSignature($currentCart['items']) === $pendingCartSignature)) {
+        $cartService->clear();
+    }
+
+    unset($_SESSION['checkout_pending_order'], $_SESSION['checkout_pending_signature']);
+}
+
 $paymentsInTestMode = payments_use_test_mode($config['app']);
 $pageTitle = 'Payment status';
 $appName = $config['app']['name'];

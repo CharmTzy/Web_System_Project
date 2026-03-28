@@ -6,6 +6,20 @@ INSERT INTO users (id, name, email, password_hash, role) VALUES
     (5, 'Tide Carry Co.', 'seller4@meridianmart.test', '$2y$12$eBzUWJoDoB55n7mjjzpaquK/l.EfPgXG7xL/0dEKaSsxhK7o8T2yq', 'seller'),
     (6, 'Sample Customer', 'customer@meridianmart.test', '$2y$12$eBzUWJoDoB55n7mjjzpaquK/l.EfPgXG7xL/0dEKaSsxhK7o8T2yq', 'customer');
 
+INSERT INTO addresses (
+    user_id,
+    label,
+    recipient,
+    line_1,
+    city,
+    state,
+    postal_code,
+    country,
+    phone,
+    is_default
+) VALUES
+    (6, 'Home', 'Sample Customer', '123 Orchard Road, #04-56', 'Singapore', 'Central', '238888', 'Singapore', '+65 9123 4567', 1);
+
 INSERT INTO seller_profiles (user_id, store_name, store_slug, support_email) VALUES
     (2, 'Northwind Audio', 'northwind-audio', 'support@northwind-audio.test'),
     (3, 'Summit Office', 'summit-office', 'support@summit-office.test'),

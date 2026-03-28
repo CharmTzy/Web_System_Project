@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$fulfillment = $fulfillmentId > 0 ? $orderManagementService->findForAdmin($fulfillmentId) : null;
+$fulfillment = $fulfillmentId !== 0 ? $orderManagementService->findForAdmin($fulfillmentId) : null;
 
 if ($fulfillment === null) {
     flash('admin_orders_error', 'That delivery package could not be found.');

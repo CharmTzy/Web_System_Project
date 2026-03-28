@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$fulfillment = $fulfillmentId > 0 ? $orderManagementService->findForSeller($fulfillmentId, $sellerId) : null;
+$fulfillment = $fulfillmentId !== 0 ? $orderManagementService->findForSeller($fulfillmentId, $sellerId) : null;
 
 if ($fulfillment === null) {
     flash('seller_orders_error', 'That delivery package could not be found in your store.');

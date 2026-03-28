@@ -25,8 +25,20 @@ $orderManagementService = new \App\Services\OrderManagementService(
 
 $profile = $userService->getProfile((int) $_SESSION['user_id']);
 $products = $productService->listSellerProducts((int) $_SESSION['user_id']);
-$fulfillments = $orderManagementService->listForSeller((int) $_SESSION['user_id']);
-$orderStats = $orderManagementService->summarize($fulfillments);
+$orderStats = [
+    'total' => 0,
+    'awaiting_action' => 0,
+    'in_transit' => 0,
+    'delivered' => 0,
+    'cancelled' => 0,
+];
+
+try {
+    $fulfillments = $orderManagementService->listForSeller((int) $_SESSION['user_id']);
+    $orderStats = $orderManagementService->summarize($fulfillments);
+} catch (\Throwable $exception) {
+    report_exception($exception, 'seller.dashboard.orders');
+}
 $stats = [
     'total_products' => count($products),
     'active_products' => count(array_filter($products, static fn (array $product): bool => $product['is_active'])),

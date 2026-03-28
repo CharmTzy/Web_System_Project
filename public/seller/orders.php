@@ -18,7 +18,17 @@ $orderManagementService = new \App\Services\OrderManagementService(
 );
 
 $page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
-$pagination = paginate_items($orderManagementService->listForSeller((int) $_SESSION['user_id']), $page, 10);
+$fulfillments = [];
+$listingError = null;
+
+try {
+    $fulfillments = $orderManagementService->listForSeller((int) $_SESSION['user_id']);
+} catch (\Throwable $exception) {
+    report_exception($exception, 'seller.orders');
+    $listingError = safe_exception_message($exception, 'We could not load your store deliveries right now.');
+}
+
+$pagination = paginate_items($fulfillments, $page, 10);
 
 $pageTitle = 'Store Orders';
 $appName = $config['app']['name'];
@@ -42,7 +52,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
                 'pagination' => $pagination,
                 'viewer' => 'seller',
                 'notice' => flash('seller_orders_notice'),
-                'error' => flash('seller_orders_error'),
+                'error' => $listingError ?? flash('seller_orders_error'),
             ]) ?>
         </div>
     </section>

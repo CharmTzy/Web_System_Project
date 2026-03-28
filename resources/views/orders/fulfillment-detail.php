@@ -8,6 +8,7 @@ $statusOptions = $statusOptions ?? [];
 $notice = $notice ?? null;
 $error = $error ?? null;
 $isAdmin = $viewer === 'admin';
+$isEditable = !empty($fulfillment['is_editable']);
 ?>
 <?php if (!is_array($fulfillment)): ?>
     <div class="empty-state">
@@ -35,6 +36,12 @@ $isAdmin = $viewer === 'admin';
                 <div class="alert alert-danger" role="alert"><?= e((string) $error) ?></div>
             <?php endif; ?>
 
+            <?php if (!$isEditable): ?>
+                <div class="alert alert-warning" role="alert">
+                    Delivery updates are read-only until the order fulfillment migration is applied. You can still review the items and shipping details for this package now.
+                </div>
+            <?php endif; ?>
+
             <div class="delivery-meta-grid">
                 <article class="delivery-meta-card">
                     <span class="results-header__eyebrow">Package</span>
@@ -55,46 +62,52 @@ $isAdmin = $viewer === 'admin';
                 </article>
             </div>
 
-            <form class="delivery-update-form" method="post">
-                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                <div class="delivery-update-form__grid">
-                    <div class="form-group">
-                        <label for="delivery-status">Delivery status</label>
-                        <select id="delivery-status" class="form-select" name="status" required>
-                            <?php foreach ($statusOptions as $option): ?>
-                                <option value="<?= e((string) $option['value']) ?>" <?= (string) $fulfillment['status'] === (string) $option['value'] ? 'selected' : '' ?>>
-                                    <?= e((string) $option['label']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+            <?php if ($isEditable): ?>
+                <form class="delivery-update-form" method="post">
+                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                    <div class="delivery-update-form__grid">
+                        <div class="form-group">
+                            <label for="delivery-status">Delivery status</label>
+                            <select id="delivery-status" class="form-select" name="status" required>
+                                <?php foreach ($statusOptions as $option): ?>
+                                    <option value="<?= e((string) $option['value']) ?>" <?= (string) $fulfillment['status'] === (string) $option['value'] ? 'selected' : '' ?>>
+                                        <?= e((string) $option['label']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delivery-courier">Courier</label>
+                            <input id="delivery-courier" class="form-control" type="text" name="courier_name" maxlength="120" value="<?= e((string) ($fulfillment['courier_name'] ?? '')) ?>" placeholder="e.g. Ninja Van">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delivery-tracking">Tracking number</label>
+                            <input id="delivery-tracking" class="form-control" type="text" name="tracking_number" maxlength="120" value="<?= e((string) ($fulfillment['tracking_number'] ?? '')) ?>" placeholder="Tracking code">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delivery-eta">Estimated delivery date</label>
+                            <input id="delivery-eta" class="form-control" type="date" name="estimated_delivery_date" value="<?= e((string) ($fulfillment['estimated_delivery_date'] ?? '')) ?>">
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="delivery-courier">Courier</label>
-                        <input id="delivery-courier" class="form-control" type="text" name="courier_name" maxlength="120" value="<?= e((string) ($fulfillment['courier_name'] ?? '')) ?>" placeholder="e.g. Ninja Van">
+                        <label for="delivery-note">Status note</label>
+                        <textarea id="delivery-note" class="form-control" name="status_note" rows="4" maxlength="500" placeholder="Add a note the customer and admin can understand."><?= e((string) ($fulfillment['status_note'] ?? '')) ?></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="delivery-tracking">Tracking number</label>
-                        <input id="delivery-tracking" class="form-control" type="text" name="tracking_number" maxlength="120" value="<?= e((string) ($fulfillment['tracking_number'] ?? '')) ?>" placeholder="Tracking code">
+                    <div class="d-flex flex-wrap gap-3">
+                        <button class="btn btn-brand" type="submit">Save delivery update</button>
+                        <a class="btn btn-brand-outline" href="<?= e($isAdmin ? '/admin/orders.php' : '/seller/orders.php') ?>">Back to packages</a>
                     </div>
-
-                    <div class="form-group">
-                        <label for="delivery-eta">Estimated delivery date</label>
-                        <input id="delivery-eta" class="form-control" type="date" name="estimated_delivery_date" value="<?= e((string) ($fulfillment['estimated_delivery_date'] ?? '')) ?>">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="delivery-note">Status note</label>
-                    <textarea id="delivery-note" class="form-control" name="status_note" rows="4" maxlength="500" placeholder="Add a note the customer and admin can understand."><?= e((string) ($fulfillment['status_note'] ?? '')) ?></textarea>
-                </div>
-
+                </form>
+            <?php else: ?>
                 <div class="d-flex flex-wrap gap-3">
-                    <button class="btn btn-brand" type="submit">Save delivery update</button>
                     <a class="btn btn-brand-outline" href="<?= e($isAdmin ? '/admin/orders.php' : '/seller/orders.php') ?>">Back to packages</a>
                 </div>
-            </form>
+            <?php endif; ?>
         </section>
 
         <aside class="delivery-workspace__aside">
