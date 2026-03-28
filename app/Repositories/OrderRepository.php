@@ -156,6 +156,69 @@ final class OrderRepository
         ];
     }
 
+    public function findByOrderNumber(string $orderNumber): ?array
+    {
+        $statement = $this->connection->prepare(
+            'SELECT * FROM orders WHERE order_number = :order_number LIMIT 1'
+        );
+        $statement->execute(['order_number' => $orderNumber]);
+        $row = $statement->fetch();
+
+        if (!is_array($row)) {
+            return null;
+        }
+
+        $orderId = (int) $row['id'];
+
+        return $this->normalizeOrder($row) + [
+            'items' => $this->itemsForOrderIds([$orderId])[$orderId] ?? [],
+        ];
+    }
+
+    public function findByOrderNumberForCustomer(string $orderNumber, int $customerId): ?array
+    {
+        $statement = $this->connection->prepare(
+            'SELECT * FROM orders WHERE order_number = :order_number AND customer_id = :customer_id LIMIT 1'
+        );
+        $statement->execute([
+            'order_number' => $orderNumber,
+            'customer_id' => $customerId,
+        ]);
+        $row = $statement->fetch();
+
+        if (!is_array($row)) {
+            return null;
+        }
+
+        $orderId = (int) $row['id'];
+
+        return $this->normalizeOrder($row) + [
+            'items' => $this->itemsForOrderIds([$orderId])[$orderId] ?? [],
+        ];
+    }
+
+    public function markPaidByOrderNumber(string $orderNumber, ?string $cardBrand = null, ?string $cardLastFour = null): bool
+    {
+        $statement = $this->connection->prepare(
+            <<<SQL
+            UPDATE orders
+            SET status = 'paid',
+                payment_card_brand = COALESCE(:payment_card_brand, payment_card_brand),
+                payment_card_last_four = COALESCE(:payment_card_last_four, payment_card_last_four),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE order_number = :order_number
+              AND status = 'pending'
+            SQL
+        );
+        $statement->execute([
+            'order_number' => $orderNumber,
+            'payment_card_brand' => $cardBrand,
+            'payment_card_last_four' => $cardLastFour,
+        ]);
+
+        return $statement->rowCount() > 0;
+    }
+
     public function listByCustomer(int $customerId): array
     {
         $statement = $this->connection->prepare(

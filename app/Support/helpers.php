@@ -385,3 +385,97 @@ function flash(string $key, mixed $value = null): mixed
 
     return $stored;
 }
+
+function stripe_api_request(string $method, string $path, string $secretKey, array $params = []): array
+{
+    if ($secretKey === '') {
+        throw new RuntimeException('Stripe secret key is not configured.');
+    }
+
+    $url = 'https://api.stripe.com/v1/' . ltrim($path, '/');
+    $curl = curl_init();
+
+    if ($curl === false) {
+        throw new RuntimeException('Failed to initialize Stripe request.');
+    }
+
+    $upperMethod = strtoupper($method);
+    $headers = [
+        'Authorization: Bearer ' . $secretKey,
+    ];
+
+    if ($upperMethod === 'GET' && $params !== []) {
+        $url .= '?' . http_build_query($params);
+    }
+
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_TIMEOUT, 25);
+    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $upperMethod);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+
+    if (in_array($upperMethod, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+        curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($params));
+    }
+
+    $responseBody = curl_exec($curl);
+    $httpCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($curl);
+    curl_close($curl);
+
+    if (!is_string($responseBody)) {
+        throw new RuntimeException($curlError !== '' ? $curlError : 'No response from Stripe API.');
+    }
+
+    $decoded = json_decode($responseBody, true);
+
+    if (!is_array($decoded)) {
+        throw new RuntimeException('Invalid response from Stripe API.');
+    }
+
+    if ($httpCode >= 400 || !empty($decoded['error'])) {
+        $message = (string) ($decoded['error']['message'] ?? 'Stripe API request failed.');
+        throw new RuntimeException($message);
+    }
+
+    return $decoded;
+}
+
+function stripe_verify_webhook_signature(string $payload, string $signatureHeader, string $webhookSecret, int $toleranceSeconds = 300): bool
+{
+    if ($payload === '' || $signatureHeader === '' || $webhookSecret === '') {
+        return false;
+    }
+
+    $parts = [];
+
+    foreach (explode(',', $signatureHeader) as $component) {
+        [$key, $value] = array_pad(explode('=', trim($component), 2), 2, '');
+
+        if ($key !== '') {
+            $parts[$key][] = $value;
+        }
+    }
+
+    $timestamp = isset($parts['t'][0]) ? (int) $parts['t'][0] : 0;
+    $signatures = $parts['v1'] ?? [];
+
+    if ($timestamp <= 0 || $signatures === []) {
+        return false;
+    }
+
+    if (abs(time() - $timestamp) > $toleranceSeconds) {
+        return false;
+    }
+
+    $signedPayload = $timestamp . '.' . $payload;
+    $expected = hash_hmac('sha256', $signedPayload, $webhookSecret);
+
+    foreach ($signatures as $signature) {
+        if (is_string($signature) && hash_equals($expected, $signature)) {
+            return true;
+        }
+    }
+
+    return false;
+}

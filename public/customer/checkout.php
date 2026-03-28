@@ -24,16 +24,6 @@ $cartService = new \App\Services\CartService(
 $addressService = new \App\Services\AddressService(
     new \App\Repositories\AddressRepository($connection)
 );
-$paymentService = new \App\Services\PaymentCardService(
-    new \App\Repositories\PaymentCardRepository($connection)
-);
-$checkoutService = new \App\Services\CheckoutService(
-    $cartService,
-    new \App\Repositories\AddressRepository($connection),
-    new \App\Repositories\PaymentCardRepository($connection),
-    new \App\Repositories\OrderRepository($connection),
-    new \App\Repositories\ProductRepository($connection),
-);
 
 $userId = (int) $_SESSION['user_id'];
 $cartSummary = $cartService->summary();
@@ -45,30 +35,8 @@ if (!empty($cartSummary['is_empty'])) {
 }
 
 $addresses = $addressService->listForUser($userId);
-$paymentCards = $paymentService->listForUser($userId);
-$formError = null;
-$selectedAddressId = (int) ($_POST['address_id'] ?? ($addresses[0]['id'] ?? 0));
-$selectedPaymentCardId = (int) ($_POST['payment_card_id'] ?? ($paymentCards[0]['id'] ?? 0));
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!verify_csrf($_POST['csrf_token'] ?? null)) {
-        $formError = 'Session expired. Please refresh and try again.';
-    } else {
-        try {
-            $order = $checkoutService->checkout(
-                $userId,
-                $selectedAddressId,
-                $selectedPaymentCardId
-            );
-            flash('orders_notice', 'Order ' . $order['order_number'] . ' was placed successfully.');
-            header('Location: /customer/orders.php');
-            exit;
-        } catch (\Throwable $exception) {
-            report_exception($exception, 'customer.checkout');
-            $formError = safe_exception_message($exception, 'We could not complete the checkout right now.');
-        }
-    }
-}
+$formError = flash('checkout_error');
+$selectedAddressId = (int) ($_GET['address_id'] ?? ($addresses[0]['id'] ?? 0));
 
 $pageTitle = 'Checkout';
 $appName = $config['app']['name'];
@@ -80,7 +48,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
         <div class="container">
             <span class="hero-section__eyebrow">Checkout</span>
             <h1 class="hero-section__title" style="max-width:18ch;">Review before payment</h1>
-            <p class="hero-section__copy">Choose a delivery address and saved card, then place your order securely.</p>
+            <p class="hero-section__copy">Choose your delivery address, then continue to Stripe to complete payment securely.</p>
         </div>
     </section>
     <section class="catalog-section">
@@ -88,9 +56,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
             <?= render('customer/checkout-center', [
                 'cart' => $cartSummary,
                 'addresses' => $addresses,
-                'paymentCards' => $paymentCards,
                 'selectedAddressId' => $selectedAddressId,
-                'selectedPaymentCardId' => $selectedPaymentCardId,
                 'formError' => $formError,
             ]) ?>
         </div>

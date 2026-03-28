@@ -134,4 +134,15 @@ final class CartRepository
             throw $exception;
         }
     }
+
+    public function clearActiveCartForUser(int $userId): void
+    {
+        $cartId = $this->findActiveCartIdForUser($userId);
+
+        if ($cartId === null) {
+            return;
+        }
+
+        $this->replaceItems($cartId, []);
+    }
 }
