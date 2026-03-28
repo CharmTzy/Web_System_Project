@@ -8,6 +8,7 @@
   const mobileLinksEl = document.querySelector('.mobile-drawer__links');
   const marketSubnav = document.querySelector('.market-subnav');
   const mobileNav = document.querySelector('.mobile-drawer__nav');
+  const isStorefrontCustomerScreen = document.body?.matches?.('[data-catalog-page], [data-product-screen], [data-cart-screen]') ?? false;
   const headerState = (window.__novaHeaderState = window.__novaHeaderState || {
     cartCount: 0,
     notificationCount: 0,
@@ -25,6 +26,12 @@
 
       const user = data.user;
       const role = user.role;
+
+      if (role === 'admin' && isStorefrontCustomerScreen) {
+        window.location.replace('/admin/');
+        return;
+      }
+
       const notificationsUrl = '/profile.php#notifications';
 
       let dashboardUrl = '/profile.php';
@@ -165,10 +172,6 @@
     chatLink.href = '/customer/chat.php';
     chatLink.textContent = 'Chat';
 
-    const paymentsLink = document.createElement('a');
-    paymentsLink.href = '/customer/payments.php';
-    paymentsLink.textContent = 'Payments';
-
     const addressesLink = document.createElement('a');
     addressesLink.href = '/customer/addresses.php';
     addressesLink.textContent = 'Addresses';
@@ -176,12 +179,10 @@
     if (helpLink) {
       container.insertBefore(ordersLink, helpLink);
       container.insertBefore(chatLink, helpLink);
-      container.insertBefore(paymentsLink, helpLink);
       container.insertBefore(addressesLink, helpLink);
     } else {
       container.appendChild(ordersLink);
       container.appendChild(chatLink);
-      container.appendChild(paymentsLink);
       container.appendChild(addressesLink);
     }
   }

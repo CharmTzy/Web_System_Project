@@ -479,3 +479,80 @@ function stripe_verify_webhook_signature(string $payload, string $signatureHeade
 
     return false;
 }
+
+function role_home_path(?string $role): string
+{
+    return match ($role) {
+        'admin' => '/admin/',
+        'seller' => '/seller/',
+        'customer' => '/index.html',
+        default => '/login.php',
+    };
+}
+
+function require_role(string $requiredRole): void
+{
+    if (empty($_SESSION['user_id'])) {
+        header('Location: /login.php');
+        exit;
+    }
+
+    $currentRole = (string) ($_SESSION['user_role'] ?? '');
+
+    if ($currentRole !== $requiredRole) {
+        header('Location: ' . role_home_path($currentRole));
+        exit;
+    }
+}
+
+function require_any_role(array $allowedRoles): void
+{
+    if (empty($_SESSION['user_id'])) {
+        header('Location: /login.php');
+        exit;
+    }
+
+    $currentRole = (string) ($_SESSION['user_role'] ?? '');
+
+    if (!in_array($currentRole, $allowedRoles, true)) {
+        header('Location: ' . role_home_path($currentRole));
+        exit;
+    }
+}
+
+function redirect_if_role_disallowed(array $disallowedRoles): void
+{
+    if (empty($_SESSION['user_id'])) {
+        return;
+    }
+
+    $currentRole = (string) ($_SESSION['user_role'] ?? '');
+
+    if (in_array($currentRole, $disallowedRoles, true)) {
+        header('Location: ' . role_home_path($currentRole));
+        exit;
+    }
+}
+
+function paginate_items(array $items, int $page = 1, int $perPage = 10): array
+{
+    $perPage = max(1, $perPage);
+    $totalItems = count($items);
+    $totalPages = max(1, (int) ceil($totalItems / $perPage));
+    $page = max(1, min($page, $totalPages));
+    $offset = ($page - 1) * $perPage;
+
+    return [
+        'items' => array_values(array_slice($items, $offset, $perPage)),
+        'page' => $page,
+        'per_page' => $perPage,
+        'total_items' => $totalItems,
+        'total_pages' => $totalPages,
+        'from' => $totalItems === 0 ? 0 : $offset + 1,
+        'to' => $totalItems === 0 ? 0 : min($totalItems, $offset + $perPage),
+        'has_prev' => $page > 1,
+        'has_next' => $page < $totalPages,
+        'prev_page' => max(1, $page - 1),
+        'next_page' => min($totalPages, $page + 1),
+    ];
+}

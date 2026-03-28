@@ -54,8 +54,6 @@ final class OrderRepository
                 shipping_postal_code,
                 shipping_country,
                 shipping_phone,
-                payment_card_brand,
-                payment_card_last_four,
                 subtotal,
                 shipping_fee,
                 total
@@ -71,8 +69,6 @@ final class OrderRepository
                 :shipping_postal_code,
                 :shipping_country,
                 :shipping_phone,
-                :payment_card_brand,
-                :payment_card_last_four,
                 :subtotal,
                 :shipping_fee,
                 :total
@@ -91,8 +87,6 @@ final class OrderRepository
             'shipping_postal_code' => $data['shipping_postal_code'],
             'shipping_country' => $data['shipping_country'],
             'shipping_phone' => $data['shipping_phone'],
-            'payment_card_brand' => $data['payment_card_brand'],
-            'payment_card_last_four' => $data['payment_card_last_four'],
             'subtotal' => $data['subtotal'],
             'shipping_fee' => $data['shipping_fee'],
             'total' => $data['total'],
@@ -252,7 +246,7 @@ final class OrderRepository
                     ON o.id = oi.order_id
                 WHERE o.customer_id = :customer_id
                   AND oi.product_id = :product_id
-                  AND o.status IN ('paid', 'shipped', 'delivered')
+                  AND o.status IN ('pending', 'paid', 'shipped', 'delivered')
                 SQL
             );
             $statement->execute([
@@ -331,8 +325,6 @@ final class OrderRepository
             'shipping_postal_code' => (string) $row['shipping_postal_code'],
             'shipping_country' => (string) $row['shipping_country'],
             'shipping_phone' => $row['shipping_phone'],
-            'payment_card_brand' => $row['payment_card_brand'] !== null ? (string) $row['payment_card_brand'] : null,
-            'payment_card_last_four' => $row['payment_card_last_four'] !== null ? (string) $row['payment_card_last_four'] : null,
             'subtotal' => (float) $row['subtotal'],
             'subtotal_formatted' => money((float) $row['subtotal']),
             'shipping_fee' => (float) $row['shipping_fee'],

@@ -11,6 +11,23 @@
     <link rel="stylesheet" href="/assets/css/app.css" />
   </head>
   <body class="page-loading" data-product-screen>
+    <script>
+      (() => {
+        fetch("/api/session.php", {
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+        })
+          .then((response) => response.json())
+          .then((payload) => {
+            if (payload.ok && payload.logged_in && payload.user?.role === "admin") {
+              window.location.replace("/admin/");
+            }
+          })
+          .catch(() => {
+            // Allow the shared session header logic to handle fallback behavior.
+          });
+      })();
+    </script>
     <div class="page-skeleton page-skeleton--product" data-page-skeleton aria-hidden="true">
       <div class="page-skeleton__market-header">
         <div class="container">

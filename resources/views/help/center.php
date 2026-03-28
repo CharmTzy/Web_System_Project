@@ -56,7 +56,7 @@ $renderHelpIcon = static function (string $iconKey): string {
             <div class="help-center__hero-copy">
                 <span class="hero-section__eyebrow help-center__eyebrow">NovaMarket support</span>
                 <h1>How can we help today?</h1>
-                <p>Find answers for orders, payments, returns, account issues, and store policies without leaving the storefront.</p>
+                <p>Find answers for orders, shipping, returns, account issues, and store policies without leaving the storefront.</p>
             </div>
 
             <form class="help-center-search" action="/help.php" method="get" role="search">

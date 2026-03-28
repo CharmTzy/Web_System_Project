@@ -12,8 +12,14 @@ $authRedirect = (
 ) ? $redirectCandidate : '';
 $cartNotice = trim((string) ($_GET['cart_notice'] ?? ''));
 
+$defaultAuthenticatedRedirect = match ($_SESSION['user_role'] ?? '') {
+    'admin' => '/admin/',
+    'seller' => '/seller/',
+    default => '/index.html',
+};
+
 if (!empty($_SESSION['user_id'])) {
-    header('Location: ' . ($authRedirect !== '' ? $authRedirect : '/profile.php'));
+    header('Location: ' . ($authRedirect !== '' ? $authRedirect : $defaultAuthenticatedRedirect));
     exit;
 }
 
@@ -24,7 +30,7 @@ $bodyClass = 'auth-page auth-page--login';
 $authFormView = 'auth/login-form';
 $authPage = [
     'title' => 'Welcome back to your shopping space',
-    'copy' => 'Sign in to review saved details, manage your cart, and jump back into the latest NovaMarket finds.',
+    'copy' => 'Sign in to review your orders, manage your cart, and return to the latest NovaMarket finds.',
     'utility_links' => [],
     'banner_title' => 'Want to browse first?',
     'banner_copy' => 'The storefront is always open if you want to explore before signing in.',

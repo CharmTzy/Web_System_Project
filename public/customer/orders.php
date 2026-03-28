@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'customer') {
-    header('Location: /login.php');
-    exit;
-}
+require_role('customer');
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
@@ -46,7 +43,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
         <div class="container">
             <span class="hero-section__eyebrow">Order history</span>
             <h1 class="hero-section__title" style="max-width:18ch;">My Orders</h1>
-            <p class="hero-section__copy">Track completed purchases, review what you ordered, and jump back to items you want to rate.</p>
+            <p class="hero-section__copy">Review your recent orders and jump back to items you want to rate.</p>
         </div>
     </section>
     <section class="catalog-section">

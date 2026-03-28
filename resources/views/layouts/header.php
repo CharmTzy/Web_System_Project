@@ -6,6 +6,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $pageTitle = $pageTitle ?? 'Shop';
 $appName = $appName ?? 'NovaMarket';
 $headerSearchValue = $headerSearchValue ?? '';
+$robotsMeta = trim((string) ($robotsMeta ?? ''));
 $cartSummary = $cartSummary ?? [
     'total_items' => 0,
 ];
@@ -20,6 +21,7 @@ $notificationsUrl = '/profile.php#notifications';
 $isCustomer = $isLoggedIn && $sessionRole === 'customer';
 $isSeller = $isLoggedIn && $sessionRole === 'seller';
 $isAdmin = $isLoggedIn && $sessionRole === 'admin';
+$isAdminArea = $isAdmin && str_starts_with($currentPath, '/admin/');
 
 $dashboardUrl = '/profile.php';
 if ($isAdmin) {
@@ -37,7 +39,6 @@ if ($isCustomer) {
     $marketNavLinks[] = ['label' => 'Coupons', 'href' => '/customer/coupons.php', 'active' => $currentPath === '/customer/coupons.php'];
     $marketNavLinks[] = ['label' => 'Orders', 'href' => '/customer/orders.php', 'active' => $currentPath === '/customer/orders.php'];
     $marketNavLinks[] = ['label' => 'Chat', 'href' => '/customer/chat.php', 'active' => $currentPath === '/customer/chat.php'];
-    $marketNavLinks[] = ['label' => 'Payments', 'href' => '/customer/payments.php', 'active' => $currentPath === '/customer/payments.php'];
     $marketNavLinks[] = ['label' => 'Addresses', 'href' => '/customer/addresses.php', 'active' => $currentPath === '/customer/addresses.php'];
 } else {
     $profileShortcut = ['label' => 'Registry', 'href' => '/register.php', 'active' => $currentPath === '/register.php'];
@@ -61,11 +62,22 @@ $marketNavLinks[] = ['label' => 'Help', 'href' => '/help.php', 'active' => $curr
 
 $mobileAccountLinks = [];
 $pageSkeletonVariant = $pageSkeletonVariant ?? match (true) {
+    $isAdminArea && ($currentPath === '/admin/' || $currentPath === '/admin/index.php') => 'admin-dashboard',
+    $isAdminArea && in_array($currentPath, [
+        '/admin/profile.php',
+        '/admin/user-edit.php',
+        '/admin/product-edit.php',
+        '/admin/address-edit.php',
+        '/admin/coupon-edit.php',
+        '/admin/help-question-edit.php',
+    ], true) => 'admin-form',
+    $isAdminArea && $currentPath === '/admin/chat.php' => 'admin-chat',
+    $isAdminArea => 'admin-table',
     $currentPath === '/profile.php',
-    $currentPath === '/seller/store-profile.php',
-    $currentPath === '/admin/user-edit.php' => 'form',
+    $currentPath === '/seller/store-profile.php' => 'form',
     default => 'panel',
 };
+$bodyClasses = trim($bodyClasses . ($isAdminArea ? ' admin-body' : ''));
 
 if ($isLoggedIn) {
     if ($isCustomer) {
@@ -99,6 +111,22 @@ $renderHeaderIcon = static function (string $icon): string {
         default => '',
     };
 };
+
+if (
+    $robotsMeta === ''
+    && (
+        str_starts_with($currentPath, '/customer/')
+        || str_starts_with($currentPath, '/seller/')
+        || str_starts_with($currentPath, '/admin/')
+        || $currentPath === '/profile.php'
+    )
+) {
+    $robotsMeta = 'noindex, nofollow, noarchive';
+}
+
+if ($robotsMeta !== '' && !headers_sent()) {
+    header('X-Robots-Tag: ' . $robotsMeta);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -107,6 +135,9 @@ $renderHeaderIcon = static function (string $icon): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+    <?php if ($robotsMeta !== ''): ?>
+        <meta name="robots" content="<?= e($robotsMeta) ?>">
+    <?php endif; ?>
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,6 +147,9 @@ $renderHeaderIcon = static function (string $icon): string {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
+    <?php if ($isAdminArea): ?>
+        <link rel="stylesheet" href="<?= e(asset('css/admin.css')) ?>">
+    <?php endif; ?>
 </head>
 
 <body class="<?= e($bodyClasses) ?>">
@@ -165,6 +199,28 @@ $renderHeaderIcon = static function (string $icon): string {
             window.addEventListener('load', scheduleReveal, { once: true });
         })();
     </script>
+    <?php if ($isAdminArea): ?>
+        <div class="admin-shell">
+            <?= render('layouts/admin-sidebar', [
+                'currentPath' => $currentPath,
+                'appName' => $appName,
+                'sessionName' => $sessionName,
+                'sessionRole' => $sessionRole,
+            ]) ?>
+            <button class="admin-shell__backdrop" type="button" data-admin-sidebar-close aria-label="Close admin sidebar"></button>
+            <div class="admin-shell__content">
+                <div class="admin-topbar">
+                    <button class="admin-shell__toggle" type="button" data-admin-sidebar-toggle aria-controls="adminSidebar" aria-expanded="true" aria-label="Toggle admin sidebar">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div class="admin-topbar__titles">
+                        <span class="admin-topbar__eyebrow">Admin console</span>
+                        <strong><?= e($pageTitle) ?></strong>
+                    </div>
+                </div>
+    <?php else: ?>
     <header class="site-header site-header--market">
         <div class="container">
             <div class="site-header__main site-header__main--market">
@@ -296,3 +352,4 @@ $renderHeaderIcon = static function (string $icon): string {
             </div>
         </div>
     </div>
+    <?php endif; ?>

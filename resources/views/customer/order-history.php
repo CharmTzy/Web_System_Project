@@ -18,7 +18,7 @@ $error = $error ?? null;
 <?php if ($orders === []): ?>
     <section class="empty-state">
         <h3>No orders yet.</h3>
-        <p>Once you place your first order, it will appear here with its items and payment snapshot.</p>
+        <p>Once you place your first order, it will appear here with its items, delivery details, and current status.</p>
         <a class="btn btn-brand" href="/">Start shopping</a>
     </section>
 <?php else: ?>
@@ -37,9 +37,6 @@ $error = $error ?? null;
                     </div>
                     <div class="order-card__summary">
                         <strong><?= e((string) $order['total_formatted']) ?></strong>
-                        <?php if (!empty($order['payment_card_last_four'])): ?>
-                            <span><?= e(strtoupper((string) ($order['payment_card_brand'] ?? 'card'))) ?> •••• <?= e((string) $order['payment_card_last_four']) ?></span>
-                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -50,7 +47,7 @@ $error = $error ?? null;
                         <p><?= e((string) $order['shipping_line_1']) ?></p>
                     </div>
                     <div>
-                        <span>Totals</span>
+                        <span>Order totals</span>
                         <strong><?= e((string) $order['subtotal_formatted']) ?> + <?= e((string) $order['shipping_fee_formatted']) ?> shipping</strong>
                         <p>Grand total <?= e((string) $order['total_formatted']) ?></p>
                     </div>

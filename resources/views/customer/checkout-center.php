@@ -12,8 +12,8 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
         <section class="customer-panel">
             <div class="customer-panel__header">
                 <div>
-                    <span class="hero-section__eyebrow">Setup required</span>
-                    <h2 class="customer-panel__title">Finish your checkout setup</h2>
+                    <span class="hero-section__eyebrow">Delivery details required</span>
+                    <h2 class="customer-panel__title">Add a delivery address</h2>
                 </div>
             </div>
             <section class="empty-state empty-state--compact customer-panel__empty">
@@ -53,8 +53,8 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
         <section class="customer-panel">
             <div class="customer-panel__header">
                 <div>
-                    <span class="hero-section__eyebrow">Complete payment</span>
-                    <h2 class="customer-panel__title">Choose your delivery and payment details</h2>
+                    <span class="hero-section__eyebrow">Checkout</span>
+                    <h2 class="customer-panel__title">Choose your delivery details</h2>
                 </div>
             </div>
 

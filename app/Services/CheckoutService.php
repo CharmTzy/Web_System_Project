@@ -7,7 +7,6 @@ namespace App\Services;
 use App\Repositories\AddressRepository;
 use App\Repositories\CartRepository;
 use App\Repositories\OrderRepository;
-use App\Repositories\PaymentCardRepository;
 use App\Repositories\ProductRepository;
 use RuntimeException;
 
@@ -16,14 +15,13 @@ final class CheckoutService
     public function __construct(
         private readonly CartService $cartService,
         private readonly AddressRepository $addressRepository,
-        private readonly PaymentCardRepository $paymentCardRepository,
         private readonly OrderRepository $orderRepository,
         private readonly ProductRepository $productRepository,
         private readonly CartRepository $cartRepository,
     ) {
     }
 
-    public function checkout(int $userId, int $addressId, int $paymentCardId): array
+    public function checkout(int $userId, int $addressId): array
     {
         $summary = $this->cartService->summary();
 
@@ -34,11 +32,6 @@ final class CheckoutService
         $address = $this->addressRepository->findById($addressId);
         if ($address === null || $address['user_id'] !== $userId) {
             throw new RuntimeException('Select a valid shipping address.');
-        }
-
-        $paymentCard = $this->paymentCardRepository->findById($paymentCardId);
-        if ($paymentCard === null || $paymentCard['user_id'] !== $userId) {
-            throw new RuntimeException('Select a valid payment method.');
         }
 
         $items = array_map(
@@ -52,7 +45,7 @@ final class CheckoutService
             $summary['items']
         );
 
-        return $this->orderRepository->transaction(function () use ($userId, $address, $paymentCard, $summary, $items) {
+        return $this->orderRepository->transaction(function () use ($userId, $address, $summary, $items) {
             foreach ($items as $item) {
                 $this->productRepository->reduceStock($item['product_id'], $item['quantity']);
             }
@@ -60,7 +53,7 @@ final class CheckoutService
             $orderId = $this->orderRepository->create([
                 'customer_id' => $userId,
                 'order_number' => $this->generateOrderNumber(),
-                'status' => 'paid',
+                'status' => 'pending',
                 'shipping_recipient' => $address['recipient'],
                 'shipping_line_1' => $address['line_1'],
                 'shipping_line_2' => $address['line_2'],
@@ -69,8 +62,6 @@ final class CheckoutService
                 'shipping_postal_code' => $address['postal_code'],
                 'shipping_country' => $address['country'],
                 'shipping_phone' => $address['phone'],
-                'payment_card_brand' => $paymentCard['card_brand'],
-                'payment_card_last_four' => $paymentCard['card_last_four'],
                 'subtotal' => $summary['subtotal'],
                 'shipping_fee' => $summary['shipping'],
                 'total' => $summary['grand_total'],

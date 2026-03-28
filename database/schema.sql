@@ -158,25 +158,6 @@ CREATE TABLE cart_items (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE payment_cards (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,
-    label VARCHAR(50) NOT NULL DEFAULT 'My Card',
-    cardholder_name VARCHAR(120) NOT NULL,
-    card_last_four CHAR(4) NOT NULL,
-    card_brand ENUM('visa', 'mastercard', 'amex', 'discover', 'other') NOT NULL DEFAULT 'visa',
-    expiry_month TINYINT UNSIGNED NOT NULL,
-    expiry_year SMALLINT UNSIGNED NOT NULL,
-    is_default TINYINT(1) NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_payment_cards_user (user_id),
-    INDEX idx_payment_cards_user_default (user_id, is_default),
-    CONSTRAINT fk_payment_cards_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
-        ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE orders (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     customer_id BIGINT UNSIGNED NOT NULL,
@@ -190,8 +171,6 @@ CREATE TABLE orders (
     shipping_postal_code VARCHAR(20) NOT NULL,
     shipping_country VARCHAR(80) NOT NULL DEFAULT 'Singapore',
     shipping_phone VARCHAR(30) DEFAULT NULL,
-    payment_card_brand ENUM('visa', 'mastercard', 'amex', 'discover', 'other') DEFAULT NULL,
-    payment_card_last_four CHAR(4) DEFAULT NULL,
     subtotal DECIMAL(10, 2) NOT NULL,
     shipping_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     total DECIMAL(10, 2) NOT NULL,
@@ -231,7 +210,11 @@ CREATE TABLE product_reviews (
     rating TINYINT UNSIGNED NOT NULL,
     title VARCHAR(120) DEFAULT NULL,
     comment TEXT NOT NULL,
+    seller_reply TEXT DEFAULT NULL,
     is_visible TINYINT(1) NOT NULL DEFAULT 1,
+    is_flagged TINYINT(1) NOT NULL DEFAULT 0,
+    flagged_reason VARCHAR(255) DEFAULT NULL,
+    moderated_by BIGINT UNSIGNED DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_product_reviews_product_user (product_id, user_id),
@@ -242,8 +225,37 @@ CREATE TABLE product_reviews (
     CONSTRAINT fk_product_reviews_user
         FOREIGN KEY (user_id) REFERENCES users(id)
         ON DELETE CASCADE,
+    CONSTRAINT fk_product_reviews_moderated_by
+        FOREIGN KEY (moderated_by) REFERENCES users(id)
+        ON DELETE SET NULL,
     CONSTRAINT chk_product_reviews_rating
         CHECK (rating BETWEEN 1 AND 5)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE product_review_media (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    review_id BIGINT UNSIGNED NOT NULL,
+    media_type ENUM('photo', 'video') NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_product_review_media_once (review_id, media_type),
+    CONSTRAINT fk_product_review_media_review
+        FOREIGN KEY (review_id) REFERENCES product_reviews(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE product_review_flags (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    review_id BIGINT UNSIGNED NOT NULL,
+    flagged_by BIGINT UNSIGNED NOT NULL,
+    reason VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_product_review_flags_review
+        FOREIGN KEY (review_id) REFERENCES product_reviews(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_product_review_flags_user
+        FOREIGN KEY (flagged_by) REFERENCES users(id)
+        ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE chat_conversations (
