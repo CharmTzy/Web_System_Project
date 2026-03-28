@@ -12,7 +12,7 @@ $connection = $database->connection();
 $pageTitle = 'My Coupons';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
-$pageSkeletonVariant = 'panel';
+$pageSkeletonVariant = 'coupons';
 $robotsMeta = 'noindex, nofollow, noarchive';
 
 try {

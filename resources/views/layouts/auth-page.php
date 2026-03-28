@@ -6,7 +6,9 @@ $appName = $appName ?? 'NovaMarket';
 $pageTitle = $pageTitle ?? 'Account';
 $pageScript = $pageScript ?? null;
 $bodyClass = $bodyClass ?? 'auth-page';
+$bodyClass = trim($bodyClass . ' page-loading');
 $authFormView = $authFormView ?? '';
+$pageSkeletonVariant = $pageSkeletonVariant ?? 'auth';
 $authPage = $authPage ?? [];
 $robotsMeta = trim((string) ($robotsMeta ?? 'noindex, nofollow, noarchive'));
 
@@ -45,6 +47,69 @@ if ($robotsMeta !== '' && !headers_sent()) {
 </head>
 
 <body class="<?= e($bodyClass) ?>">
+    <?= render('partials/page-skeleton', ['variant' => $pageSkeletonVariant]) ?>
+    <script>
+        (() => {
+            const minimumDelay = 900;
+            const startedAt = window.performance?.now?.() ?? Date.now();
+            const maximumFontWait = 1600;
+            let revealScheduled = false;
+            let revealPromise = null;
+
+            const revealPage = () => {
+                const body = document.body;
+
+                if (!body) {
+                    return;
+                }
+
+                body.classList.remove('page-loading');
+                body.classList.add('page-ready');
+
+                window.setTimeout(() => {
+                    document.querySelectorAll('[data-page-skeleton]').forEach((node) => node.remove());
+                }, 320);
+            };
+
+            const scheduleReveal = () => {
+                if (revealScheduled) {
+                    return revealPromise;
+                }
+
+                revealScheduled = true;
+
+                const now = window.performance?.now?.() ?? Date.now();
+                const remaining = Math.max(0, minimumDelay - (now - startedAt));
+                const delayGate = new Promise((resolve) => {
+                    window.setTimeout(resolve, remaining);
+                });
+                const fontGate = (() => {
+                    if (!document.fonts?.ready) {
+                        return Promise.resolve();
+                    }
+
+                    return Promise.race([
+                        document.fonts.ready.catch(() => undefined),
+                        new Promise((resolve) => window.setTimeout(resolve, maximumFontWait)),
+                    ]);
+                })();
+
+                revealPromise = Promise.all([delayGate, fontGate]).then(revealPage);
+
+                return revealPromise;
+            };
+
+            window.__novaRevealPageShell = revealPage;
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', scheduleReveal, { once: true });
+            } else {
+                scheduleReveal();
+            }
+
+            window.addEventListener('load', scheduleReveal, { once: true });
+        })();
+    </script>
     <main class="auth-page__main">
         <div class="container auth-page__container">
             <section class="auth-shell">

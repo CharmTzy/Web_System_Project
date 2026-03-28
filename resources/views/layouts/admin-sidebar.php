@@ -49,20 +49,22 @@ $adminNavItems = [
         <?php endforeach; ?>
     </nav>
 
-    <div class="admin-sidebar__meta">
-        <a href="/logout.php">
-            <span class="admin-sidebar__nav-icon" aria-hidden="true"><?= $renderAdminIcon('logout') ?></span>
-            <span>Sign out</span>
+    <div class="admin-sidebar__footer">
+        <div class="admin-sidebar__meta">
+            <a href="/logout.php">
+                <span class="admin-sidebar__nav-icon" aria-hidden="true"><?= $renderAdminIcon('logout') ?></span>
+                <span>Sign out</span>
+            </a>
+        </div>
+
+        <a class="admin-sidebar__profile" href="/admin/profile.php"<?= str_starts_with($currentPath, '/admin/profile.php') ? ' aria-current="page"' : '' ?>>
+            <span class="admin-sidebar__eyebrow">Signed in as</span>
+            <span class="admin-sidebar__profile-link">
+                <span class="admin-sidebar__profile-mark" aria-hidden="true"><?= $renderAdminIcon('profile') ?></span>
+                <span class="admin-sidebar__profile-copy">
+                    <strong class="admin-sidebar__profile-name"><?= e($sessionName !== '' ? $sessionName : 'Administrator') ?></strong>
+                </span>
+            </span>
         </a>
     </div>
-
-    <a class="admin-sidebar__profile" href="/admin/profile.php"<?= str_starts_with($currentPath, '/admin/profile.php') ? ' aria-current="page"' : '' ?>>
-        <span class="admin-sidebar__eyebrow">Signed in as</span>
-        <span class="admin-sidebar__profile-link">
-            <span class="admin-sidebar__profile-mark" aria-hidden="true"><?= $renderAdminIcon('profile') ?></span>
-            <span class="admin-sidebar__profile-copy">
-                <strong class="admin-sidebar__profile-name"><?= e($sessionName !== '' ? $sessionName : 'Administrator') ?></strong>
-            </span>
-        </span>
-    </a>
 </aside>

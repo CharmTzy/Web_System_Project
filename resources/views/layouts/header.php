@@ -76,6 +76,12 @@ $pageSkeletonVariant = $pageSkeletonVariant ?? match (true) {
     ], true) => 'admin-form',
     $isAdminArea && $currentPath === '/admin/chat.php' => 'admin-chat',
     $isAdminArea => 'admin-table',
+    $currentPath === '/customer/orders.php' => 'orders',
+    $currentPath === '/customer/addresses.php' => 'addresses',
+    $currentPath === '/customer/checkout.php' => 'checkout',
+    $currentPath === '/seller/index.php' => 'seller-dashboard',
+    $currentPath === '/seller/products.php' => 'market-table',
+    $currentPath === '/seller/product-edit.php' => 'form',
     in_array($currentPath, ['/privacy.php', '/terms.php', '/contact.php'], true) => 'legal',
     $currentPath === '/profile.php',
     $currentPath === '/seller/store-profile.php' => 'form',
@@ -137,7 +143,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
     <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
     <?php if ($robotsMeta !== ''): ?>
         <meta name="robots" content="<?= e($robotsMeta) ?>">
@@ -154,6 +160,70 @@ if ($robotsMeta !== '' && !headers_sent()) {
     <?php if ($isAdminArea): ?>
         <link rel="stylesheet" href="<?= e(asset('css/admin.css')) ?>">
     <?php endif; ?>
+    <script>
+        (() => {
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
+
+            if (!viewportMeta) {
+                return;
+            }
+
+            const baseViewport = 'width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no';
+            let syncTimeout = 0;
+            let syncFrame = 0;
+
+            const isNarrowViewport = () => {
+                const widths = [
+                    window.innerWidth,
+                    document.documentElement?.clientWidth,
+                    window.visualViewport?.width,
+                    window.screen?.width,
+                ].filter((value) => Number.isFinite(value) && value > 0);
+
+                if (widths.length === 0) {
+                    return false;
+                }
+
+                return Math.min(...widths) <= 767.98;
+            };
+
+            const refreshViewport = () => {
+                viewportMeta.setAttribute('content', `${baseViewport}, maximum-scale=1`);
+
+                window.cancelAnimationFrame(syncFrame);
+                syncFrame = window.requestAnimationFrame(() => {
+                    syncFrame = window.requestAnimationFrame(() => {
+                        viewportMeta.setAttribute('content', baseViewport);
+                    });
+                });
+            };
+
+            const scheduleViewportSync = () => {
+                window.clearTimeout(syncTimeout);
+                syncTimeout = window.setTimeout(() => {
+                    if (isNarrowViewport()) {
+                        refreshViewport();
+                    } else {
+                        viewportMeta.setAttribute('content', baseViewport);
+                    }
+                }, 50);
+            };
+
+            viewportMeta.setAttribute('content', baseViewport);
+            window.addEventListener('resize', scheduleViewportSync, { passive: true });
+            window.addEventListener('orientationchange', scheduleViewportSync);
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', scheduleViewportSync, { passive: true });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', scheduleViewportSync, { once: true });
+            } else {
+                scheduleViewportSync();
+            }
+        })();
+    </script>
 </head>
 
 <body class="<?= e($bodyClasses) ?>">
@@ -162,7 +232,9 @@ if ($robotsMeta !== '' && !headers_sent()) {
         (() => {
             const minimumDelay = 900;
             const startedAt = window.performance?.now?.() ?? Date.now();
+            const maximumFontWait = 1600;
             let revealScheduled = false;
+            let revealPromise = null;
 
             const revealPage = () => {
                 const body = document.body;
@@ -181,15 +253,32 @@ if ($robotsMeta !== '' && !headers_sent()) {
 
             const scheduleReveal = () => {
                 if (revealScheduled) {
-                    return;
+                    return revealPromise;
                 }
 
                 revealScheduled = true;
 
                 const now = window.performance?.now?.() ?? Date.now();
                 const remaining = Math.max(0, minimumDelay - (now - startedAt));
+                const delayGate = new Promise((resolve) => {
+                    window.setTimeout(resolve, remaining);
+                });
+                const fontGate = (() => {
+                    if (!document.fonts?.ready) {
+                        return Promise.resolve();
+                    }
 
-                window.setTimeout(revealPage, remaining);
+                    return Promise.race([
+                        document.fonts.ready.catch(() => undefined),
+                        new Promise((resolve) => {
+                            window.setTimeout(resolve, maximumFontWait);
+                        }),
+                    ]);
+                })();
+
+                revealPromise = Promise.all([delayGate, fontGate]).then(revealPage);
+
+                return revealPromise;
             };
 
             window.__novaRevealPageShell = revealPage;

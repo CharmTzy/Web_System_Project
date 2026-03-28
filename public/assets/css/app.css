@@ -28,6 +28,8 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -542,12 +544,13 @@ body.page-ready .page-skeleton {
   padding: 1.75rem 1.35rem;
   background:
     radial-gradient(
-      circle at top right,
-      rgba(96, 165, 250, 0.2),
-      transparent 26%
+      circle at top left,
+      rgba(59, 130, 246, 0.14),
+      transparent 24%
     ),
-    linear-gradient(180deg, #0f172a 0%, #13254a 100%);
-  border-right: 1px solid rgba(148, 163, 184, 0.18);
+    linear-gradient(180deg, #edf3ff 0%, #e3ecff 100%);
+  border-right: 1px solid rgba(148, 163, 184, 0.24);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.35);
 }
 
 .page-skeleton__admin-brand {
@@ -710,9 +713,9 @@ body.page-ready .page-skeleton {
 .page-skeleton__admin-sidebar .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.12) 25%,
-    rgba(255, 255, 255, 0.28) 50%,
-    rgba(255, 255, 255, 0.12) 75%
+    rgba(103, 127, 168, 0.18) 25%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(103, 127, 168, 0.18) 75%
   );
   background-size: 200% 100%;
 }
@@ -800,6 +803,238 @@ body.page-ready .page-skeleton {
   gap: 0.85rem;
 }
 
+.page-skeleton__chat-shell,
+.page-skeleton__checkout-shell,
+.page-skeleton__coupon-split-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.page-skeleton__chat-shell {
+  grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+}
+
+.page-skeleton__chat-sidebar-card,
+.page-skeleton__chat-thread-card,
+.page-skeleton__checkout-panel,
+.page-skeleton__checkout-summary-card {
+  margin-top: 0;
+}
+
+.page-skeleton__chat-list,
+.page-skeleton__chat-thread-body,
+.page-skeleton__checkout-choice-grid,
+.page-skeleton__checkout-summary-lines,
+.page-skeleton__coupon-stack,
+.page-skeleton__market-table,
+.page-skeleton__order-items {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.1rem;
+}
+
+.page-skeleton__chat-list-item,
+.page-skeleton__chat-status,
+.page-skeleton__chat-input,
+.page-skeleton__chat-bubble,
+.page-skeleton__coupon-overview-card,
+.page-skeleton__coupon-card,
+.page-skeleton__order-total,
+.page-skeleton__order-meta-card,
+.page-skeleton__order-item,
+.page-skeleton__action-pill,
+.page-skeleton__address-card,
+.page-skeleton__checkout-choice,
+.page-skeleton__seller-stat-card,
+.page-skeleton__market-table-search,
+.page-skeleton__market-table-filter,
+.page-skeleton__market-table-row {
+  display: block;
+  border-radius: 1.4rem;
+}
+
+.page-skeleton__chat-list-item {
+  min-height: 5rem;
+}
+
+.page-skeleton__chat-status {
+  inline-size: 11rem;
+  block-size: 1rem;
+}
+
+.page-skeleton__chat-thread-body {
+  min-height: 20rem;
+  align-content: start;
+}
+
+.page-skeleton__chat-bubble {
+  inline-size: min(100%, 18rem);
+  min-height: 4.7rem;
+}
+
+.page-skeleton__chat-bubble--reply {
+  margin-left: auto;
+  inline-size: min(100%, 15rem);
+}
+
+.page-skeleton__chat-input {
+  block-size: 3.5rem;
+  margin-top: 1rem;
+}
+
+.page-skeleton__coupon-overview-grid,
+.page-skeleton__coupon-featured-grid,
+.page-skeleton__address-grid,
+.page-skeleton__seller-stat-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.page-skeleton__coupon-overview-grid,
+.page-skeleton__seller-stat-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.page-skeleton__coupon-featured-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.page-skeleton__coupon-split-grid {
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  margin-top: 1.2rem;
+}
+
+.page-skeleton__coupon-overview-card {
+  min-height: 8.6rem;
+}
+
+.page-skeleton__coupon-card {
+  min-height: 12rem;
+}
+
+.page-skeleton__coupon-card--featured {
+  min-height: 15rem;
+}
+
+.page-skeleton__coupon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1.1rem;
+}
+
+.page-skeleton__order-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.page-skeleton__order-card {
+  margin-top: 0;
+}
+
+.page-skeleton__order-head,
+.page-skeleton__section-head,
+.page-skeleton__market-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page-skeleton__order-head-copy,
+.page-skeleton__section-head-copy {
+  display: grid;
+  gap: 0.7rem;
+  flex: 1 1 auto;
+}
+
+.page-skeleton__order-head-copy .page-skeleton__section-title,
+.page-skeleton__section-head-copy .page-skeleton__section-title {
+  margin-top: 0;
+}
+
+.page-skeleton__order-total {
+  inline-size: 7rem;
+  block-size: 2.6rem;
+  flex: 0 0 auto;
+}
+
+.page-skeleton__order-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.page-skeleton__order-meta-card {
+  min-height: 6.5rem;
+}
+
+.page-skeleton__order-item {
+  min-height: 5.2rem;
+}
+
+.page-skeleton__action-pill {
+  inline-size: 9.5rem;
+  block-size: 3rem;
+  flex: 0 0 auto;
+}
+
+.page-skeleton__address-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.page-skeleton__address-card {
+  min-height: 15rem;
+}
+
+.page-skeleton__checkout-shell {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 21rem);
+}
+
+.page-skeleton__checkout-choice-grid {
+  min-height: 16rem;
+}
+
+.page-skeleton__checkout-choice {
+  min-height: 5.4rem;
+}
+
+.page-skeleton__checkout-summary-card .page-skeleton__section-title {
+  margin-top: 0.7rem;
+}
+
+.page-skeleton__seller-stat-card {
+  min-height: 8.8rem;
+}
+
+.page-skeleton__seller-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 1.2rem;
+}
+
+.page-skeleton__market-table-search {
+  inline-size: min(100%, 18rem);
+  block-size: 3.25rem;
+}
+
+.page-skeleton__market-table-filter {
+  inline-size: 8.5rem;
+  block-size: 3.25rem;
+}
+
+.page-skeleton__market-table {
+  margin-top: 1rem;
+}
+
+.page-skeleton__market-table-row {
+  min-height: 4.1rem;
+}
+
 .page-skeleton__market-header .skeleton-shimmer,
 .page-skeleton__help-header .skeleton-shimmer {
   background: linear-gradient(
@@ -862,7 +1097,10 @@ body.page-ready .page-skeleton {
   .page-skeleton__product-shell,
   .page-skeleton__detail-grid,
   .page-skeleton__cart-shell,
-  .page-skeleton__panel-grid {
+  .page-skeleton__panel-grid,
+  .page-skeleton__chat-shell,
+  .page-skeleton__checkout-shell,
+  .page-skeleton__coupon-split-grid {
     grid-template-columns: 1fr;
   }
 
@@ -873,8 +1111,17 @@ body.page-ready .page-skeleton {
 
   .page-skeleton__category-grid,
   .page-skeleton__product-grid,
-  .page-skeleton__topic-grid {
+  .page-skeleton__topic-grid,
+  .page-skeleton__coupon-overview-grid,
+  .page-skeleton__coupon-featured-grid,
+  .page-skeleton__seller-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .page-skeleton__order-meta,
+  .page-skeleton__address-grid,
+  .page-skeleton__coupon-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -898,7 +1145,12 @@ body.page-ready .page-skeleton {
   .page-skeleton__category-grid,
   .page-skeleton__product-grid,
   .page-skeleton__topic-grid,
-  .page-skeleton__field-row {
+  .page-skeleton__field-row,
+  .page-skeleton__coupon-overview-grid,
+  .page-skeleton__coupon-featured-grid,
+  .page-skeleton__coupon-grid,
+  .page-skeleton__address-grid,
+  .page-skeleton__seller-stat-grid {
     grid-template-columns: 1fr;
   }
 
@@ -915,6 +1167,20 @@ body.page-ready .page-skeleton {
   }
 
   .page-skeleton__button--secondary {
+    max-width: none;
+  }
+
+  .page-skeleton__order-head,
+  .page-skeleton__section-head,
+  .page-skeleton__market-table-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-skeleton__action-pill,
+  .page-skeleton__market-table-search,
+  .page-skeleton__market-table-filter {
+    width: 100%;
     max-width: none;
   }
 }
