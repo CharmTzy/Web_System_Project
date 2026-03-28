@@ -21,6 +21,7 @@ try {
     $reviewService = new \App\Services\ReviewService(
         new \App\Repositories\ReviewRepository($connection),
         new \App\Repositories\OrderRepository($connection),
+        new \App\Repositories\ProductRepository($connection),
     );
 
     $productId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
