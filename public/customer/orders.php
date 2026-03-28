@@ -22,9 +22,11 @@ $orderRepository = new \App\Repositories\OrderRepository($connection);
 $reviewRepository = new \App\Repositories\ReviewRepository($connection);
 
 $orders = $orderRepository->listByCustomer((int) $_SESSION['user_id']);
+$page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
+$pagination = paginate_items($orders, $page, 6);
 $productIds = [];
 
-foreach ($orders as $order) {
+foreach ($pagination['items'] as $order) {
     foreach ($order['items'] as $item) {
         $productIds[] = (int) $item['product_id'];
     }
@@ -49,7 +51,8 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     <section class="catalog-section">
         <div class="container">
             <?= render('customer/order-history', [
-                'orders' => $orders,
+                'orders' => $pagination['items'],
+                'pagination' => $pagination,
                 'reviewedProductIds' => $reviewedProductIds,
                 'notice' => flash('orders_notice'),
                 'error' => flash('checkout_error'),

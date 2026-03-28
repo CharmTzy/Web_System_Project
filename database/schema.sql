@@ -203,6 +203,34 @@ CREATE TABLE order_items (
         ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE order_fulfillments (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT UNSIGNED NOT NULL,
+    seller_id BIGINT UNSIGNED NOT NULL,
+    status ENUM('pending', 'paid', 'processing', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
+    seller_subtotal DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    item_count INT UNSIGNED NOT NULL DEFAULT 0,
+    item_quantity INT UNSIGNED NOT NULL DEFAULT 0,
+    courier_name VARCHAR(120) DEFAULT NULL,
+    tracking_number VARCHAR(120) DEFAULT NULL,
+    status_note VARCHAR(500) DEFAULT NULL,
+    estimated_delivery_date DATE DEFAULT NULL,
+    shipped_at DATETIME DEFAULT NULL,
+    out_for_delivery_at DATETIME DEFAULT NULL,
+    delivered_at DATETIME DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_order_fulfillments_order_seller (order_id, seller_id),
+    INDEX idx_order_fulfillments_seller_status (seller_id, status),
+    INDEX idx_order_fulfillments_order_status (order_id, status),
+    CONSTRAINT fk_order_fulfillments_order
+        FOREIGN KEY (order_id) REFERENCES orders(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_order_fulfillments_seller
+        FOREIGN KEY (seller_id) REFERENCES users(id)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE product_reviews (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     product_id BIGINT UNSIGNED NOT NULL,

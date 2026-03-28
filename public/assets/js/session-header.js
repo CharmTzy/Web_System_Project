@@ -27,8 +27,8 @@
       const user = data.user;
       const role = user.role;
 
-      if (role === 'admin' && isStorefrontCustomerScreen) {
-        window.location.replace('/admin/');
+      if ((role === 'admin' || role === 'seller') && isStorefrontCustomerScreen) {
+        window.location.replace(role === 'admin' ? '/admin/' : '/seller/');
         return;
       }
 

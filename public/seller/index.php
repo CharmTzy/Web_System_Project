@@ -19,9 +19,14 @@ $userService = new \App\Services\UserService(
 $productService = new \App\Services\ProductManagementService(
     new \App\Repositories\ProductRepository($connection)
 );
+$orderManagementService = new \App\Services\OrderManagementService(
+    new \App\Repositories\OrderRepository($connection)
+);
 
 $profile = $userService->getProfile((int) $_SESSION['user_id']);
 $products = $productService->listSellerProducts((int) $_SESSION['user_id']);
+$fulfillments = $orderManagementService->listForSeller((int) $_SESSION['user_id']);
+$orderStats = $orderManagementService->summarize($fulfillments);
 $stats = [
     'total_products' => count($products),
     'active_products' => count(array_filter($products, static fn (array $product): bool => $product['is_active'])),
@@ -31,6 +36,7 @@ $stats = [
 $pageTitle = 'Seller Dashboard';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
+$pageSkeletonVariant = 'admin-dashboard';
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 ?>
@@ -44,8 +50,9 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     </section>
     <section class="catalog-section">
         <div class="container">
-            <?= render('seller/dashboard', ['profile' => $profile, 'stats' => $stats]) ?>
+            <?= render('seller/dashboard', ['profile' => $profile, 'stats' => $stats, 'orderStats' => $orderStats]) ?>
             <div class="d-flex gap-3 flex-wrap">
+                <a class="btn btn-brand" href="/seller/orders.php">Manage orders</a>
                 <a class="btn btn-brand" href="/seller/products.php">Manage products</a>
                 <a class="btn btn-brand-outline" href="/seller/product-edit.php">Add new product</a>
                 <a class="btn btn-brand-outline" href="/seller/chat.php">Open chat inbox</a>

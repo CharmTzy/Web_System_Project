@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__) . '/bootstrap.php';
 
-redirect_if_role_disallowed(['admin']);
+redirect_if_role_disallowed(['admin', 'seller']);
 
 $pageTitle = 'Terms';
 $appName = $config['app']['name'];

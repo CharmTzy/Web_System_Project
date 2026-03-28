@@ -49,6 +49,22 @@ $paymentsInTestMode = !empty($paymentsInTestMode);
                 <strong><?= e(ucfirst((string) ($order['status'] ?? ''))) ?></strong>
             </div>
         </div>
+        <?php if (($order['fulfillments'] ?? []) !== []): ?>
+            <div class="checkout-success-packages mb-4">
+                <span class="hero-section__eyebrow">Delivery packages</span>
+                <?php foreach ($order['fulfillments'] as $fulfillment): ?>
+                    <article class="checkout-success-packages__item">
+                        <div>
+                            <strong><?= e((string) $fulfillment['seller_name']) ?></strong>
+                            <p><?= e((string) $fulfillment['item_count']) ?> items · <?= e((string) ($fulfillment['tracking_number'] ?: 'Tracking to follow')) ?></p>
+                        </div>
+                        <span class="<?= e(delivery_status_badge_class((string) $fulfillment['status'])) ?>">
+                            <?= e((string) $fulfillment['status_label']) ?>
+                        </span>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
         <div class="d-flex flex-wrap gap-3">
             <a class="btn btn-brand" href="/customer/orders.php">View orders</a>
             <a class="btn btn-brand-outline" href="/">Continue shopping</a>

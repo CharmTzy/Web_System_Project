@@ -6,6 +6,7 @@ $orders = $orders ?? [];
 $reviewedProductIds = array_map('intval', $reviewedProductIds ?? []);
 $notice = $notice ?? null;
 $error = $error ?? null;
+$pagination = $pagination ?? null;
 ?>
 <?php if (!empty($notice)): ?>
     <div class="alert alert-success" role="alert"><?= e((string) $notice) ?></div>
@@ -56,33 +57,71 @@ $error = $error ?? null;
                     </div>
                 </div>
 
-                <div class="order-card__items">
-                    <?php foreach ($order['items'] as $item): ?>
-                        <?php
-                        $productLink = product_url([
-                            'id' => $item['product_id'],
-                            'slug' => $item['slug'],
-                        ]);
-                        $isReviewed = in_array((int) $item['product_id'], $reviewedProductIds, true);
-                        ?>
-                        <article class="order-card__item">
-                            <a class="order-card__item-image" href="<?= e($productLink) ?>">
-                                <img src="<?= e((string) $item['image_url']) ?>" alt="<?= e((string) $item['product_name']) ?>" loading="lazy">
-                            </a>
-                            <div class="order-card__item-copy">
-                                <h3><a href="<?= e($productLink) ?>"><?= e((string) $item['product_name']) ?></a></h3>
-                                <p><?= e((string) $item['unit_price_formatted']) ?> × <?= e((string) $item['quantity']) ?></p>
+                <div class="order-card__fulfillments">
+                    <?php foreach (($order['fulfillments'] ?? []) as $fulfillment): ?>
+                        <section class="order-fulfillment">
+                            <div class="order-fulfillment__header">
+                                <div>
+                                    <span class="hero-section__eyebrow">Seller package</span>
+                                    <h3><?= e((string) $fulfillment['seller_name']) ?></h3>
+                                    <p>
+                                        <?= e((string) $fulfillment['item_count']) ?> items ·
+                                        <?= e((string) $fulfillment['seller_subtotal_formatted']) ?>
+                                    </p>
+                                </div>
+                                <span class="<?= e(delivery_status_badge_class((string) $fulfillment['status'])) ?>">
+                                    <?= e((string) $fulfillment['status_label']) ?>
+                                </span>
                             </div>
-                            <div class="order-card__item-actions">
-                                <strong><?= e((string) $item['line_total_formatted']) ?></strong>
-                                <a class="btn btn-brand-outline btn-sm" href="<?= e($productLink) ?>#product-reviews">
-                                    <?= $isReviewed ? 'Update review' : 'Write review' ?>
-                                </a>
+
+                            <div class="order-fulfillment__meta">
+                                <div>
+                                    <span>Tracking</span>
+                                    <strong><?= e((string) ($fulfillment['tracking_number'] ?: 'Pending assignment')) ?></strong>
+                                    <p><?= e((string) ($fulfillment['courier_name'] ?: 'Courier not assigned yet')) ?></p>
+                                </div>
+                                <div>
+                                    <span>Estimated delivery</span>
+                                    <strong><?= e((string) ($fulfillment['estimated_delivery_date_formatted'] ?: 'We’ll update this soon')) ?></strong>
+                                    <?php if (!empty($fulfillment['status_note'])): ?>
+                                        <p><?= e((string) $fulfillment['status_note']) ?></p>
+                                    <?php else: ?>
+                                        <p>Delivery updates from the seller will appear here.</p>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                        </article>
+
+                            <div class="order-card__items">
+                                <?php foreach (($fulfillment['items'] ?? []) as $item): ?>
+                                    <?php
+                                    $productLink = product_url([
+                                        'id' => $item['product_id'],
+                                        'slug' => $item['slug'],
+                                    ]);
+                                    $isReviewed = in_array((int) $item['product_id'], $reviewedProductIds, true);
+                                    ?>
+                                    <article class="order-card__item">
+                                        <a class="order-card__item-image" href="<?= e($productLink) ?>">
+                                            <img src="<?= e((string) $item['image_url']) ?>" alt="<?= e((string) $item['product_name']) ?>" loading="lazy">
+                                        </a>
+                                        <div class="order-card__item-copy">
+                                            <h3><a href="<?= e($productLink) ?>"><?= e((string) $item['product_name']) ?></a></h3>
+                                            <p><?= e((string) $item['unit_price_formatted']) ?> × <?= e((string) $item['quantity']) ?></p>
+                                        </div>
+                                        <div class="order-card__item-actions">
+                                            <strong><?= e((string) $item['line_total_formatted']) ?></strong>
+                                            <a class="btn btn-brand-outline btn-sm" href="<?= e($productLink) ?>#product-reviews">
+                                                <?= $isReviewed ? 'Update review' : 'Write review' ?>
+                                            </a>
+                                        </div>
+                                    </article>
+                                <?php endforeach; ?>
+                            </div>
+                        </section>
                     <?php endforeach; ?>
                 </div>
             </article>
         <?php endforeach; ?>
     </div>
+    <?= render('partials/pagination', ['pagination' => $pagination]) ?>
 <?php endif; ?>

@@ -38,6 +38,7 @@ final class CheckoutService
             static fn (array $item): array => [
                 'product_id' => (int) $item['product_id'],
                 'product_name' => (string) $item['product']['name'],
+                'seller_id' => (int) ($item['product']['seller_id'] ?? 0),
                 'quantity' => (int) $item['quantity'],
                 'unit_price' => (float) $item['product']['price'],
                 'line_total' => (float) $item['line_total'],
@@ -91,6 +92,7 @@ final class CheckoutService
             static fn (array $item): array => [
                 'product_id' => (int) $item['product_id'],
                 'product_name' => (string) $item['product']['name'],
+                'seller_id' => (int) ($item['product']['seller_id'] ?? 0),
                 'quantity' => (int) $item['quantity'],
                 'unit_price' => (float) $item['product']['price'],
                 'line_total' => (float) $item['line_total'],
@@ -111,8 +113,6 @@ final class CheckoutService
                 'shipping_postal_code' => $address['postal_code'],
                 'shipping_country' => $address['country'],
                 'shipping_phone' => $address['phone'],
-                'payment_card_brand' => null,
-                'payment_card_last_four' => null,
                 'subtotal' => $summary['subtotal'],
                 'shipping_fee' => $summary['shipping'],
                 'total' => $summary['grand_total'],
@@ -123,9 +123,9 @@ final class CheckoutService
         });
     }
 
-    public function finalizePendingOrder(string $orderNumber, ?string $cardBrand = null, ?string $cardLastFour = null): ?array
+    public function finalizePendingOrder(string $orderNumber): ?array
     {
-        return $this->orderRepository->transaction(function () use ($orderNumber, $cardBrand, $cardLastFour) {
+        return $this->orderRepository->transaction(function () use ($orderNumber) {
             $order = $this->orderRepository->findByOrderNumber($orderNumber);
 
             if ($order === null) {
@@ -140,7 +140,7 @@ final class CheckoutService
                 $this->productRepository->reduceStock((int) $item['product_id'], (int) $item['quantity']);
             }
 
-            $this->orderRepository->markPaidByOrderNumber($orderNumber, $cardBrand, $cardLastFour);
+            $this->orderRepository->markPaidByOrderNumber($orderNumber);
             $this->cartRepository->clearActiveCartForUser((int) $order['customer_id']);
 
             return $this->orderRepository->findByOrderNumber($orderNumber);

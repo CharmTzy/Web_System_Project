@@ -241,6 +241,24 @@ function asset(string $path): string
     return '/assets/' . ltrim($path, '/');
 }
 
+function delivery_status_label(string $status): string
+{
+    return ucwords(str_replace('_', ' ', trim($status)));
+}
+
+function delivery_status_badge_class(string $status): string
+{
+    return match ($status) {
+        'pending' => 'pill-badge pill-badge--dark',
+        'paid', 'processing' => 'pill-badge pill-badge--soft',
+        'packed', 'out_for_delivery' => 'pill-badge pill-badge--accent',
+        'shipped' => 'pill-badge pill-badge--info',
+        'delivered' => 'pill-badge pill-badge--success',
+        'cancelled' => 'pill-badge pill-badge--danger',
+        default => 'pill-badge pill-badge--dark',
+    };
+}
+
 function product_url(array $product): string
 {
     $params = http_build_query([

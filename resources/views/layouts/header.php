@@ -22,6 +22,8 @@ $isCustomer = $isLoggedIn && $sessionRole === 'customer';
 $isSeller = $isLoggedIn && $sessionRole === 'seller';
 $isAdmin = $isLoggedIn && $sessionRole === 'admin';
 $isAdminArea = $isAdmin && str_starts_with($currentPath, '/admin/');
+$isSellerArea = $isSeller && str_starts_with($currentPath, '/seller/');
+$isConsoleArea = $isAdminArea || $isSellerArea;
 
 $dashboardUrl = '/profile.php';
 if ($isAdmin) {
@@ -52,6 +54,7 @@ if ($isCustomer) {
     $marketNavLinks[] = $profileShortcut;
 
     if ($isSeller) {
+        $marketNavLinks[] = ['label' => 'Orders', 'href' => '/seller/orders.php', 'active' => $currentPath === '/seller/orders.php' || $currentPath === '/seller/order-view.php'];
         $marketNavLinks[] = ['label' => 'Chat', 'href' => '/seller/chat.php', 'active' => $currentPath === '/seller/chat.php'];
     } elseif ($isAdmin) {
         $marketNavLinks[] = ['label' => 'Chat', 'href' => '/admin/chat.php', 'active' => $currentPath === '/admin/chat.php'];
@@ -61,7 +64,7 @@ if ($isCustomer) {
 $marketNavLinks[] = ['label' => 'Help', 'href' => '/help.php', 'active' => $currentPath === '/help.php'];
 
 $paymentsInTestMode = payments_use_test_mode(isset($config['app']) ? $config['app'] : null);
-$showPaymentTestModeNotice = !$isAdminArea && $paymentsInTestMode;
+$showPaymentTestModeNotice = !$isConsoleArea && $paymentsInTestMode;
 
 $mobileAccountLinks = [];
 $pageSkeletonVariant = $pageSkeletonVariant ?? match (true) {
@@ -76,6 +79,14 @@ $pageSkeletonVariant = $pageSkeletonVariant ?? match (true) {
     ], true) => 'admin-form',
     $isAdminArea && $currentPath === '/admin/chat.php' => 'admin-chat',
     $isAdminArea => 'admin-table',
+    $isSellerArea && ($currentPath === '/seller/' || $currentPath === '/seller/index.php') => 'admin-dashboard',
+    $isSellerArea && in_array($currentPath, [
+        '/seller/product-edit.php',
+        '/seller/store-profile.php',
+        '/seller/order-view.php',
+    ], true) => 'admin-form',
+    $isSellerArea && $currentPath === '/seller/chat.php' => 'admin-chat',
+    $isSellerArea => 'admin-table',
     $currentPath === '/customer/orders.php' => 'orders',
     $currentPath === '/customer/addresses.php' => 'addresses',
     $currentPath === '/customer/checkout.php' => 'checkout',
@@ -87,7 +98,7 @@ $pageSkeletonVariant = $pageSkeletonVariant ?? match (true) {
     $currentPath === '/seller/store-profile.php' => 'form',
     default => 'panel',
 };
-$bodyClasses = trim($bodyClasses . ($isAdminArea ? ' admin-body' : ''));
+$bodyClasses = trim($bodyClasses . ($isAdminArea ? ' admin-body' : '') . ($isSellerArea ? ' admin-body seller-body' : ''));
 
 if ($isLoggedIn) {
     if ($isCustomer) {
@@ -157,7 +168,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
-    <?php if ($isAdminArea): ?>
+    <?php if ($isConsoleArea): ?>
         <link rel="stylesheet" href="<?= e(asset('css/admin.css')) ?>">
     <?php endif; ?>
     <script>
@@ -292,14 +303,20 @@ if ($robotsMeta !== '' && !headers_sent()) {
             window.addEventListener('load', scheduleReveal, { once: true });
         })();
     </script>
-    <?php if ($isAdminArea): ?>
-        <div class="admin-shell">
-            <?= render('layouts/admin-sidebar', [
-                'currentPath' => $currentPath,
-                'appName' => $appName,
-                'sessionName' => $sessionName,
-                'sessionRole' => $sessionRole,
-            ]) ?>
+    <?php if ($isConsoleArea): ?>
+        <div class="admin-shell<?= $isSellerArea ? ' seller-shell' : '' ?>">
+            <?= $isAdminArea
+                ? render('layouts/admin-sidebar', [
+                    'currentPath' => $currentPath,
+                    'appName' => $appName,
+                    'sessionName' => $sessionName,
+                    'sessionRole' => $sessionRole,
+                ])
+                : render('layouts/seller-sidebar', [
+                    'currentPath' => $currentPath,
+                    'appName' => $appName,
+                    'sessionName' => $sessionName,
+                ]) ?>
             <button class="admin-shell__backdrop" type="button" data-admin-sidebar-close aria-label="Close admin sidebar"></button>
             <div class="admin-shell__content">
                 <div class="admin-topbar">
@@ -309,7 +326,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
                         <span></span>
                     </button>
                     <div class="admin-topbar__titles">
-                        <span class="admin-topbar__eyebrow">Admin console</span>
+                        <span class="admin-topbar__eyebrow"><?= $isAdminArea ? 'Admin console' : 'Seller workspace' ?></span>
                         <strong><?= e($pageTitle) ?></strong>
                     </div>
                 </div>

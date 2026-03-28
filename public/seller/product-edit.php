@@ -70,21 +70,27 @@ $formValues = $_SERVER['REQUEST_METHOD'] === 'POST'
 $pageTitle = $editProduct ? 'Edit Product' : 'Add Product';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
+$pageSkeletonVariant = 'admin-form';
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 ?>
 <main>
-    <section class="auth-section">
+    <section class="hero-section hero-section--compact">
         <div class="container">
-            <div class="auth-wrapper">
-                <?= render('seller/product-form', [
-                    'editProduct' => $editProduct,
-                    'categories' => $service->categories(),
-                    'formValues' => $formValues,
-                    'formError' => $formError,
-                    'notice' => flash('seller_products_notice'),
-                ]) ?>
-            </div>
+            <span class="hero-section__eyebrow">Seller workspace</span>
+            <h1 class="hero-section__title" style="max-width:18ch;"><?= e($editProduct ? 'Edit Product' : 'Add Product') ?></h1>
+            <p class="hero-section__copy">Update your listing details, pricing, stock, and storefront visibility from one seller workspace.</p>
+        </div>
+    </section>
+    <section class="catalog-section">
+        <div class="container">
+            <?= render('seller/product-form', [
+                'editProduct' => $editProduct,
+                'categories' => $service->categories(),
+                'formValues' => $formValues,
+                'formError' => $formError,
+                'notice' => flash('seller_products_notice'),
+            ]) ?>
         </div>
     </section>
 </main>

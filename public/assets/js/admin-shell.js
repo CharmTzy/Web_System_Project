@@ -3,14 +3,23 @@
   const toggleButton = document.querySelector("[data-admin-sidebar-toggle]");
   const closeButtons = document.querySelectorAll("[data-admin-sidebar-close]");
 
-  if (!body || !toggleButton || !body.classList.contains("admin-body")) {
+  if (!body || !toggleButton) {
+    return;
+  }
+
+  const isAdminBody = body.classList.contains("admin-body");
+  const isSellerBody = body.classList.contains("seller-body");
+
+  if (!isAdminBody && !isSellerBody) {
     return;
   }
 
   const collapsedClass = "admin-sidebar-collapsed";
   const openClass = "admin-sidebar-open";
   const syncingClass = "admin-layout-syncing";
-  const storageKey = "novamarket-admin-sidebar-collapsed";
+  const storageKey = isSellerBody
+    ? "novamarket-seller-sidebar-collapsed"
+    : "novamarket-admin-sidebar-collapsed";
   const mobileQuery = window.matchMedia("(max-width: 991.98px)");
   let syncFrame = 0;
   let syncTimeout = 0;
