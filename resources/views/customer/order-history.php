@@ -37,9 +37,6 @@ $error = $error ?? null;
                     </div>
                     <div class="order-card__summary">
                         <strong><?= e((string) $order['total_formatted']) ?></strong>
-                        <?php if (!empty($order['payment_card_last_four'])): ?>
-                            <span><?= e(strtoupper((string) ($order['payment_card_brand'] ?? 'card'))) ?> •••• <?= e((string) $order['payment_card_last_four']) ?></span>
-                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -50,8 +47,11 @@ $error = $error ?? null;
                         <p><?= e((string) $order['shipping_line_1']) ?></p>
                     </div>
                     <div>
-                        <span>Totals</span>
+                        <span>Order totals</span>
                         <strong><?= e((string) $order['subtotal_formatted']) ?> + <?= e((string) $order['shipping_fee_formatted']) ?> shipping</strong>
+                        <?php if (!empty($order['discount_amount'])): ?>
+                            <p>Promotional savings -<?= e((string) $order['discount_amount_formatted']) ?></p>
+                        <?php endif; ?>
                         <p>Grand total <?= e((string) $order['total_formatted']) ?></p>
                     </div>
                 </div>

@@ -54,8 +54,6 @@ final class OrderRepository
                 shipping_postal_code,
                 shipping_country,
                 shipping_phone,
-                payment_card_brand,
-                payment_card_last_four,
                 subtotal,
                 shipping_fee,
                 total
@@ -71,8 +69,6 @@ final class OrderRepository
                 :shipping_postal_code,
                 :shipping_country,
                 :shipping_phone,
-                :payment_card_brand,
-                :payment_card_last_four,
                 :subtotal,
                 :shipping_fee,
                 :total
@@ -91,8 +87,6 @@ final class OrderRepository
             'shipping_postal_code' => $data['shipping_postal_code'],
             'shipping_country' => $data['shipping_country'],
             'shipping_phone' => $data['shipping_phone'],
-            'payment_card_brand' => $data['payment_card_brand'],
-            'payment_card_last_four' => $data['payment_card_last_four'],
             'subtotal' => $data['subtotal'],
             'shipping_fee' => $data['shipping_fee'],
             'total' => $data['total'],
@@ -154,6 +148,69 @@ final class OrderRepository
         return $this->normalizeOrder($row) + [
             'items' => $this->itemsForOrderIds([$orderId])[$orderId] ?? [],
         ];
+    }
+
+    public function findByOrderNumber(string $orderNumber): ?array
+    {
+        $statement = $this->connection->prepare(
+            'SELECT * FROM orders WHERE order_number = :order_number LIMIT 1'
+        );
+        $statement->execute(['order_number' => $orderNumber]);
+        $row = $statement->fetch();
+
+        if (!is_array($row)) {
+            return null;
+        }
+
+        $orderId = (int) $row['id'];
+
+        return $this->normalizeOrder($row) + [
+            'items' => $this->itemsForOrderIds([$orderId])[$orderId] ?? [],
+        ];
+    }
+
+    public function findByOrderNumberForCustomer(string $orderNumber, int $customerId): ?array
+    {
+        $statement = $this->connection->prepare(
+            'SELECT * FROM orders WHERE order_number = :order_number AND customer_id = :customer_id LIMIT 1'
+        );
+        $statement->execute([
+            'order_number' => $orderNumber,
+            'customer_id' => $customerId,
+        ]);
+        $row = $statement->fetch();
+
+        if (!is_array($row)) {
+            return null;
+        }
+
+        $orderId = (int) $row['id'];
+
+        return $this->normalizeOrder($row) + [
+            'items' => $this->itemsForOrderIds([$orderId])[$orderId] ?? [],
+        ];
+    }
+
+    public function markPaidByOrderNumber(string $orderNumber, ?string $cardBrand = null, ?string $cardLastFour = null): bool
+    {
+        $statement = $this->connection->prepare(
+            <<<SQL
+            UPDATE orders
+            SET status = 'paid',
+                payment_card_brand = COALESCE(:payment_card_brand, payment_card_brand),
+                payment_card_last_four = COALESCE(:payment_card_last_four, payment_card_last_four),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE order_number = :order_number
+              AND status = 'pending'
+            SQL
+        );
+        $statement->execute([
+            'order_number' => $orderNumber,
+            'payment_card_brand' => $cardBrand,
+            'payment_card_last_four' => $cardLastFour,
+        ]);
+
+        return $statement->rowCount() > 0;
     }
 
     public function listByCustomer(int $customerId): array
@@ -255,6 +312,11 @@ final class OrderRepository
 
     private function normalizeOrder(array $row): array
     {
+        $subtotal = (float) $row['subtotal'];
+        $shippingFee = (float) $row['shipping_fee'];
+        $total = (float) $row['total'];
+        $discountAmount = max(0, round(($subtotal + $shippingFee) - $total, 2));
+
         return [
             'id' => (int) $row['id'],
             'customer_id' => (int) $row['customer_id'],
@@ -268,14 +330,14 @@ final class OrderRepository
             'shipping_postal_code' => (string) $row['shipping_postal_code'],
             'shipping_country' => (string) $row['shipping_country'],
             'shipping_phone' => $row['shipping_phone'],
-            'payment_card_brand' => $row['payment_card_brand'] !== null ? (string) $row['payment_card_brand'] : null,
-            'payment_card_last_four' => $row['payment_card_last_four'] !== null ? (string) $row['payment_card_last_four'] : null,
-            'subtotal' => (float) $row['subtotal'],
-            'subtotal_formatted' => money((float) $row['subtotal']),
-            'shipping_fee' => (float) $row['shipping_fee'],
-            'shipping_fee_formatted' => (float) $row['shipping_fee'] > 0 ? money((float) $row['shipping_fee']) : 'FREE',
-            'total' => (float) $row['total'],
-            'total_formatted' => money((float) $row['total']),
+            'subtotal' => $subtotal,
+            'subtotal_formatted' => money($subtotal),
+            'shipping_fee' => $shippingFee,
+            'shipping_fee_formatted' => $shippingFee > 0 ? money($shippingFee) : 'FREE',
+            'discount_amount' => $discountAmount,
+            'discount_amount_formatted' => money($discountAmount),
+            'total' => $total,
+            'total_formatted' => money($total),
             'created_at' => (string) $row['created_at'],
             'updated_at' => (string) $row['updated_at'],
         ];

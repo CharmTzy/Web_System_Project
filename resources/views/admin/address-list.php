@@ -3,7 +3,7 @@
     <div class="section-block__header">
         <div>
             <span class="results-header__eyebrow">Customer address management</span>
-            <h2><?= e((string) count($addresses)) ?> addresses</h2>
+            <h2><?= e((string) ($pagination['total_items'] ?? count($addresses))) ?> addresses</h2>
         </div>
         <a class="btn btn-brand" href="/admin/address-edit.php">Add address</a>
     </div>
@@ -90,5 +90,6 @@
                 </tbody>
             </table>
         </div>
+        <?= render('partials/pagination', ['pagination' => $pagination ?? null]) ?>
     <?php endif; ?>
 </div>

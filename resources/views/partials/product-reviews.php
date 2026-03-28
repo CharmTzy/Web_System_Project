@@ -36,8 +36,8 @@ $loginUrl = '/login.php?redirect=' . rawurlencode(product_url($product));
                 </section>
             <?php elseif (!$canReview && $existingReview === null): ?>
                 <section class="empty-state empty-state--compact product-reviews__prompt">
-                    <h3>Review this after checkout.</h3>
-                    <p>Once this product is part of one of your paid orders, you can come back to leave a rating and comment.</p>
+                    <h3>Review this after placing an order.</h3>
+                    <p>Once this product is part of one of your confirmed orders, you can come back to leave a rating and comment.</p>
                     <a class="btn btn-brand-outline" href="/customer/orders.php">View my orders</a>
                 </section>
             <?php else: ?>

@@ -6,6 +6,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $pageTitle = $pageTitle ?? 'Shop';
 $appName = $appName ?? 'NovaMarket';
 $headerSearchValue = $headerSearchValue ?? '';
+$robotsMeta = trim((string) ($robotsMeta ?? ''));
 $cartSummary = $cartSummary ?? [
     'total_items' => 0,
 ];
@@ -20,6 +21,7 @@ $notificationsUrl = '/profile.php#notifications';
 $isCustomer = $isLoggedIn && $sessionRole === 'customer';
 $isSeller = $isLoggedIn && $sessionRole === 'seller';
 $isAdmin = $isLoggedIn && $sessionRole === 'admin';
+$isAdminArea = $isAdmin && str_starts_with($currentPath, '/admin/');
 
 $dashboardUrl = '/profile.php';
 if ($isAdmin) {
@@ -58,13 +60,34 @@ if ($isCustomer) {
 
 $marketNavLinks[] = ['label' => 'Help', 'href' => '/help.php', 'active' => $currentPath === '/help.php'];
 
+$paymentsInTestMode = payments_use_test_mode(isset($config['app']) ? $config['app'] : null);
+$showPaymentTestModeNotice = !$isAdminArea && $paymentsInTestMode;
+
 $mobileAccountLinks = [];
 $pageSkeletonVariant = $pageSkeletonVariant ?? match (true) {
+    $isAdminArea && ($currentPath === '/admin/' || $currentPath === '/admin/index.php') => 'admin-dashboard',
+    $isAdminArea && in_array($currentPath, [
+        '/admin/profile.php',
+        '/admin/user-edit.php',
+        '/admin/product-edit.php',
+        '/admin/address-edit.php',
+        '/admin/coupon-edit.php',
+        '/admin/help-question-edit.php',
+    ], true) => 'admin-form',
+    $isAdminArea && $currentPath === '/admin/chat.php' => 'admin-chat',
+    $isAdminArea => 'admin-table',
+    $currentPath === '/customer/orders.php' => 'orders',
+    $currentPath === '/customer/addresses.php' => 'addresses',
+    $currentPath === '/customer/checkout.php' => 'checkout',
+    $currentPath === '/seller/index.php' => 'seller-dashboard',
+    $currentPath === '/seller/products.php' => 'market-table',
+    $currentPath === '/seller/product-edit.php' => 'form',
+    in_array($currentPath, ['/privacy.php', '/terms.php', '/contact.php'], true) => 'legal',
     $currentPath === '/profile.php',
-    $currentPath === '/seller/store-profile.php',
-    $currentPath === '/admin/user-edit.php' => 'form',
+    $currentPath === '/seller/store-profile.php' => 'form',
     default => 'panel',
 };
+$bodyClasses = trim($bodyClasses . ($isAdminArea ? ' admin-body' : ''));
 
 if ($isLoggedIn) {
     if ($isCustomer) {
@@ -98,14 +121,33 @@ $renderHeaderIcon = static function (string $icon): string {
         default => '',
     };
 };
+
+if (
+    $robotsMeta === ''
+    && (
+        str_starts_with($currentPath, '/customer/')
+        || str_starts_with($currentPath, '/seller/')
+        || str_starts_with($currentPath, '/admin/')
+        || $currentPath === '/profile.php'
+    )
+) {
+    $robotsMeta = 'noindex, nofollow, noarchive';
+}
+
+if ($robotsMeta !== '' && !headers_sent()) {
+    header('X-Robots-Tag: ' . $robotsMeta);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
     <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+    <?php if ($robotsMeta !== ''): ?>
+        <meta name="robots" content="<?= e($robotsMeta) ?>">
+    <?php endif; ?>
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -115,6 +157,73 @@ $renderHeaderIcon = static function (string $icon): string {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
+    <?php if ($isAdminArea): ?>
+        <link rel="stylesheet" href="<?= e(asset('css/admin.css')) ?>">
+    <?php endif; ?>
+    <script>
+        (() => {
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
+
+            if (!viewportMeta) {
+                return;
+            }
+
+            const baseViewport = 'width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no';
+            let syncTimeout = 0;
+            let syncFrame = 0;
+
+            const isNarrowViewport = () => {
+                const widths = [
+                    window.innerWidth,
+                    document.documentElement?.clientWidth,
+                    window.visualViewport?.width,
+                    window.screen?.width,
+                ].filter((value) => Number.isFinite(value) && value > 0);
+
+                if (widths.length === 0) {
+                    return false;
+                }
+
+                return Math.min(...widths) <= 767.98;
+            };
+
+            const refreshViewport = () => {
+                viewportMeta.setAttribute('content', `${baseViewport}, maximum-scale=1`);
+
+                window.cancelAnimationFrame(syncFrame);
+                syncFrame = window.requestAnimationFrame(() => {
+                    syncFrame = window.requestAnimationFrame(() => {
+                        viewportMeta.setAttribute('content', baseViewport);
+                    });
+                });
+            };
+
+            const scheduleViewportSync = () => {
+                window.clearTimeout(syncTimeout);
+                syncTimeout = window.setTimeout(() => {
+                    if (isNarrowViewport()) {
+                        refreshViewport();
+                    } else {
+                        viewportMeta.setAttribute('content', baseViewport);
+                    }
+                }, 50);
+            };
+
+            viewportMeta.setAttribute('content', baseViewport);
+            window.addEventListener('resize', scheduleViewportSync, { passive: true });
+            window.addEventListener('orientationchange', scheduleViewportSync);
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', scheduleViewportSync, { passive: true });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', scheduleViewportSync, { once: true });
+            } else {
+                scheduleViewportSync();
+            }
+        })();
+    </script>
 </head>
 
 <body class="<?= e($bodyClasses) ?>">
@@ -123,7 +232,9 @@ $renderHeaderIcon = static function (string $icon): string {
         (() => {
             const minimumDelay = 900;
             const startedAt = window.performance?.now?.() ?? Date.now();
+            const maximumFontWait = 1600;
             let revealScheduled = false;
+            let revealPromise = null;
 
             const revealPage = () => {
                 const body = document.body;
@@ -142,15 +253,32 @@ $renderHeaderIcon = static function (string $icon): string {
 
             const scheduleReveal = () => {
                 if (revealScheduled) {
-                    return;
+                    return revealPromise;
                 }
 
                 revealScheduled = true;
 
                 const now = window.performance?.now?.() ?? Date.now();
                 const remaining = Math.max(0, minimumDelay - (now - startedAt));
+                const delayGate = new Promise((resolve) => {
+                    window.setTimeout(resolve, remaining);
+                });
+                const fontGate = (() => {
+                    if (!document.fonts?.ready) {
+                        return Promise.resolve();
+                    }
 
-                window.setTimeout(revealPage, remaining);
+                    return Promise.race([
+                        document.fonts.ready.catch(() => undefined),
+                        new Promise((resolve) => {
+                            window.setTimeout(resolve, maximumFontWait);
+                        }),
+                    ]);
+                })();
+
+                revealPromise = Promise.all([delayGate, fontGate]).then(revealPage);
+
+                return revealPromise;
             };
 
             window.__novaRevealPageShell = revealPage;
@@ -164,6 +292,28 @@ $renderHeaderIcon = static function (string $icon): string {
             window.addEventListener('load', scheduleReveal, { once: true });
         })();
     </script>
+    <?php if ($isAdminArea): ?>
+        <div class="admin-shell">
+            <?= render('layouts/admin-sidebar', [
+                'currentPath' => $currentPath,
+                'appName' => $appName,
+                'sessionName' => $sessionName,
+                'sessionRole' => $sessionRole,
+            ]) ?>
+            <button class="admin-shell__backdrop" type="button" data-admin-sidebar-close aria-label="Close admin sidebar"></button>
+            <div class="admin-shell__content">
+                <div class="admin-topbar">
+                    <button class="admin-shell__toggle" type="button" data-admin-sidebar-toggle aria-controls="adminSidebar" aria-expanded="true" aria-label="Toggle admin sidebar">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div class="admin-topbar__titles">
+                        <span class="admin-topbar__eyebrow">Admin console</span>
+                        <strong><?= e($pageTitle) ?></strong>
+                    </div>
+                </div>
+    <?php else: ?>
     <header class="site-header site-header--market">
         <div class="container">
             <div class="site-header__main site-header__main--market">
@@ -259,6 +409,12 @@ $renderHeaderIcon = static function (string $icon): string {
                     <a href="<?= e((string) $link['href']) ?>" <?= !empty($link['active']) ? ' aria-current="page"' : '' ?>><?= e((string) $link['label']) ?></a>
                 <?php endforeach; ?>
             </nav>
+            <?php if ($showPaymentTestModeNotice): ?>
+                <div class="site-status-banner site-status-banner--warning" role="status">
+                    <strong>Stripe test mode active.</strong>
+                    <span>Use Stripe test cards only. This environment is not processing live charges.</span>
+                </div>
+            <?php endif; ?>
         </div>
     </header>
 
@@ -295,3 +451,4 @@ $renderHeaderIcon = static function (string $icon): string {
             </div>
         </div>
     </div>
+    <?php endif; ?>
