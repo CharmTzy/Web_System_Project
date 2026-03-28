@@ -74,9 +74,9 @@ final class CheckoutService
         });
     }
 
-    public function createPendingOrder(int $userId, int $addressId): array
+    public function createPendingOrder(int $userId, int $addressId, ?array $summaryOverride = null): array
     {
-        $summary = $this->cartService->summary();
+        $summary = $summaryOverride ?? $this->cartService->summary();
 
         if (!empty($summary['is_empty'])) {
             throw new RuntimeException('Your cart is empty.');

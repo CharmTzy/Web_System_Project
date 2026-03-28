@@ -34,7 +34,6 @@ $orderRepository = new \App\Repositories\OrderRepository($connection);
 $checkoutService = new \App\Services\CheckoutService(
     $cartService,
     new \App\Repositories\AddressRepository($connection),
-    new \App\Repositories\PaymentCardRepository($connection),
     $orderRepository,
     new \App\Repositories\ProductRepository($connection),
     new \App\Repositories\CartRepository($connection),
@@ -69,6 +68,7 @@ if ($order['status'] === 'pending' && $sessionId !== '' && !empty($config['app']
     }
 }
 
+$paymentsInTestMode = payments_use_test_mode($config['app']);
 $pageTitle = 'Payment status';
 $appName = $config['app']['name'];
 
@@ -79,7 +79,11 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
         <div class="container">
             <span class="hero-section__eyebrow">Checkout</span>
             <h1 class="hero-section__title" style="max-width:18ch;">Payment status</h1>
-            <p class="hero-section__copy">We’re verifying your Stripe payment and order details.</p>
+            <p class="hero-section__copy">
+                <?= $paymentsInTestMode
+                    ? 'We’re verifying your Stripe test payment and order details.'
+                    : 'We’re verifying your Stripe payment and order details.' ?>
+            </p>
         </div>
     </section>
     <section class="catalog-section">
@@ -87,6 +91,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
             <?= render('customer/checkout-success', [
                 'order' => $order,
                 'sessionId' => $sessionId,
+                'paymentsInTestMode' => $paymentsInTestMode,
             ]) ?>
         </div>
     </section>

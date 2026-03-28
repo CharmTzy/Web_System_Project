@@ -76,6 +76,40 @@ function request_is_secure(): bool
         || $serverPort === '443';
 }
 
+function request_origin(): ?string
+{
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
+
+    if ($host === '') {
+        return null;
+    }
+
+    return (request_is_secure() ? 'https' : 'http') . '://' . $host;
+}
+
+function url_origin(string $url): ?string
+{
+    $parts = parse_url($url);
+
+    if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+        return null;
+    }
+
+    $origin = strtolower((string) $parts['scheme']) . '://' . strtolower((string) $parts['host']);
+    $port = isset($parts['port']) ? (int) $parts['port'] : null;
+
+    if ($port !== null) {
+        $isDefaultPort = ($parts['scheme'] === 'http' && $port === 80)
+            || ($parts['scheme'] === 'https' && $port === 443);
+
+        if (!$isDefaultPort) {
+            $origin .= ':' . $port;
+        }
+    }
+
+    return $origin;
+}
+
 function bootstrap_session_security(): void
 {
     if (session_status() !== PHP_SESSION_NONE) {
@@ -106,10 +140,22 @@ function send_security_headers(): void
         return;
     }
 
+    $formActionSources = ["'self'"];
+
+    foreach ([
+        request_origin(),
+        url_origin((string) env('APP_URL', '')),
+        'https://checkout.stripe.com',
+    ] as $origin) {
+        if ($origin !== null && !in_array($origin, $formActionSources, true)) {
+            $formActionSources[] = $origin;
+        }
+    }
+
     $contentSecurityPolicy = implode('; ', [
         "default-src 'self'",
         "base-uri 'self'",
-        "form-action 'self'",
+        'form-action ' . implode(' ', $formActionSources),
         "frame-ancestors 'none'",
         "object-src 'none'",
         "img-src 'self' data: https://storage.googleapis.com",
@@ -141,6 +187,43 @@ function env(string $key, mixed $default = null): mixed
     }
 
     return $value;
+}
+
+function stripe_mode(?array $appConfig = null): string
+{
+    $keys = [
+        trim((string) ($appConfig['stripe_secret_key'] ?? env('STRIPE_SECRET_KEY', ''))),
+        trim((string) ($appConfig['stripe_publishable_key'] ?? env('STRIPE_PUBLISHABLE_KEY', ''))),
+    ];
+
+    foreach ($keys as $key) {
+        if ($key === '') {
+            continue;
+        }
+
+        if (
+            str_starts_with($key, 'sk_test_')
+            || str_starts_with($key, 'pk_test_')
+            || str_starts_with($key, 'rk_test_')
+        ) {
+            return 'test';
+        }
+
+        if (
+            str_starts_with($key, 'sk_live_')
+            || str_starts_with($key, 'pk_live_')
+            || str_starts_with($key, 'rk_live_')
+        ) {
+            return 'live';
+        }
+    }
+
+    return 'unconfigured';
+}
+
+function payments_use_test_mode(?array $appConfig = null): bool
+{
+    return stripe_mode($appConfig) === 'test';
 }
 
 function e(mixed $value): string

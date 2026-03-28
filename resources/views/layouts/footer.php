@@ -13,6 +13,11 @@ declare(strict_types=1);
     <?php else: ?>
     <footer class="site-footer">
         <div class="container">
+            <nav class="site-footer__links" aria-label="Legal and contact links">
+                <a href="/privacy.php"<?= ($currentPath ?? '') === '/privacy.php' ? ' aria-current="page"' : '' ?>>Privacy Policy</a>
+                <a href="/terms.php"<?= ($currentPath ?? '') === '/terms.php' ? ' aria-current="page"' : '' ?>>Terms</a>
+                <a href="/contact.php"<?= ($currentPath ?? '') === '/contact.php' ? ' aria-current="page"' : '' ?>>Contact</a>
+            </nav>
             <p class="site-footer__copyright mb-0">Copyright &copy; 2026 NovaMarket. All rights reserved.</p>
         </div>
     </footer>

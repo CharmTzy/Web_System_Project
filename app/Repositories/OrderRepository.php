@@ -312,6 +312,11 @@ final class OrderRepository
 
     private function normalizeOrder(array $row): array
     {
+        $subtotal = (float) $row['subtotal'];
+        $shippingFee = (float) $row['shipping_fee'];
+        $total = (float) $row['total'];
+        $discountAmount = max(0, round(($subtotal + $shippingFee) - $total, 2));
+
         return [
             'id' => (int) $row['id'],
             'customer_id' => (int) $row['customer_id'],
@@ -325,12 +330,14 @@ final class OrderRepository
             'shipping_postal_code' => (string) $row['shipping_postal_code'],
             'shipping_country' => (string) $row['shipping_country'],
             'shipping_phone' => $row['shipping_phone'],
-            'subtotal' => (float) $row['subtotal'],
-            'subtotal_formatted' => money((float) $row['subtotal']),
-            'shipping_fee' => (float) $row['shipping_fee'],
-            'shipping_fee_formatted' => (float) $row['shipping_fee'] > 0 ? money((float) $row['shipping_fee']) : 'FREE',
-            'total' => (float) $row['total'],
-            'total_formatted' => money((float) $row['total']),
+            'subtotal' => $subtotal,
+            'subtotal_formatted' => money($subtotal),
+            'shipping_fee' => $shippingFee,
+            'shipping_fee_formatted' => $shippingFee > 0 ? money($shippingFee) : 'FREE',
+            'discount_amount' => $discountAmount,
+            'discount_amount_formatted' => money($discountAmount),
+            'total' => $total,
+            'total_formatted' => money($total),
             'created_at' => (string) $row['created_at'],
             'updated_at' => (string) $row['updated_at'],
         ];

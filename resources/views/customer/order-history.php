@@ -49,6 +49,9 @@ $error = $error ?? null;
                     <div>
                         <span>Order totals</span>
                         <strong><?= e((string) $order['subtotal_formatted']) ?> + <?= e((string) $order['shipping_fee_formatted']) ?> shipping</strong>
+                        <?php if (!empty($order['discount_amount'])): ?>
+                            <p>Promotional savings -<?= e((string) $order['discount_amount_formatted']) ?></p>
+                        <?php endif; ?>
                         <p>Grand total <?= e((string) $order['total_formatted']) ?></p>
                     </div>
                 </div>

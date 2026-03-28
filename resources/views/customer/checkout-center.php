@@ -6,6 +6,10 @@ $cart = $cart ?? ['items' => [], 'is_empty' => true];
 $addresses = $addresses ?? [];
 $formError = $formError ?? null;
 $selectedAddressId = (int) ($selectedAddressId ?? 0);
+$paymentsInTestMode = !empty($paymentsInTestMode);
+$availableCoupons = $availableCoupons ?? [];
+$selectedCouponCode = strtoupper(trim((string) ($selectedCouponCode ?? '')));
+$appliedCoupon = $appliedCoupon ?? ($cart['applied_coupon'] ?? null);
 ?>
 <?php if ($addresses === []): ?>
     <div class="customer-grid customer-grid--checkout">
@@ -41,6 +45,12 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
                     <span>Shipping</span>
                     <strong><?= e((string) $cart['shipping_formatted']) ?></strong>
                 </div>
+                <?php if (!empty($cart['has_discount'])): ?>
+                    <div class="summary-row summary-row--discount">
+                        <span>Coupon savings</span>
+                        <strong>-<?= e((string) $cart['discount_amount_formatted']) ?></strong>
+                    </div>
+                <?php endif; ?>
                 <div class="summary-row summary-row--grand">
                     <span>Grand total</span>
                     <strong><?= e((string) $cart['grand_total_formatted']) ?></strong>
@@ -62,8 +72,56 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
                 <div class="alert alert-danger" role="alert"><?= e((string) $formError) ?></div>
             <?php endif; ?>
 
+            <?php if ($paymentsInTestMode): ?>
+                <div class="alert alert-warning" role="alert">
+                    Stripe test mode is active on this environment. Use Stripe test cards only. No live charge should be expected here.
+                </div>
+            <?php endif; ?>
+
+            <?php if ($availableCoupons !== []): ?>
+                <div class="checkout-group">
+                    <div class="checkout-group__heading">
+                        <span class="hero-section__eyebrow">Coupon</span>
+                    </div>
+                    <form class="checkout-coupon-form" method="get" action="/customer/checkout.php">
+                        <input type="hidden" name="address_id" value="<?= e((string) $selectedAddressId) ?>">
+                        <div class="checkout-coupon-form__controls">
+                            <label class="visually-hidden" for="checkout-coupon-code">Select a coupon</label>
+                            <select id="checkout-coupon-code" class="form-select" name="coupon_code">
+                                <option value="">Choose a coupon</option>
+                                <?php foreach ($availableCoupons as $coupon): ?>
+                                    <option value="<?= e((string) $coupon['code']) ?>" <?= $selectedCouponCode === strtoupper((string) $coupon['code']) ? 'selected' : '' ?><?= empty($coupon['is_eligible']) ? ' disabled' : '' ?>>
+                                        <?= e((string) $coupon['option_label']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button class="btn btn-brand-outline" type="submit">Apply</button>
+                            <?php if ($selectedCouponCode !== ''): ?>
+                                <a class="btn btn-link btn-remove" href="/customer/checkout.php?address_id=<?= e((string) $selectedAddressId) ?>">Remove</a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
+
+                    <?php if (!empty($appliedCoupon)): ?>
+                        <div class="checkout-coupon-card">
+                            <div>
+                                <strong><?= e((string) $appliedCoupon['code']) ?></strong>
+                                <p><?= e((string) ($appliedCoupon['title'] ?? 'Coupon applied')) ?></p>
+                                <span><?= e((string) ($appliedCoupon['scope_label'] ?? '')) ?></span>
+                            </div>
+                            <div class="checkout-coupon-card__value">
+                                <?= e((string) ($appliedCoupon['discount_amount_formatted'] ?? $appliedCoupon['discount_label'] ?? 'Applied')) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
             <form class="customer-form" method="post" action="/api/stripe-checkout.php">
                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                <?php if ($selectedCouponCode !== ''): ?>
+                    <input type="hidden" name="coupon_code" value="<?= e($selectedCouponCode) ?>">
+                <?php endif; ?>
 
                 <div class="checkout-group">
                     <div class="checkout-group__heading">
@@ -86,8 +144,15 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
                     </div>
                 </div>
 
-                <p class="summary-card__note mb-3">You’ll be redirected to Stripe’s secure checkout page to complete payment.</p>
-                <button class="btn btn-brand w-100" type="submit">Continue to Stripe · <?= e((string) $cart['grand_total_formatted']) ?></button>
+                <p class="summary-card__note mb-3">
+                    <?= $paymentsInTestMode
+                        ? 'You’ll be redirected to Stripe test checkout to verify the payment flow. Do not use real payment details on this environment.'
+                        : 'You’ll be redirected to Stripe’s secure checkout page to complete payment.' ?>
+                </p>
+                <button class="btn btn-brand w-100" type="submit">
+                    <?= $paymentsInTestMode ? 'Continue to Stripe test checkout' : 'Continue to Stripe' ?>
+                    · <?= e((string) $cart['grand_total_formatted']) ?>
+                </button>
             </form>
         </section>
 
@@ -109,12 +174,22 @@ $selectedAddressId = (int) ($selectedAddressId ?? 0);
                     <span>Shipping</span>
                     <strong><?= e((string) $cart['shipping_formatted']) ?></strong>
                 </div>
+                <?php if (!empty($cart['has_discount'])): ?>
+                    <div class="summary-row summary-row--discount">
+                        <span>Coupon savings</span>
+                        <strong>-<?= e((string) $cart['discount_amount_formatted']) ?></strong>
+                    </div>
+                <?php endif; ?>
                 <div class="summary-row summary-row--grand">
                     <span>Grand total</span>
                     <strong><?= e((string) $cart['grand_total_formatted']) ?></strong>
                 </div>
             </div>
-            <p class="summary-card__note">Payment is processed securely by Stripe. Your order will be confirmed after payment succeeds.</p>
+            <p class="summary-card__note">
+                <?= $paymentsInTestMode
+                    ? 'This environment is using Stripe test mode. Payments here are for checkout testing and verification only.'
+                    : 'Payment is processed securely by Stripe. Your order will be confirmed after payment succeeds.' ?>
+            </p>
         </aside>
     </div>
 <?php endif; ?>

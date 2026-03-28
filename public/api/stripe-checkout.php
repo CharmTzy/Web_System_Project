@@ -31,6 +31,7 @@ if (!$connection) {
 
 $userId = (int) $_SESSION['user_id'];
 $selectedAddressId = (int) ($_POST['address_id'] ?? 0);
+$selectedCouponCode = strtoupper(trim((string) ($_POST['coupon_code'] ?? '')));
 
 if ($selectedAddressId < 1) {
     flash('checkout_error', 'Please select a shipping address.');
@@ -43,17 +44,27 @@ $cartService = new \App\Services\CartService(
     $config['app'],
     new \App\Repositories\CartRepository($connection),
 );
+$couponRepository = new \App\Repositories\CouponRepository($connection);
+$checkoutCouponService = new \App\Services\CheckoutCouponService($couponRepository);
 $checkoutService = new \App\Services\CheckoutService(
     $cartService,
     new \App\Repositories\AddressRepository($connection),
-    new \App\Repositories\PaymentCardRepository($connection),
     new \App\Repositories\OrderRepository($connection),
     new \App\Repositories\ProductRepository($connection),
     new \App\Repositories\CartRepository($connection),
 );
 
 try {
-    $pendingOrder = $checkoutService->createPendingOrder($userId, $selectedAddressId);
+    $cartSummary = $cartService->summary();
+    $appliedCoupon = null;
+
+    if ($selectedCouponCode !== '') {
+        $couponResult = $checkoutCouponService->applyCoupon($cartSummary, $selectedCouponCode);
+        $cartSummary = $couponResult['summary'];
+        $appliedCoupon = $couponResult['coupon'];
+    }
+
+    $pendingOrder = $checkoutService->createPendingOrder($userId, $selectedAddressId, $cartSummary);
 
     $lineItems = [];
     foreach ($pendingOrder['items'] as $item) {
@@ -87,16 +98,34 @@ try {
         . '/customer/checkout-success.php?session_id={CHECKOUT_SESSION_ID}&order='
         . rawurlencode((string) $pendingOrder['order_number']);
 
-    $session = stripe_api_request('POST', 'checkout/sessions', (string) $config['app']['stripe_secret_key'], [
+    $sessionPayload = [
         'mode' => 'payment',
         'success_url' => $successUrl,
-        'cancel_url' => $appUrl . '/customer/checkout.php?address_id=' . $selectedAddressId,
+        'cancel_url' => $appUrl . '/customer/checkout.php?address_id=' . $selectedAddressId . ($selectedCouponCode !== '' ? '&coupon_code=' . rawurlencode($selectedCouponCode) : ''),
         'line_items' => $lineItems,
         'metadata' => [
             'order_number' => (string) $pendingOrder['order_number'],
             'user_id' => (string) $userId,
+            'coupon_code' => $selectedCouponCode,
         ],
-    ]);
+    ];
+
+    if (!empty($cartSummary['has_discount']) && (float) ($cartSummary['discount_amount'] ?? 0) > 0) {
+        $stripeCoupon = stripe_api_request('POST', 'coupons', (string) $config['app']['stripe_secret_key'], [
+            'duration' => 'once',
+            'name' => 'NovaMarket ' . ($appliedCoupon['code'] ?? 'discount'),
+            'amount_off' => (int) round(((float) $cartSummary['discount_amount']) * 100),
+            'currency' => (string) ($config['app']['currency'] ?? 'sgd'),
+        ]);
+
+        $sessionPayload['discounts'] = [
+            [
+                'coupon' => (string) ($stripeCoupon['id'] ?? ''),
+            ],
+        ];
+    }
+
+    $session = stripe_api_request('POST', 'checkout/sessions', (string) $config['app']['stripe_secret_key'], $sessionPayload);
 
     $checkoutUrl = (string) ($session['url'] ?? '');
 
@@ -109,6 +138,6 @@ try {
 } catch (\Throwable $exception) {
     report_exception($exception, 'api.stripe-checkout');
     flash('checkout_error', safe_exception_message($exception, 'Unable to start Stripe checkout right now.'));
-    header('Location: /customer/checkout.php?address_id=' . $selectedAddressId);
+    header('Location: /customer/checkout.php?address_id=' . $selectedAddressId . ($selectedCouponCode !== '' ? '&coupon_code=' . rawurlencode($selectedCouponCode) : ''));
     exit;
 }

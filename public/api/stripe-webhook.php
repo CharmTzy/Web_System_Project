@@ -79,7 +79,6 @@ try {
                         new \App\Repositories\CartRepository($connection),
                     ),
                     new \App\Repositories\AddressRepository($connection),
-                    new \App\Repositories\PaymentCardRepository($connection),
                     new \App\Repositories\OrderRepository($connection),
                     new \App\Repositories\ProductRepository($connection),
                     new \App\Repositories\CartRepository($connection),
