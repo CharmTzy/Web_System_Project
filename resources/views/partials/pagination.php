@@ -27,7 +27,7 @@ $buildUrl = static function (int $page) use ($currentPath, $query): string {
 $windowStart = max(1, (int) $pagination['page'] - 2);
 $windowEnd = min((int) $pagination['total_pages'], (int) $pagination['page'] + 2);
 ?>
-<nav class="admin-pagination" aria-label="Table pagination">
+<nav class="admin-pagination" aria-label="Pagination">
     <p class="admin-pagination__summary">
         Showing <?= e((string) $pagination['from']) ?>-<?= e((string) $pagination['to']) ?>
         of <?= e((string) $pagination['total_items']) ?>

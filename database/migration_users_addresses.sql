@@ -3,9 +3,9 @@
 
 -- Add profile and status columns to users
 ALTER TABLE users
-    ADD COLUMN phone       VARCHAR(30)  DEFAULT NULL AFTER email,
-    ADD COLUMN avatar_url  VARCHAR(255) DEFAULT NULL AFTER phone,
-    ADD COLUMN is_active   TINYINT(1)   NOT NULL DEFAULT 1 AFTER role;
+    ADD COLUMN IF NOT EXISTS phone       VARCHAR(30)  DEFAULT NULL AFTER email,
+    ADD COLUMN IF NOT EXISTS avatar_url  VARCHAR(255) DEFAULT NULL AFTER phone,
+    ADD COLUMN IF NOT EXISTS is_active   TINYINT(1)   NOT NULL DEFAULT 1 AFTER role;
 
 -- Customer addresses
 CREATE TABLE IF NOT EXISTS addresses (
@@ -33,5 +33,12 @@ CREATE TABLE IF NOT EXISTS addresses (
 UPDATE users SET is_active = 1 WHERE id > 0;
 
 -- Seed: sample address for the customer
-INSERT INTO addresses (user_id, label, recipient, line_1, city, state, postal_code, country, phone, is_default) VALUES
-    (6, 'Home', 'Sample Customer', '123 Orchard Road, #04-56', 'Singapore', 'Central', '238888', 'Singapore', '+65 9123 4567', 1);
+INSERT INTO addresses (user_id, label, recipient, line_1, city, state, postal_code, country, phone, is_default)
+SELECT 6, 'Home', 'Sample Customer', '123 Orchard Road, #04-56', 'Singapore', 'Central', '238888', 'Singapore', '+65 9123 4567', 1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM addresses
+    WHERE user_id = 6
+      AND label = 'Home'
+      AND line_1 = '123 Orchard Road, #04-56'
+);

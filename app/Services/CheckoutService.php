@@ -34,37 +34,17 @@ final class CheckoutService
             throw new RuntimeException('Select a valid shipping address.');
         }
 
-        $items = array_map(
-            static fn (array $item): array => [
-                'product_id' => (int) $item['product_id'],
-                'product_name' => (string) $item['product']['name'],
-                'quantity' => (int) $item['quantity'],
-                'unit_price' => (float) $item['product']['price'],
-                'line_total' => (float) $item['line_total'],
-            ],
-            $summary['items']
-        );
+        $items = $this->buildOrderItems($summary);
+        $orderData = $this->buildOrderData($userId, $address, $summary);
 
-        return $this->orderRepository->transaction(function () use ($userId, $address, $summary, $items) {
+        return $this->orderRepository->transaction(function () use ($userId, $items, $orderData) {
             foreach ($items as $item) {
                 $this->productRepository->reduceStock($item['product_id'], $item['quantity']);
             }
 
             $orderId = $this->orderRepository->create([
-                'customer_id' => $userId,
+                ...$orderData,
                 'order_number' => $this->generateOrderNumber(),
-                'status' => 'pending',
-                'shipping_recipient' => $address['recipient'],
-                'shipping_line_1' => $address['line_1'],
-                'shipping_line_2' => $address['line_2'],
-                'shipping_city' => $address['city'],
-                'shipping_state' => $address['state'],
-                'shipping_postal_code' => $address['postal_code'],
-                'shipping_country' => $address['country'],
-                'shipping_phone' => $address['phone'],
-                'subtotal' => $summary['subtotal'],
-                'shipping_fee' => $summary['shipping'],
-                'total' => $summary['grand_total'],
             ], $items);
 
             $this->cartService->clear();
@@ -87,45 +67,35 @@ final class CheckoutService
             throw new RuntimeException('Select a valid shipping address.');
         }
 
-        $items = array_map(
-            static fn (array $item): array => [
-                'product_id' => (int) $item['product_id'],
-                'product_name' => (string) $item['product']['name'],
-                'quantity' => (int) $item['quantity'],
-                'unit_price' => (float) $item['product']['price'],
-                'line_total' => (float) $item['line_total'],
-            ],
-            $summary['items']
-        );
+        $items = $this->buildOrderItems($summary);
+        $orderData = $this->buildOrderData($userId, $address, $summary);
 
-        return $this->orderRepository->transaction(function () use ($userId, $address, $summary, $items) {
+        return $this->orderRepository->transaction(function () use ($userId, $items, $orderData) {
+            $existingOrder = $this->orderRepository->findMatchingPendingOrderForCustomer($userId, $orderData, $items);
+
+            if ($existingOrder !== null) {
+                $this->orderRepository->deleteMatchingPendingOrdersForCustomerExcept($userId, (int) $existingOrder['id'], $orderData, $items);
+
+                return $existingOrder;
+            }
+
             $orderId = $this->orderRepository->create([
-                'customer_id' => $userId,
+                ...$orderData,
                 'order_number' => $this->generateOrderNumber(),
-                'status' => 'pending',
-                'shipping_recipient' => $address['recipient'],
-                'shipping_line_1' => $address['line_1'],
-                'shipping_line_2' => $address['line_2'],
-                'shipping_city' => $address['city'],
-                'shipping_state' => $address['state'],
-                'shipping_postal_code' => $address['postal_code'],
-                'shipping_country' => $address['country'],
-                'shipping_phone' => $address['phone'],
-                'payment_card_brand' => null,
-                'payment_card_last_four' => null,
-                'subtotal' => $summary['subtotal'],
-                'shipping_fee' => $summary['shipping'],
-                'total' => $summary['grand_total'],
             ], $items);
 
-            return $this->orderRepository->findByIdForCustomer($orderId, $userId)
+            $createdOrder = $this->orderRepository->findByIdForCustomer($orderId, $userId)
                 ?? throw new RuntimeException('The order was created, but we could not load it afterward.');
+
+            $this->orderRepository->deleteMatchingPendingOrdersForCustomerExcept($userId, $orderId, $orderData, $items);
+
+            return $createdOrder;
         });
     }
 
-    public function finalizePendingOrder(string $orderNumber, ?string $cardBrand = null, ?string $cardLastFour = null): ?array
+    public function finalizePendingOrder(string $orderNumber): ?array
     {
-        return $this->orderRepository->transaction(function () use ($orderNumber, $cardBrand, $cardLastFour) {
+        return $this->orderRepository->transaction(function () use ($orderNumber) {
             $order = $this->orderRepository->findByOrderNumber($orderNumber);
 
             if ($order === null) {
@@ -140,15 +110,90 @@ final class CheckoutService
                 $this->productRepository->reduceStock((int) $item['product_id'], (int) $item['quantity']);
             }
 
-            $this->orderRepository->markPaidByOrderNumber($orderNumber, $cardBrand, $cardLastFour);
+            $this->orderRepository->markPaidByOrderNumber($orderNumber);
+            $paidOrder = $this->orderRepository->findByOrderNumber($orderNumber) ?? $order;
+            $this->orderRepository->deleteMatchingPendingOrdersForCustomerExcept(
+                (int) $paidOrder['customer_id'],
+                (int) $paidOrder['id'],
+                $this->buildOrderDataFromOrder($paidOrder),
+                $this->buildItemsFromOrder($paidOrder)
+            );
             $this->cartRepository->clearActiveCartForUser((int) $order['customer_id']);
 
-            return $this->orderRepository->findByOrderNumber($orderNumber);
+            return $paidOrder;
         });
     }
 
     private function generateOrderNumber(): string
     {
         return 'NM-' . date('ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
+    }
+
+    private function buildOrderItems(array $summary): array
+    {
+        return array_map(
+            static fn (array $item): array => [
+                'product_id' => (int) $item['product_id'],
+                'product_name' => (string) $item['product']['name'],
+                'seller_id' => (int) ($item['product']['seller_id'] ?? 0),
+                'quantity' => (int) $item['quantity'],
+                'unit_price' => (float) $item['product']['price'],
+                'line_total' => (float) $item['line_total'],
+            ],
+            $summary['items']
+        );
+    }
+
+    private function buildOrderData(int $userId, array $address, array $summary): array
+    {
+        return [
+            'customer_id' => $userId,
+            'status' => 'pending',
+            'shipping_recipient' => $address['recipient'],
+            'shipping_line_1' => $address['line_1'],
+            'shipping_line_2' => $address['line_2'],
+            'shipping_city' => $address['city'],
+            'shipping_state' => $address['state'],
+            'shipping_postal_code' => $address['postal_code'],
+            'shipping_country' => $address['country'],
+            'shipping_phone' => $address['phone'],
+            'subtotal' => (float) $summary['subtotal'],
+            'shipping_fee' => (float) $summary['shipping'],
+            'total' => (float) $summary['grand_total'],
+        ];
+    }
+
+    private function buildOrderDataFromOrder(array $order): array
+    {
+        return [
+            'customer_id' => (int) $order['customer_id'],
+            'status' => (string) $order['status'],
+            'shipping_recipient' => (string) $order['shipping_recipient'],
+            'shipping_line_1' => (string) $order['shipping_line_1'],
+            'shipping_line_2' => $order['shipping_line_2'],
+            'shipping_city' => (string) $order['shipping_city'],
+            'shipping_state' => (string) $order['shipping_state'],
+            'shipping_postal_code' => (string) $order['shipping_postal_code'],
+            'shipping_country' => (string) $order['shipping_country'],
+            'shipping_phone' => $order['shipping_phone'],
+            'subtotal' => (float) $order['subtotal'],
+            'shipping_fee' => (float) $order['shipping_fee'],
+            'total' => (float) $order['total'],
+        ];
+    }
+
+    private function buildItemsFromOrder(array $order): array
+    {
+        return array_map(
+            static fn (array $item): array => [
+                'product_id' => (int) ($item['product_id'] ?? 0),
+                'product_name' => (string) ($item['product_name'] ?? ''),
+                'seller_id' => (int) ($item['seller_id'] ?? 0),
+                'quantity' => (int) ($item['quantity'] ?? 0),
+                'unit_price' => (float) ($item['unit_price'] ?? 0),
+                'line_total' => (float) ($item['line_total'] ?? 0),
+            ],
+            $order['items'] ?? []
+        );
     }
 }

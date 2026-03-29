@@ -46,6 +46,7 @@ $products = $service->listSellerProducts((int) $_SESSION['user_id']);
 $pageTitle = 'Manage Products';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
+$pageSkeletonVariant = 'admin-table';
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 ?>

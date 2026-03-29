@@ -23,15 +23,21 @@ $pageTitle = 'Store Profile';
 $appName = $config['app']['name'];
 $pageScript = 'seller-store.js';
 $cartSummary = ['total_items' => 0];
+$pageSkeletonVariant = 'admin-form';
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 ?>
 <main>
-    <section class="auth-section">
+    <section class="hero-section hero-section--compact">
         <div class="container">
-            <div class="auth-wrapper">
-                <?= render('seller/store-form', ['profile' => $profile]) ?>
-            </div>
+            <span class="hero-section__eyebrow">Seller workspace</span>
+            <h1 class="hero-section__title" style="max-width:18ch;">Store Profile</h1>
+            <p class="hero-section__copy">Keep your storefront identity, slug, and support contact details current for buyers.</p>
+        </div>
+    </section>
+    <section class="catalog-section">
+        <div class="container">
+            <?= render('seller/store-form', ['profile' => $profile]) ?>
         </div>
     </section>
 </main>

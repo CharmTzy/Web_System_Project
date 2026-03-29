@@ -10,6 +10,16 @@
     linear-gradient(180deg, #eef4ff 0%, #f7faff 100%);
 }
 
+.seller-body {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(8, 145, 178, 0.12),
+      transparent 24%
+    ),
+    linear-gradient(180deg, #eefcfd 0%, #f7fcff 100%);
+}
+
 .admin-shell {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -43,6 +53,16 @@
   transition:
     padding 0.22s ease,
     transform 0.22s ease;
+}
+
+.seller-body .admin-sidebar {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(45, 212, 191, 0.18),
+      transparent 28%
+    ),
+    linear-gradient(180deg, #0f172a 0%, #10374a 100%);
 }
 
 .admin-sidebar__brand {
@@ -165,6 +185,15 @@
   );
   color: #fff;
   box-shadow: 0 16px 30px rgba(37, 99, 235, 0.28);
+}
+
+.seller-body .admin-sidebar__nav a[aria-current="page"] {
+  background: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.92),
+    rgba(8, 145, 178, 0.86)
+  );
+  box-shadow: 0 16px 30px rgba(8, 145, 178, 0.24);
 }
 
 .admin-sidebar__footer {

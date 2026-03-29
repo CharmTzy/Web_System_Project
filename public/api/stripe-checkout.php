@@ -55,6 +55,23 @@ $checkoutService = new \App\Services\CheckoutService(
 );
 
 try {
+    $cartSignature = static function (array $items): string {
+        $signature = array_map(
+            static fn (array $item): string => implode(':', [
+                (int) ($item['product_id'] ?? 0),
+                (int) ($item['seller_id'] ?? 0),
+                (int) ($item['quantity'] ?? 0),
+                number_format((float) ($item['unit_price'] ?? 0), 2, '.', ''),
+                number_format((float) ($item['line_total'] ?? 0), 2, '.', ''),
+            ]),
+            $items
+        );
+
+        sort($signature);
+
+        return implode('|', $signature);
+    };
+
     $cartSummary = $cartService->summary();
     $appliedCoupon = null;
 
@@ -132,6 +149,9 @@ try {
     if ($checkoutUrl === '') {
         throw new RuntimeException('Unable to start Stripe checkout. Please try again.');
     }
+
+    $_SESSION['checkout_pending_order'] = (string) $pendingOrder['order_number'];
+    $_SESSION['checkout_pending_signature'] = $cartSignature($pendingOrder['items']);
 
     header('Location: ' . $checkoutUrl, true, 303);
     exit;
