@@ -1,3 +1,4 @@
+USE novamarket;
 -- Migration: Product Reviews
 -- Run this AFTER the orders migration so purchase checks can read orders and order_items
 
@@ -12,6 +13,7 @@ CREATE TABLE IF NOT EXISTS product_reviews (
     is_visible TINYINT(1) NOT NULL DEFAULT 1,
     is_flagged TINYINT(1) NOT NULL DEFAULT 0,
     flagged_reason VARCHAR(255) DEFAULT NULL,
+    hide_reason VARCHAR(255)DEFAULT NULL,
     moderated_by BIGINT UNSIGNED DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -346,14 +346,46 @@ final class ReviewRepository
                 UPDATE product_reviews
                 SET is_visible = 0,
                     is_flagged = 1,
-                    flagged_reason = :flagged_reason,
+                    hide_reason = :hide_reason,
                     moderated_by = :moderated_by
                 WHERE id = :review_id
                 SQL
             );
             $statement->execute([
-                'flagged_reason' => $reason,
+                'hide_reason' => $reason,
                 'moderated_by' => $moderatedBy,
+                'review_id' => $reviewId,
+            ]);
+
+            $this->refreshProductStats((int) $review['product_id']);
+
+            return true;
+        } catch (PDOException) {
+            return false;
+        }
+    }
+
+    public function restore(int $reviewId): bool
+    {
+        try {
+            $review = $this->findById($reviewId);
+
+            if ($review === null) {
+                return false;
+            }
+
+            $statement = $this->connection->prepare(
+                <<<SQL
+                UPDATE product_reviews
+                SET is_visible = 1,
+                    is_flagged = 0,
+                    flagged_reason = NULL,
+                    hide_reason = NULL,
+                    moderated_by = NULL
+                WHERE id = :review_id
+                SQL
+            );
+            $statement->execute([
                 'review_id' => $reviewId,
             ]);
 
@@ -470,6 +502,9 @@ final class ReviewRepository
             'is_flagged' => isset($row['is_flagged']) ? (bool) $row['is_flagged'] : false,
             'flagged_reason' => isset($row['flagged_reason']) && $row['flagged_reason'] !== null
                 ? (string) $row['flagged_reason']
+                : null,
+            'hide_reason' => isset($row['hide_reason']) && $row['hide_reason'] !== null
+                ? (string) $row['hide_reason']
                 : null,
             'moderated_by' => isset($row['moderated_by']) && $row['moderated_by'] !== null
                 ? (int) $row['moderated_by']
