@@ -33,6 +33,68 @@ final class AddressRepository
         return array_map(fn (array $row) => $this->normalize($row), $stmt->fetchAll());
     }
 
+    public function findDetailedById(int $id): ?array
+    {
+        $stmt = $this->connection->prepare(
+            <<<SQL
+            SELECT
+                a.*,
+                u.name AS user_name,
+                u.email AS user_email
+            FROM addresses a
+            INNER JOIN users u
+                ON u.id = a.user_id
+            WHERE a.id = :id
+            LIMIT 1
+            SQL
+        );
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+
+        return is_array($row) ? $this->normalizeDetailed($row) : null;
+    }
+
+    public function listAll(array $filters = []): array
+    {
+        $conditions = [];
+        $params = [];
+
+        if (($filters['user_id'] ?? 0) > 0) {
+            $conditions[] = 'a.user_id = :user_id';
+            $params['user_id'] = (int) $filters['user_id'];
+        }
+
+        if (($filters['search'] ?? '') !== '') {
+            $conditions[] = '(u.name LIKE :search_name OR u.email LIKE :search_email OR a.recipient LIKE :search_recipient OR a.line_1 LIKE :search_line)';
+            $searchPattern = '%' . $filters['search'] . '%';
+            $params['search_name'] = $searchPattern;
+            $params['search_email'] = $searchPattern;
+            $params['search_recipient'] = $searchPattern;
+            $params['search_line'] = $searchPattern;
+        }
+
+        $sql = <<<SQL
+            SELECT
+                a.*,
+                u.name AS user_name,
+                u.email AS user_email
+            FROM addresses a
+            INNER JOIN users u
+                ON u.id = a.user_id
+            SQL;
+
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+
+        $sql .= ' ORDER BY a.is_default DESC, a.created_at DESC';
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute($params);
+
+        return array_map(fn (array $row) => $this->normalizeDetailed($row), $stmt->fetchAll());
+    }
+
     public function countByUser(int $userId): int
     {
         $stmt = $this->connection->prepare(
@@ -130,6 +192,14 @@ final class AddressRepository
             'is_default' => (bool) $row['is_default'],
             'created_at' => (string) $row['created_at'],
             'updated_at' => (string) $row['updated_at'],
+        ];
+    }
+
+    private function normalizeDetailed(array $row): array
+    {
+        return $this->normalize($row) + [
+            'user_name' => (string) ($row['user_name'] ?? ''),
+            'user_email' => (string) ($row['user_email'] ?? ''),
         ];
     }
 }

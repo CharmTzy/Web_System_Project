@@ -16,13 +16,13 @@ final class AuthService
 
     public function register(array $input): array
     {
-        $name = trim((string) ($input['name'] ?? ''));
-        $email = trim((string) ($input['email'] ?? ''));
-        $phone = trim((string) ($input['phone'] ?? '')) ?: null;
+        $name = sanitize_single_line($input['name'] ?? '', 120);
+        $email = sanitize_email_address($input['email'] ?? '');
+        $phone = sanitize_phone_number($input['phone'] ?? '');
         $password = (string) ($input['password'] ?? '');
         $passwordConfirm = (string) ($input['password_confirm'] ?? '');
         $accountType = (string) ($input['account_type'] ?? 'customer');
-        $storeName = trim((string) ($input['store_name'] ?? ''));
+        $storeName = sanitize_single_line($input['store_name'] ?? '', 120);
 
         if ($name === '' || mb_strlen($name) > 120) {
             throw new InvalidArgumentException('Name is required (max 120 characters).');
@@ -32,9 +32,7 @@ final class AuthService
             throw new InvalidArgumentException('A valid email address is required.');
         }
 
-        if (mb_strlen($password) < 8) {
-            throw new InvalidArgumentException('Password must be at least 8 characters.');
-        }
+        ensure_password_strength($password);
 
         if ($password !== $passwordConfirm) {
             throw new InvalidArgumentException('Passwords do not match.');
@@ -91,6 +89,7 @@ final class AuthService
 
     public function login(string $email, string $password): array
     {
+        $email = sanitize_email_address($email);
         $user = $this->userRepository->findByEmail($email);
 
         if ($user === null) {
@@ -98,11 +97,19 @@ final class AuthService
         }
 
         if (!$user['is_active']) {
-            throw new RuntimeException('This account has been deactivated. Contact support.');
+            throw new RuntimeException('Invalid email or password.');
         }
 
         if (!password_verify($password, $user['password_hash'])) {
             throw new RuntimeException('Invalid email or password.');
+        }
+
+        if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
+            $rehash = password_hash($password, PASSWORD_DEFAULT);
+            $this->userRepository->update((int) $user['id'], [
+                'password_hash' => $rehash,
+            ]);
+            $user['password_hash'] = $rehash;
         }
 
         unset($user['password_hash']);
@@ -135,6 +142,7 @@ final class AuthService
     {
         session_regenerate_id(true);
 
+        unset($_SESSION['csrf_token']);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_role'] = $user['role'];
         $_SESSION['user_name'] = $user['name'];

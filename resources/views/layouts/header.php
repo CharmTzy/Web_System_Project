@@ -6,16 +6,22 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $pageTitle = $pageTitle ?? 'Shop';
 $appName = $appName ?? 'NovaMarket';
 $headerSearchValue = $headerSearchValue ?? '';
+$robotsMeta = trim((string) ($robotsMeta ?? ''));
 $cartSummary = $cartSummary ?? [
     'total_items' => 0,
 ];
+$notificationCount = $notificationCount ?? 0;
+$bodyClasses = trim(((string) ($bodyClass ?? '')) . ' page-loading');
+$guestCartUrl = '/login.php?redirect=' . rawurlencode('/cart.html');
 
 $isLoggedIn = !empty($_SESSION['user_id']);
 $sessionRole = $_SESSION['user_role'] ?? '';
 $sessionName = $_SESSION['user_name'] ?? '';
-<<<<<<< Updated upstream
-=======
-$notificationsUrl = '/profile.php#notifications';
+$notificationsUrl = match ($sessionRole) {
+    'seller' => '/seller/chat.php',
+    'admin' => '/admin/chat.php',
+    default => '/customer/chat.php',
+};
 $isCustomer = $isLoggedIn && $sessionRole === 'customer';
 $isSeller = $isLoggedIn && $sessionRole === 'seller';
 $isAdmin = $isLoggedIn && $sessionRole === 'admin';
@@ -146,78 +152,354 @@ if (
 if ($robotsMeta !== '' && !headers_sent()) {
     header('X-Robots-Tag: ' . $robotsMeta);
 }
->>>>>>> Stashed changes
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
     <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+    <?php if ($robotsMeta !== ''): ?>
+        <meta name="robots" content="<?= e($robotsMeta) ?>">
+    <?php endif; ?>
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&amp;family=Source+Sans+3:wght@400;600;700&amp;display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
-</head>
-<body class="<?= e($bodyClass ?? '') ?>">
-    <header class="site-header">
-        <div class="container">
-            <div class="site-header__main">
-                <a class="site-nav__brand-link" href="/index.html">
-                    <span class="site-nav__eyebrow">Everyday style. Smart prices.</span>
-                    <span class="site-nav__brand"><?= e($appName) ?></span>
-                </a>
+    <?php if ($isConsoleArea): ?>
+        <link rel="stylesheet" href="<?= e(asset('css/admin.css')) ?>">
+    <?php endif; ?>
+    <script>
+        (() => {
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
 
-                <form class="header-search" action="/index.html" method="get" role="search">
+            if (!viewportMeta) {
+                return;
+            }
+
+            const baseViewport = 'width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no';
+            let syncTimeout = 0;
+            let syncFrame = 0;
+
+            const isNarrowViewport = () => {
+                const widths = [
+                    window.innerWidth,
+                    document.documentElement?.clientWidth,
+                    window.visualViewport?.width,
+                    window.screen?.width,
+                ].filter((value) => Number.isFinite(value) && value > 0);
+
+                if (widths.length === 0) {
+                    return false;
+                }
+
+                return Math.min(...widths) <= 767.98;
+            };
+
+            const refreshViewport = () => {
+                viewportMeta.setAttribute('content', `${baseViewport}, maximum-scale=1`);
+
+                window.cancelAnimationFrame(syncFrame);
+                syncFrame = window.requestAnimationFrame(() => {
+                    syncFrame = window.requestAnimationFrame(() => {
+                        viewportMeta.setAttribute('content', baseViewport);
+                    });
+                });
+            };
+
+            const scheduleViewportSync = () => {
+                window.clearTimeout(syncTimeout);
+                syncTimeout = window.setTimeout(() => {
+                    if (isNarrowViewport()) {
+                        refreshViewport();
+                    } else {
+                        viewportMeta.setAttribute('content', baseViewport);
+                    }
+                }, 50);
+            };
+
+            viewportMeta.setAttribute('content', baseViewport);
+            window.addEventListener('resize', scheduleViewportSync, { passive: true });
+            window.addEventListener('orientationchange', scheduleViewportSync);
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', scheduleViewportSync, { passive: true });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', scheduleViewportSync, { once: true });
+            } else {
+                scheduleViewportSync();
+            }
+        })();
+    </script>
+</head>
+
+<body class="<?= e($bodyClasses) ?>">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <?= render('partials/page-skeleton', ['variant' => $pageSkeletonVariant]) ?>
+    <script>
+        (() => {
+            const minimumDelay = 900;
+            const startedAt = window.performance?.now?.() ?? Date.now();
+            const maximumFontWait = 1600;
+            let revealScheduled = false;
+            let revealPromise = null;
+
+            const revealPage = () => {
+                const body = document.body;
+
+                if (!body) {
+                    return;
+                }
+
+                body.classList.remove('page-loading');
+                body.classList.add('page-ready');
+
+                window.setTimeout(() => {
+                    document.querySelectorAll('[data-page-skeleton]').forEach((node) => node.remove());
+                }, 320);
+            };
+
+            const scheduleReveal = () => {
+                if (revealScheduled) {
+                    return revealPromise;
+                }
+
+                revealScheduled = true;
+
+                const now = window.performance?.now?.() ?? Date.now();
+                const remaining = Math.max(0, minimumDelay - (now - startedAt));
+                const delayGate = new Promise((resolve) => {
+                    window.setTimeout(resolve, remaining);
+                });
+                const fontGate = (() => {
+                    if (!document.fonts?.ready) {
+                        return Promise.resolve();
+                    }
+
+                    return Promise.race([
+                        document.fonts.ready.catch(() => undefined),
+                        new Promise((resolve) => {
+                            window.setTimeout(resolve, maximumFontWait);
+                        }),
+                    ]);
+                })();
+
+                revealPromise = Promise.all([delayGate, fontGate]).then(revealPage);
+
+                return revealPromise;
+            };
+
+            window.__novaRevealPageShell = revealPage;
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', scheduleReveal, { once: true });
+            } else {
+                scheduleReveal();
+            }
+
+            window.addEventListener('load', scheduleReveal, { once: true });
+        })();
+    </script>
+    <?php if ($isConsoleArea): ?>
+        <div class="admin-shell<?= $isSellerArea ? ' seller-shell' : '' ?>">
+            <?= $isAdminArea
+                ? render('layouts/admin-sidebar', [
+                    'currentPath' => $currentPath,
+                    'appName' => $appName,
+                    'sessionName' => $sessionName,
+                    'sessionRole' => $sessionRole,
+                ])
+                : render('layouts/seller-sidebar', [
+                    'currentPath' => $currentPath,
+                    'appName' => $appName,
+                    'sessionName' => $sessionName,
+                ]) ?>
+            <button class="admin-shell__backdrop" type="button" data-admin-sidebar-close aria-label="Close admin sidebar"></button>
+            <div class="admin-shell__content">
+                <div class="admin-topbar">
+                    <button class="admin-shell__toggle" type="button" data-admin-sidebar-toggle aria-controls="adminSidebar" aria-expanded="true" aria-label="Toggle admin sidebar">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div class="admin-topbar__titles">
+                        <span class="admin-topbar__eyebrow"><?= $isAdminArea ? 'Admin console' : 'Seller workspace' ?></span>
+                        <strong><?= e($pageTitle) ?></strong>
+                    </div>
+                </div>
+                <div id="main-content" tabindex="-1"></div>
+    <?php else: ?>
+    <header class="site-header site-header--market">
+        <div class="container">
+            <div class="site-header__main site-header__main--market">
+                <div class="site-header__start">
+                    <button class="mobile-menu-toggle" type="button" data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileNavDrawer" aria-controls="mobileNavDrawer"
+                        aria-label="Open navigation menu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <a class="site-nav__brand-link site-nav__brand-link--market" href="/" aria-label="NovaMarket home">
+                        <span class="site-nav__eyebrow">Everyday style. Smart prices.</span>
+                        <span class="site-nav__brand-row">
+                            <span class="site-nav__brand-mark" aria-hidden="true">NM</span>
+                            <span class="site-nav__brand site-nav__brand--market"><?= e($appName) ?></span>
+                        </span>
+                    </a>
+                </div>
+
+                <form id="header-search-form" class="header-search header-search--market" action="/" method="get"
+                    role="search">
                     <label class="visually-hidden" for="header-search-input">Search the product catalog</label>
-                    <input
-                        id="header-search-input"
-                        class="header-search__input"
-                        type="search"
-                        name="search"
-                        value="<?= e($headerSearchValue) ?>"
-                        placeholder="Search products, brands, or categories"
-                    >
-                    <button class="btn btn-brand header-search__button" type="submit">Search</button>
+                    <input id="header-search-input" class="header-search__input" type="search" name="search"
+                        value="<?= e($headerSearchValue) ?>" placeholder="Search for anything" autocomplete="off"
+                        aria-autocomplete="list" aria-expanded="false">
+                    <button class="header-search__button header-search__button--market" type="submit"
+                        aria-label="Search">&#8981;</button>
                 </form>
 
-                <div class="site-header__actions">
-                    <a class="header-cart-link" href="/cart.html">
-                        <span>Cart</span>
-                        <strong data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>
-                    </a>
-                    <button class="btn btn-brand-outline" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartDrawer" aria-controls="cartDrawer">
-                        Quick cart
-                    </button>
-                </div>
-            </div>
-
-            <div class="site-header__navrow">
-                <nav class="header-nav" aria-label="Primary">
-                    <a class="nav-link <?= $currentPath === '/' || $currentPath === '/index.html' ? 'active' : '' ?>" href="/index.html">Shop</a>
-                    <a class="nav-link <?= $currentPath === '/cart.html' ? 'active' : '' ?>" href="/cart.html">Cart</a>
-                    <?php if ($isLoggedIn && $sessionRole === 'admin'): ?>
-                        <a class="nav-link <?= str_starts_with($currentPath, '/admin') ? 'active' : '' ?>" href="/admin/">Dashboard</a>
-                        <a class="nav-link <?= $currentPath === '/admin/users.php' ? 'active' : '' ?>" href="/admin/users.php">Users</a>
-                    <?php elseif ($isLoggedIn && $sessionRole === 'seller'): ?>
-                        <a class="nav-link <?= str_starts_with($currentPath, '/seller') ? 'active' : '' ?>" href="/seller/">Dashboard</a>
-                        <a class="nav-link <?= $currentPath === '/seller/store-profile.php' ? 'active' : '' ?>" href="/seller/store-profile.php">Store</a>
-                    <?php elseif ($isLoggedIn && $sessionRole === 'customer'): ?>
-                        <a class="nav-link <?= $currentPath === '/customer/addresses.php' ? 'active' : '' ?>" href="/customer/addresses.php">Addresses</a>
-                    <?php endif; ?>
-                </nav>
-                <div class="header-auth" aria-label="Account">
+                <div class="site-header__actions site-header__actions--market">
                     <?php if ($isLoggedIn): ?>
-                        <a class="nav-link <?= $currentPath === '/profile.php' ? 'active' : '' ?>" href="/profile.php"><?= e($sessionName) ?></a>
-                        <span class="pill-badge pill-badge--soft"><?= e(ucfirst($sessionRole)) ?></span>
-                        <a class="nav-link" href="/logout.php">Sign out</a>
+                        <?php if ($isCustomer): ?>
+                            <a class="header-icon-action" href="/profile.php">
+                                <span class="header-icon-action__icon-wrap">
+                                    <?= $renderHeaderIcon('account') ?>
+                                </span>
+                                <span class="header-icon-action__label">Account</span>
+                            </a>
+                            <div class="header-notification" data-notification-menu>
+                                <button
+                                    class="header-icon-action header-icon-action--button header-icon-action--with-badge"
+                                    type="button"
+                                    data-notification-toggle
+                                    aria-haspopup="dialog"
+                                    aria-expanded="false"
+                                    aria-controls="headerNotificationPanel">
+                                    <span class="header-icon-action__icon-wrap">
+                                        <?= $renderHeaderIcon('notification') ?>
+                                        <strong class="header-icon-action__badge"
+                                            data-notification-count
+                                            data-notification-badge
+                                            <?= (int) $notificationCount < 1 ? 'hidden' : '' ?>><?= e((string) $notificationCount) ?></strong>
+                                    </span>
+                                    <span class="header-icon-action__label">Notification</span>
+                                </button>
+                                <div
+                                    class="header-notification__panel"
+                                    id="headerNotificationPanel"
+                                    data-notification-panel
+                                    hidden>
+                                    <div class="header-notification__head">
+                                        <div>
+                                            <strong>Notifications</strong>
+                                            <span>Live chat updates from your conversations.</span>
+                                        </div>
+                                        <a href="<?= e($notificationsUrl) ?>">Open chat</a>
+                                    </div>
+                                    <div class="header-notification__list" data-notification-list>
+                                        <p class="header-notification__empty">You are all caught up right now.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <a class="header-icon-action header-icon-action--with-badge" href="/cart.html"
+                                data-open-cart-drawer="true" aria-controls="cartDrawer" aria-haspopup="dialog">
+                                <span class="header-icon-action__icon-wrap">
+                                    <?= $renderHeaderIcon('cart') ?>
+                                    <strong class="header-icon-action__badge"
+                                        data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>
+                                </span>
+                                <span class="header-icon-action__label">Cart</span>
+                            </a>
+                            <a class="header-icon-action" href="/logout.php">
+                                <span class="header-icon-action__icon-wrap">
+                                    <?= $renderHeaderIcon('signout') ?>
+                                </span>
+                                <span class="header-icon-action__label">Sign out</span>
+                            </a>
+                        <?php else: ?>
+                            <a class="header-action-link" href="<?= e($dashboardUrl) ?>"><?= e($sessionName) ?></a>
+                            <span class="header-action-badge"><?= e(ucfirst($sessionRole)) ?></span>
+                            <a class="header-action-link" href="/logout.php">Sign out</a>
+                            <a class="header-cart-link header-cart-link--market" href="/cart.html" data-open-cart-drawer="true"
+                                aria-controls="cartDrawer" aria-haspopup="dialog">
+                                <span>Cart</span>
+                                <strong data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>
+                            </a>
+                        <?php endif; ?>
                     <?php else: ?>
-                        <a class="nav-link <?= $currentPath === '/login.php' ? 'active' : '' ?>" href="/login.php">Sign in</a>
-                        <a class="btn btn-brand-outline" href="/register.php" style="padding:0.5rem 1rem;font-size:0.9rem;">Register</a>
+                        <a class="header-icon-action header-icon-action--with-badge" href="<?= e($guestCartUrl) ?>"
+                            data-open-cart-drawer="true" aria-controls="cartDrawer" aria-haspopup="dialog">
+                            <span class="header-icon-action__icon-wrap">
+                                <?= $renderHeaderIcon('cart') ?>
+                                <strong class="header-icon-action__badge"
+                                    data-cart-count><?= e((string) $cartSummary['total_items']) ?></strong>
+                            </span>
+                            <span class="header-icon-action__label">Cart</span>
+                        </a>
+                        <a class="header-icon-action" href="/login.php">
+                            <span class="header-icon-action__icon-wrap">
+                                <?= $renderHeaderIcon('account') ?>
+                            </span>
+                            <span class="header-icon-action__label">Sign in</span>
+                        </a>
                     <?php endif; ?>
                 </div>
             </div>
+            <nav class="market-subnav" aria-label="Featured links">
+                <?php foreach ($marketNavLinks as $link): ?>
+                    <a href="<?= e((string) $link['href']) ?>" <?= !empty($link['active']) ? ' aria-current="page"' : '' ?>><?= e((string) $link['label']) ?></a>
+                <?php endforeach; ?>
+            </nav>
+            <?php if ($showPaymentTestModeNotice): ?>
+                <div class="site-status-banner site-status-banner--warning" role="status">
+                    <strong>Stripe test mode active.</strong>
+                    <span>Use Stripe test cards only. This environment is not processing live charges.</span>
+                </div>
+            <?php endif; ?>
         </div>
     </header>
+
+    <div class="offcanvas offcanvas-end cart-drawer" tabindex="-1" id="cartDrawer" aria-labelledby="cartDrawerLabel">
+        <div class="offcanvas-header">
+            <div>
+                <span class="hero-section__eyebrow">Cart preview</span>
+                <h2 class="offcanvas-title" id="cartDrawerLabel">Your cart</h2>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body" data-cart-drawer></div>
+    </div>
+
+    <div class="offcanvas offcanvas-start mobile-drawer" tabindex="-1" id="mobileNavDrawer"
+        aria-labelledby="mobileNavDrawerLabel">
+        <div class="offcanvas-header">
+            <div>
+                <span class="hero-section__eyebrow">Browse menu</span>
+                <h2 class="offcanvas-title" id="mobileNavDrawerLabel">Browse menu</h2>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <nav class="mobile-drawer__nav" aria-label="Mobile site navigation">
+                <?php foreach ($marketNavLinks as $link): ?>
+                    <a href="<?= e((string) $link['href']) ?>"><?= e((string) $link['label']) ?></a>
+                <?php endforeach; ?>
+            </nav>
+            <div class="mobile-drawer__links">
+                <?php foreach ($mobileAccountLinks as $link): ?>
+                    <a href="<?= e((string) $link['href']) ?>"><?= e((string) $link['label']) ?></a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <div id="main-content" tabindex="-1"></div>
+    <?php endif; ?>

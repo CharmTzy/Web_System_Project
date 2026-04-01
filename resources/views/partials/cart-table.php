@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 ?>
-<?php if ($cart['is_empty']): ?>
+<?php if (!empty($cart['requires_sign_in'])): ?>
+    <?= render('partials/cart-signin-prompt', ['login_url' => $cart['login_url'] ?? '/login.php?redirect=%2Fcart.html&cart_notice=full-cart']) ?>
+<?php elseif ($cart['is_empty']): ?>
     <section class="empty-state">
         <h3>Your cart is ready.</h3>
         <p>Add products from NovaMarket to see your selected items, quantities, and totals here.</p>
-        <a class="btn btn-brand" href="/index.html">Continue shopping</a>
+        <a class="btn btn-brand" href="/">Continue shopping</a>
     </section>
 <?php else: ?>
     <div class="row g-4">
@@ -14,13 +16,18 @@ declare(strict_types=1);
             <div class="cart-lines">
                 <?php foreach ($cart['items'] as $item): ?>
                     <?php $product = $item['product']; ?>
+                    <?php $detailUrl = product_url($product); ?>
                     <article class="cart-line">
-                        <img class="cart-line__image" src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>" loading="lazy">
+                        <a class="cart-line__image-link" href="<?= e($detailUrl) ?>">
+                            <img class="cart-line__image" src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>"
+                                loading="lazy">
+                        </a>
                         <div class="cart-line__content">
                             <div class="cart-line__header">
                                 <div>
                                     <span class="pill-badge pill-badge--soft"><?= e($product['category_name']) ?></span>
-                                    <h3><?= e($product['name']) ?></h3>
+                                    <h3><a class="cart-line__title-link"
+                                            href="<?= e($detailUrl) ?>"><?= e($product['name']) ?></a></h3>
                                 </div>
                                 <strong><?= e($item['line_total_formatted']) ?></strong>
                             </div>
@@ -33,24 +40,20 @@ declare(strict_types=1);
                                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
 
                                     <div class="quantity-picker quantity-picker--wide" data-quantity-picker>
-                                        <button class="quantity-picker__button" type="button" data-quantity-button="decrement" aria-label="Decrease quantity">
+                                        <button class="quantity-picker__button" type="button" data-quantity-button="decrement"
+                                            aria-label="Decrease quantity">
                                             -
                                         </button>
-                                        <label class="visually-hidden" for="cart-quantity-<?= e((string) $product['id']) ?>">Quantity for <?= e($product['name']) ?></label>
-                                        <input
-                                            id="cart-quantity-<?= e((string) $product['id']) ?>"
-                                            class="quantity-picker__input"
-                                            type="number"
-                                            name="quantity"
-                                            value="<?= e((string) $item['quantity']) ?>"
-                                            min="1"
-                                            max="<?= e((string) $product['stock_quantity']) ?>"
-                                            inputmode="numeric"
-                                            data-quantity-input
-                                            data-auto-submit="true"
-                                            data-cart-quantity-input
-                                        >
-                                        <button class="quantity-picker__button" type="button" data-quantity-button="increment" aria-label="Increase quantity">
+                                        <label class="visually-hidden"
+                                            for="cart-quantity-<?= e((string) $product['id']) ?>">Quantity for
+                                            <?= e($product['name']) ?></label>
+                                        <input id="cart-quantity-<?= e((string) $product['id']) ?>"
+                                            class="quantity-picker__input" type="number" name="quantity"
+                                            value="<?= e((string) $item['quantity']) ?>" min="1"
+                                            max="<?= e((string) $product['stock_quantity']) ?>" inputmode="numeric"
+                                            data-quantity-input data-auto-submit="true" data-cart-quantity-input>
+                                        <button class="quantity-picker__button" type="button" data-quantity-button="increment"
+                                            aria-label="Increase quantity">
                                             +
                                         </button>
                                     </div>
@@ -91,8 +94,10 @@ declare(strict_types=1);
                         <strong><?= e($cart['grand_total_formatted']) ?></strong>
                     </div>
                 </div>
-                <button class="btn btn-brand w-100" type="button" disabled>Checkout coming soon</button>
-                <p class="summary-card__note">Shipping is free once the cart subtotal reaches <?= e(money($cart['free_shipping_threshold'])) ?>.</p>
+                <a class="btn btn-brand w-100" href="/customer/checkout.php">Continue to Checkout</a>
+                <p class="summary-card__note">Shipping is free once the cart subtotal reaches
+                    <?= e(money($cart['free_shipping_threshold'])) ?>.
+                </p>
             </aside>
         </div>
     </div>

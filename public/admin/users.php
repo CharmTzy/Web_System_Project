@@ -4,30 +4,49 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: /login.php');
-    exit;
-}
+require_role('admin');
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
 
 if (!$connection) {
-    http_response_code(503);
-    echo 'Database connection required.';
-    exit;
+    render_error_page(503, 'Service temporarily unavailable', service_unavailable_message());
 }
 
 $userService = new \App\Services\UserService(
     new \App\Repositories\UserRepository($connection)
 );
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verify_csrf($_POST['csrf_token'] ?? null)) {
+        flash('admin_users_error', 'Session expired. Please refresh and try again.');
+        header('Location: /admin/users.php');
+        exit;
+    }
+
+    try {
+        if (($_POST['action'] ?? '') === 'delete') {
+            $userService->adminDeleteUser(
+                (int) ($_POST['user_id'] ?? 0),
+                (int) $_SESSION['user_id']
+            );
+            flash('admin_users_notice', 'User deleted successfully.');
+        }
+    } catch (\Throwable $exception) {
+        report_exception($exception, 'admin.users');
+        flash('admin_users_error', safe_exception_message($exception, 'We could not update the user right now.'));
+    }
+
+    header('Location: /admin/users.php');
+    exit;
+}
+
 $filters = [
     'search' => trim((string) ($_GET['search'] ?? '')),
     'role' => trim((string) ($_GET['role'] ?? '')),
 ];
-
-$users = $userService->listUsers(array_filter($filters));
+$page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
+$pagination = paginate_items($userService->listUsers(array_filter($filters)), $page, 10);
 
 $pageTitle = 'Manage Users';
 $appName = $config['app']['name'];
@@ -45,7 +64,14 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     </section>
     <section class="catalog-section">
         <div class="container">
-            <?= render('admin/user-list', ['users' => $users, 'filters' => $filters]) ?>
+            <?= render('admin/user-list', [
+                'users' => $pagination['items'],
+                'pagination' => $pagination,
+                'filters' => $filters,
+                'actingUserId' => (int) $_SESSION['user_id'],
+                'notice' => flash('admin_users_notice'),
+                'error' => flash('admin_users_error'),
+            ]) ?>
         </div>
     </section>
 </main>

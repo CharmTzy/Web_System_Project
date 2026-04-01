@@ -1,0 +1,12 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Repositories;
+
+interface CouponRepositoryInterface
+{
+    public function activeCoupons(): array;
+
+    public function findActiveByCode(string $code): ?array;
+}

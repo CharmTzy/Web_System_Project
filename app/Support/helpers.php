@@ -63,6 +63,121 @@ function load_env(string $path): void
     }
 }
 
+function request_is_secure(): bool
+{
+    $https = strtolower((string) ($_SERVER['HTTPS'] ?? ''));
+    $forwardedProto = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+    $forwardedSsl = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? ''));
+    $serverPort = (string) ($_SERVER['SERVER_PORT'] ?? '');
+
+    return ($https !== '' && $https !== 'off')
+        || $forwardedProto === 'https'
+        || $forwardedSsl === 'on'
+        || $serverPort === '443';
+}
+
+function request_origin(): ?string
+{
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
+
+    if ($host === '') {
+        return null;
+    }
+
+    return (request_is_secure() ? 'https' : 'http') . '://' . $host;
+}
+
+function url_origin(string $url): ?string
+{
+    $parts = parse_url($url);
+
+    if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+        return null;
+    }
+
+    $origin = strtolower((string) $parts['scheme']) . '://' . strtolower((string) $parts['host']);
+    $port = isset($parts['port']) ? (int) $parts['port'] : null;
+
+    if ($port !== null) {
+        $isDefaultPort = ($parts['scheme'] === 'http' && $port === 80)
+            || ($parts['scheme'] === 'https' && $port === 443);
+
+        if (!$isDefaultPort) {
+            $origin .= ':' . $port;
+        }
+    }
+
+    return $origin;
+}
+
+function bootstrap_session_security(): void
+{
+    if (session_status() !== PHP_SESSION_NONE) {
+        return;
+    }
+
+    $isSecure = request_is_secure();
+
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.use_only_cookies', '1');
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+    ini_set('session.cookie_secure', $isSecure ? '1' : '0');
+
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => '',
+        'secure' => $isSecure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+function send_security_headers(): void
+{
+    if (headers_sent()) {
+        return;
+    }
+
+    $formActionSources = ["'self'"];
+
+    foreach ([
+        request_origin(),
+        url_origin((string) env('APP_URL', '')),
+        'https://checkout.stripe.com',
+    ] as $origin) {
+        if ($origin !== null && !in_array($origin, $formActionSources, true)) {
+            $formActionSources[] = $origin;
+        }
+    }
+
+    $contentSecurityPolicy = implode('; ', [
+        "default-src 'self'",
+        "base-uri 'self'",
+        'form-action ' . implode(' ', $formActionSources),
+        "frame-ancestors 'none'",
+        "object-src 'none'",
+        "img-src 'self' data: https://storage.googleapis.com",
+        "font-src 'self' data: https://fonts.gstatic.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+        "connect-src 'self' ws: wss: https://cdn.jsdelivr.net",
+        "media-src 'self' https://storage.googleapis.com",
+    ]);
+
+    header('X-Frame-Options: DENY');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()');
+    header('Cross-Origin-Opener-Policy: same-origin');
+    header('Content-Security-Policy: ' . $contentSecurityPolicy);
+
+    if (request_is_secure()) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
+}
+
 function env(string $key, mixed $default = null): mixed
 {
     $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
@@ -74,9 +189,318 @@ function env(string $key, mixed $default = null): mixed
     return $value;
 }
 
+function stripe_mode(?array $appConfig = null): string
+{
+    $keys = [
+        trim((string) ($appConfig['stripe_secret_key'] ?? env('STRIPE_SECRET_KEY', ''))),
+        trim((string) ($appConfig['stripe_publishable_key'] ?? env('STRIPE_PUBLISHABLE_KEY', ''))),
+    ];
+
+    foreach ($keys as $key) {
+        if ($key === '') {
+            continue;
+        }
+
+        if (
+            str_starts_with($key, 'sk_test_')
+            || str_starts_with($key, 'pk_test_')
+            || str_starts_with($key, 'rk_test_')
+        ) {
+            return 'test';
+        }
+
+        if (
+            str_starts_with($key, 'sk_live_')
+            || str_starts_with($key, 'pk_live_')
+            || str_starts_with($key, 'rk_live_')
+        ) {
+            return 'live';
+        }
+    }
+
+    return 'unconfigured';
+}
+
+function payments_use_test_mode(?array $appConfig = null): bool
+{
+    return stripe_mode($appConfig) === 'test';
+}
+
+function payments_are_configured(?array $appConfig = null): bool
+{
+    return in_array(stripe_mode($appConfig), ['test', 'live'], true);
+}
+
+function google_cloud_storage_bucket(?array $appConfig = null): string
+{
+    return trim((string) ($appConfig['google_cloud_storage_bucket'] ?? env('GOOGLE_CLOUD_STORAGE_BUCKET', '')));
+}
+
+function google_cloud_storage_product_prefix(?array $appConfig = null): string
+{
+    $prefix = trim((string) ($appConfig['google_cloud_storage_product_prefix'] ?? env('GOOGLE_CLOUD_STORAGE_PRODUCT_PREFIX', 'product-images')), '/');
+
+    return $prefix !== '' ? $prefix : 'product-images';
+}
+
+function google_cloud_storage_review_prefix(?array $appConfig = null): string
+{
+    $prefix = trim((string) ($appConfig['google_cloud_storage_review_prefix'] ?? env('GOOGLE_CLOUD_STORAGE_REVIEW_PREFIX', 'review-images')), '/');
+
+    return $prefix !== '' ? $prefix : 'review-images';
+}
+
+function google_cloud_storage_public_url(string $bucket, string $objectPath): string
+{
+    $segments = array_map(
+        static fn(string $segment): string => rawurlencode($segment),
+        array_values(array_filter(explode('/', trim($objectPath, '/')), static fn(string $segment): bool => $segment !== ''))
+    );
+
+    return sprintf(
+        'https://storage.googleapis.com/%s/%s',
+        rawurlencode(trim($bucket, '/')),
+        implode('/', $segments)
+    );
+}
+
+function google_cloud_storage_access_token(): string
+{
+    if (!function_exists('curl_init')) {
+        throw new RuntimeException('PHP cURL is required for Google Cloud Storage uploads.');
+    }
+
+    $ch = curl_init('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token');
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 5,
+        CURLOPT_HTTPHEADER => [
+            'Metadata-Flavor: Google',
+        ],
+    ]);
+
+    $response = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    if ($response === false || $status < 200 || $status >= 300) {
+        throw new RuntimeException(
+            $curlError !== ''
+                ? 'Unable to contact the Google Cloud metadata service for uploads.'
+                : 'Google Cloud Storage authentication is not available for uploads.'
+        );
+    }
+
+    $payload = json_decode($response, true);
+    $token = is_array($payload) ? trim((string) ($payload['access_token'] ?? '')) : '';
+
+    if ($token === '') {
+        throw new RuntimeException('Google Cloud Storage did not return an upload access token.');
+    }
+
+    return $token;
+}
+
+function google_cloud_storage_upload_object(
+    string $bucket,
+    string $objectPath,
+    string $localPath,
+    string $contentType
+): string {
+    if (!function_exists('curl_init')) {
+        throw new RuntimeException('PHP cURL is required for Google Cloud Storage uploads.');
+    }
+
+    if (!is_file($localPath)) {
+        throw new RuntimeException('Uploaded media could not be read.');
+    }
+
+    $fileContents = file_get_contents($localPath);
+
+    if ($fileContents === false) {
+        throw new RuntimeException('Uploaded media could not be read.');
+    }
+
+    $uploadUrl = sprintf(
+        'https://storage.googleapis.com/upload/storage/v1/b/%s/o?uploadType=media&name=%s',
+        rawurlencode($bucket),
+        rawurlencode(trim($objectPath, '/'))
+    );
+
+    $token = google_cloud_storage_access_token();
+    $ch = curl_init($uploadUrl);
+
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $token,
+            'Content-Type: ' . $contentType,
+            'Content-Length: ' . (string) strlen($fileContents),
+        ],
+        CURLOPT_POSTFIELDS => $fileContents,
+    ]);
+
+    $response = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    if ($response === false || $status < 200 || $status >= 300) {
+        report_exception(
+            new RuntimeException(
+                $curlError !== ''
+                    ? $curlError
+                    : 'Google Cloud Storage upload failed with status ' . $status
+            ),
+            'gcs.upload.object'
+        );
+        throw new RuntimeException('Unable to upload media right now.');
+    }
+
+    return google_cloud_storage_public_url($bucket, $objectPath);
+}
+
+function google_cloud_storage_public_url_path(string $bucket, string $publicUrl): ?string
+{
+    $bucket = trim($bucket, '/');
+    $publicUrl = trim($publicUrl);
+
+    if ($bucket === '' || $publicUrl === '') {
+        return null;
+    }
+
+    $parsed = parse_url($publicUrl);
+    $host = strtolower((string) ($parsed['host'] ?? ''));
+    $path = (string) ($parsed['path'] ?? '');
+
+    if ($host !== 'storage.googleapis.com' || $path === '') {
+        return null;
+    }
+
+    $prefix = '/' . $bucket . '/';
+
+    if (!str_starts_with($path, $prefix)) {
+        return null;
+    }
+
+    $objectPath = substr($path, strlen($prefix));
+
+    return $objectPath !== false ? rawurldecode($objectPath) : null;
+}
+
+function google_cloud_storage_delete_object(string $bucket, string $objectPath): void
+{
+    if (!function_exists('curl_init')) {
+        throw new RuntimeException('PHP cURL is required for Google Cloud Storage uploads.');
+    }
+
+    $bucket = trim($bucket, '/');
+    $objectPath = trim($objectPath, '/');
+
+    if ($bucket === '' || $objectPath === '') {
+        return;
+    }
+
+    $deleteUrl = sprintf(
+        'https://storage.googleapis.com/storage/v1/b/%s/o/%s',
+        rawurlencode($bucket),
+        rawurlencode($objectPath)
+    );
+
+    $token = google_cloud_storage_access_token();
+    $ch = curl_init($deleteUrl);
+
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => 'DELETE',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $token,
+        ],
+    ]);
+
+    $response = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    if ($response === false || ($status !== 404 && ($status < 200 || $status >= 300))) {
+        report_exception(
+            new RuntimeException(
+                $curlError !== ''
+                    ? $curlError
+                    : 'Google Cloud Storage delete failed with status ' . $status
+            ),
+            'gcs.delete.object'
+        );
+        throw new RuntimeException('Unable to remove media from storage right now.');
+    }
+}
+
 function e(mixed $value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
+function sanitize_single_line(mixed $value, int $maxLength = 0): string
+{
+    $sanitized = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string) $value) ?? '');
+    $sanitized = preg_replace('/\s{2,}/u', ' ', $sanitized) ?? $sanitized;
+
+    if ($maxLength > 0 && mb_strlen($sanitized) > $maxLength) {
+        $sanitized = mb_substr($sanitized, 0, $maxLength);
+    }
+
+    return $sanitized;
+}
+
+function sanitize_multiline_text(mixed $value, int $maxLength = 0): string
+{
+    $sanitized = str_replace(["\r\n", "\r"], "\n", (string) $value);
+    $sanitized = preg_replace('/[^\P{C}\n\t]+/u', '', $sanitized) ?? $sanitized;
+    $sanitized = preg_replace("/\n{3,}/u", "\n\n", trim($sanitized)) ?? $sanitized;
+
+    if ($maxLength > 0 && mb_strlen($sanitized) > $maxLength) {
+        $sanitized = mb_substr($sanitized, 0, $maxLength);
+    }
+
+    return $sanitized;
+}
+
+function sanitize_email_address(mixed $value): string
+{
+    return mb_strtolower(trim((string) filter_var((string) $value, FILTER_SANITIZE_EMAIL)));
+}
+
+function sanitize_phone_number(mixed $value, int $maxLength = 30): ?string
+{
+    $phone = preg_replace('/[^0-9+\-\s()]/', '', trim((string) $value)) ?? '';
+    $phone = preg_replace('/\s{2,}/', ' ', $phone) ?? $phone;
+
+    if ($phone === '') {
+        return null;
+    }
+
+    if (mb_strlen($phone) > $maxLength) {
+        $phone = mb_substr($phone, 0, $maxLength);
+    }
+
+    return $phone;
+}
+
+function ensure_password_strength(string $password): void
+{
+    if (mb_strlen($password) < 8) {
+        throw new InvalidArgumentException('Password must be at least 8 characters.');
+    }
+
+    if (preg_match('/[A-Za-z]/', $password) !== 1 || preg_match('/\d/', $password) !== 1) {
+        throw new InvalidArgumentException('Password must contain at least one letter and one number.');
+    }
 }
 
 function money(float|int|string $value): string
@@ -87,6 +511,51 @@ function money(float|int|string $value): string
 function asset(string $path): string
 {
     return '/assets/' . ltrim($path, '/');
+}
+
+function delivery_status_label(string $status): string
+{
+    return ucwords(str_replace('_', ' ', trim($status)));
+}
+
+function delivery_status_badge_class(string $status): string
+{
+    return match ($status) {
+        'pending' => 'pill-badge pill-badge--dark',
+        'paid', 'processing' => 'pill-badge pill-badge--soft',
+        'packed', 'out_for_delivery' => 'pill-badge pill-badge--accent',
+        'shipped' => 'pill-badge pill-badge--info',
+        'delivered' => 'pill-badge pill-badge--success',
+        'cancelled' => 'pill-badge pill-badge--danger',
+        default => 'pill-badge pill-badge--dark',
+    };
+}
+
+function product_url(array $product): string
+{
+    $params = http_build_query([
+        'id' => (string) ($product['id'] ?? ''),
+        'slug' => (string) ($product['slug'] ?? ''),
+    ]);
+
+    return '/product.html' . ($params !== '' ? '?' . $params : '');
+}
+
+function chat_websocket_url(array $appConfig): string
+{
+    $configured = trim((string) ($appConfig['chat_websocket_url'] ?? ''));
+
+    if ($configured !== '') {
+        return $configured;
+    }
+
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost'));
+    $host = preg_replace('/:\d+$/', '', $host) ?: 'localhost';
+    $scheme = request_is_secure() ? 'wss' : 'ws';
+    $port = (int) ($appConfig['chat_websocket_port'] ?? 8080);
+    $path = '/' . ltrim((string) ($appConfig['chat_websocket_path'] ?? '/ws/chat'), '/');
+
+    return sprintf('%s://%s:%d%s', $scheme, $host, $port, $path);
 }
 
 function render(string $view, array $data = []): string
@@ -103,6 +572,143 @@ function render(string $view, array $data = []): string
     require $file;
 
     return (string) ob_get_clean();
+}
+
+function report_exception(Throwable $exception, string $context = ''): void
+{
+    $prefix = $context !== '' ? '[' . $context . '] ' : '';
+
+    error_log(sprintf(
+        '%s%s in %s:%d',
+        $prefix,
+        $exception->getMessage(),
+        $exception->getFile(),
+        $exception->getLine()
+    ));
+}
+
+function service_unavailable_message(): string
+{
+    return 'This service is temporarily unavailable. Please try again shortly.';
+}
+
+function render_error_page(int $status, string $title, string $message): never
+{
+    if (!headers_sent()) {
+        http_response_code($status);
+        header('Content-Type: text/html; charset=UTF-8');
+    }
+
+    echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>'
+        . e($title)
+        . ' | NovaMarket</title><style>body{margin:0;font-family:Manrope,Arial,sans-serif;background:#f4f7fb;color:#17324d}main{min-height:100vh;display:grid;place-items:center;padding:2rem}.panel{max-width:36rem;background:#fff;border:1px solid #d7e3f6;border-radius:24px;padding:2rem 2.25rem;box-shadow:0 24px 60px rgba(15,23,42,.08)}h1{margin:0 0 .75rem;font-size:2rem}p{margin:0;color:#506b8a;line-height:1.6}a{display:inline-block;margin-top:1.25rem;color:#0d67d5;font-weight:700;text-decoration:none}</style></head><body><main><section class="panel"><h1>'
+        . e($title)
+        . '</h1><p>'
+        . e($message)
+        . '</p><a href="/">Back to home</a></section></main></body></html>';
+    exit;
+}
+
+function client_ip(): string
+{
+    $ip = trim((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+
+    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : 'unknown';
+}
+
+function rate_limit_storage_path(string $key): string
+{
+    return rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'novamarket-rate-limit-' . hash('sha256', $key) . '.json';
+}
+
+function read_rate_limit_state(string $key, int $windowSeconds): array
+{
+    $path = rate_limit_storage_path($key);
+    $defaultState = [
+        'attempts' => 0,
+        'first_attempt_at' => time(),
+    ];
+
+    if (!is_file($path)) {
+        return $defaultState;
+    }
+
+    $contents = file_get_contents($path);
+    $state = is_string($contents) ? json_decode($contents, true) : null;
+
+    if (!is_array($state)) {
+        return $defaultState;
+    }
+
+    $attempts = max(0, (int) ($state['attempts'] ?? 0));
+    $firstAttemptAt = (int) ($state['first_attempt_at'] ?? time());
+
+    if (time() - $firstAttemptAt >= $windowSeconds) {
+        return $defaultState;
+    }
+
+    return [
+        'attempts' => $attempts,
+        'first_attempt_at' => $firstAttemptAt,
+    ];
+}
+
+function write_rate_limit_state(string $key, array $state): void
+{
+    $path = rate_limit_storage_path($key);
+
+    file_put_contents($path, json_encode($state, JSON_THROW_ON_ERROR), LOCK_EX);
+}
+
+function rate_limit_status(string $key, int $limit, int $windowSeconds): array
+{
+    $state = read_rate_limit_state($key, $windowSeconds);
+    $retryAfter = max(0, $windowSeconds - (time() - (int) $state['first_attempt_at']));
+    $isLimited = (int) $state['attempts'] >= $limit;
+
+    return [
+        'attempts' => (int) $state['attempts'],
+        'remaining' => max(0, $limit - (int) $state['attempts']),
+        'retry_after' => $isLimited ? max(1, $retryAfter) : 0,
+        'is_limited' => $isLimited,
+    ];
+}
+
+function rate_limit_record_failure(string $key, int $windowSeconds): array
+{
+    $state = read_rate_limit_state($key, $windowSeconds);
+
+    if ((int) $state['attempts'] === 0) {
+        $state['first_attempt_at'] = time();
+    }
+
+    $state['attempts'] = (int) $state['attempts'] + 1;
+
+    write_rate_limit_state($key, $state);
+
+    return $state;
+}
+
+function clear_rate_limit(string $key): void
+{
+    $path = rate_limit_storage_path($key);
+
+    if (is_file($path)) {
+        @unlink($path);
+    }
+}
+
+function is_safe_user_error(Throwable $exception): bool
+{
+    return $exception instanceof InvalidArgumentException
+        || $exception instanceof RuntimeException;
+}
+
+function safe_exception_message(Throwable $exception, string $fallback = 'Something went wrong. Please try again.'): string
+{
+    return is_safe_user_error($exception)
+        ? $exception->getMessage()
+        : $fallback;
 }
 
 function csrf_token(): string
@@ -130,4 +736,196 @@ function bool_from_input(mixed $value): bool
     $normalized = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 
     return $normalized ?? false;
+}
+
+function flash(string $key, mixed $value = null): mixed
+{
+    if (!isset($_SESSION['_flash']) || !is_array($_SESSION['_flash'])) {
+        $_SESSION['_flash'] = [];
+    }
+
+    if (func_num_args() > 1) {
+        $_SESSION['_flash'][$key] = $value;
+        return null;
+    }
+
+    if (!array_key_exists($key, $_SESSION['_flash'])) {
+        return null;
+    }
+
+    $stored = $_SESSION['_flash'][$key];
+    unset($_SESSION['_flash'][$key]);
+
+    return $stored;
+}
+
+function stripe_api_request(string $method, string $path, string $secretKey, array $params = []): array
+{
+    if ($secretKey === '') {
+        throw new RuntimeException('Stripe secret key is not configured.');
+    }
+
+    $url = 'https://api.stripe.com/v1/' . ltrim($path, '/');
+    $curl = curl_init();
+
+    if ($curl === false) {
+        throw new RuntimeException('Failed to initialize Stripe request.');
+    }
+
+    $upperMethod = strtoupper($method);
+    $headers = [
+        'Authorization: Bearer ' . $secretKey,
+    ];
+
+    if ($upperMethod === 'GET' && $params !== []) {
+        $url .= '?' . http_build_query($params);
+    }
+
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_TIMEOUT, 25);
+    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $upperMethod);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+
+    if (in_array($upperMethod, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+        curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($params));
+    }
+
+    $responseBody = curl_exec($curl);
+    $httpCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($curl);
+    curl_close($curl);
+
+    if (!is_string($responseBody)) {
+        throw new RuntimeException($curlError !== '' ? $curlError : 'No response from Stripe API.');
+    }
+
+    $decoded = json_decode($responseBody, true);
+
+    if (!is_array($decoded)) {
+        throw new RuntimeException('Invalid response from Stripe API.');
+    }
+
+    if ($httpCode >= 400 || !empty($decoded['error'])) {
+        $message = (string) ($decoded['error']['message'] ?? 'Stripe API request failed.');
+        throw new RuntimeException($message);
+    }
+
+    return $decoded;
+}
+
+function stripe_verify_webhook_signature(string $payload, string $signatureHeader, string $webhookSecret, int $toleranceSeconds = 300): bool
+{
+    if ($payload === '' || $signatureHeader === '' || $webhookSecret === '') {
+        return false;
+    }
+
+    $parts = [];
+
+    foreach (explode(',', $signatureHeader) as $component) {
+        [$key, $value] = array_pad(explode('=', trim($component), 2), 2, '');
+
+        if ($key !== '') {
+            $parts[$key][] = $value;
+        }
+    }
+
+    $timestamp = isset($parts['t'][0]) ? (int) $parts['t'][0] : 0;
+    $signatures = $parts['v1'] ?? [];
+
+    if ($timestamp <= 0 || $signatures === []) {
+        return false;
+    }
+
+    if (abs(time() - $timestamp) > $toleranceSeconds) {
+        return false;
+    }
+
+    $signedPayload = $timestamp . '.' . $payload;
+    $expected = hash_hmac('sha256', $signedPayload, $webhookSecret);
+
+    foreach ($signatures as $signature) {
+        if (is_string($signature) && hash_equals($expected, $signature)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function role_home_path(?string $role): string
+{
+    return match ($role) {
+        'admin' => '/admin/',
+        'seller' => '/seller/',
+        'customer' => '/index.html',
+        default => '/login.php',
+    };
+}
+
+function require_role(string $requiredRole): void
+{
+    if (empty($_SESSION['user_id'])) {
+        header('Location: /login.php');
+        exit;
+    }
+
+    $currentRole = (string) ($_SESSION['user_role'] ?? '');
+
+    if ($currentRole !== $requiredRole) {
+        header('Location: ' . role_home_path($currentRole));
+        exit;
+    }
+}
+
+function require_any_role(array $allowedRoles): void
+{
+    if (empty($_SESSION['user_id'])) {
+        header('Location: /login.php');
+        exit;
+    }
+
+    $currentRole = (string) ($_SESSION['user_role'] ?? '');
+
+    if (!in_array($currentRole, $allowedRoles, true)) {
+        header('Location: ' . role_home_path($currentRole));
+        exit;
+    }
+}
+
+function redirect_if_role_disallowed(array $disallowedRoles): void
+{
+    if (empty($_SESSION['user_id'])) {
+        return;
+    }
+
+    $currentRole = (string) ($_SESSION['user_role'] ?? '');
+
+    if (in_array($currentRole, $disallowedRoles, true)) {
+        header('Location: ' . role_home_path($currentRole));
+        exit;
+    }
+}
+
+function paginate_items(array $items, int $page = 1, int $perPage = 10): array
+{
+    $perPage = max(1, $perPage);
+    $totalItems = count($items);
+    $totalPages = max(1, (int) ceil($totalItems / $perPage));
+    $page = max(1, min($page, $totalPages));
+    $offset = ($page - 1) * $perPage;
+
+    return [
+        'items' => array_values(array_slice($items, $offset, $perPage)),
+        'page' => $page,
+        'per_page' => $perPage,
+        'total_items' => $totalItems,
+        'total_pages' => $totalPages,
+        'from' => $totalItems === 0 ? 0 : $offset + 1,
+        'to' => $totalItems === 0 ? 0 : min($totalItems, $offset + $perPage),
+        'has_prev' => $page > 1,
+        'has_next' => $page < $totalPages,
+        'prev_page' => max(1, $page - 1),
+        'next_page' => min($totalPages, $page + 1),
+    ];
 }

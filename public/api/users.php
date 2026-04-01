@@ -14,7 +14,7 @@ $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
 
 if (!$connection) {
-    respond(['ok' => false, 'message' => 'Database connection required.'], 503);
+    respond(['ok' => false, 'message' => service_unavailable_message()], 503);
 }
 
 $userRepository = new \App\Repositories\UserRepository($connection);
@@ -59,8 +59,12 @@ try {
         'message' => 'Changes saved successfully.',
         'user' => $result,
     ]);
-} catch (\Throwable $exception) {
+} catch (\InvalidArgumentException | \RuntimeException $exception) {
+    report_exception($exception, 'api.users.expected');
     respond(['ok' => false, 'message' => $exception->getMessage()], 422);
+} catch (\Throwable $exception) {
+    report_exception($exception, 'api.users.unexpected');
+    respond(['ok' => false, 'message' => service_unavailable_message()], 500);
 }
 
 function adminOnly(): ?array

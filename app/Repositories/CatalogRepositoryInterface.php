@@ -12,6 +12,7 @@ interface CatalogRepositoryInterface
 
     public function findById(int $id): ?array;
 
+    public function findBySlug(string $slug): ?array;
+
     public function findByIds(array $ids): array;
 }
-

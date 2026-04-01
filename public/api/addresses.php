@@ -14,7 +14,7 @@ $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
 
 if (!$connection) {
-    respond(['ok' => false, 'message' => 'Database connection required.'], 503);
+    respond(['ok' => false, 'message' => service_unavailable_message()], 503);
 }
 
 $addressService = new \App\Services\AddressService(
@@ -68,8 +68,12 @@ try {
         'address' => $result,
         'html' => render('customer/address-list', ['addresses' => $addresses]),
     ]);
-} catch (\Throwable $exception) {
+} catch (\InvalidArgumentException | \RuntimeException $exception) {
+    report_exception($exception, 'api.addresses.expected');
     respond(['ok' => false, 'message' => $exception->getMessage()], 422);
+} catch (\Throwable $exception) {
+    report_exception($exception, 'api.addresses.unexpected');
+    respond(['ok' => false, 'message' => service_unavailable_message()], 500);
 }
 
 function respond(array $payload, int $status = 200): never

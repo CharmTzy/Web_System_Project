@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Repositories\UserRepository;
 use InvalidArgumentException;
+use Throwable;
 use RuntimeException;
 
 final class UserService
@@ -39,7 +40,7 @@ final class UserService
 
         $data = [];
 
-        $name = trim((string) ($input['name'] ?? ''));
+        $name = sanitize_single_line($input['name'] ?? '', 120);
         if ($name !== '' && $name !== $user['name']) {
             if (mb_strlen($name) > 120) {
                 throw new InvalidArgumentException('Name must be 120 characters or less.');
@@ -47,7 +48,7 @@ final class UserService
             $data['name'] = $name;
         }
 
-        $email = trim((string) ($input['email'] ?? ''));
+        $email = sanitize_email_address($input['email'] ?? '');
         if ($email !== '' && $email !== $user['email']) {
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 throw new InvalidArgumentException('Invalid email address.');
@@ -59,14 +60,12 @@ final class UserService
         }
 
         if (array_key_exists('phone', $input)) {
-            $data['phone'] = trim((string) $input['phone']) ?: null;
+            $data['phone'] = sanitize_phone_number($input['phone'] ?? '');
         }
 
         $newPassword = (string) ($input['new_password'] ?? '');
         if ($newPassword !== '') {
-            if (mb_strlen($newPassword) < 8) {
-                throw new InvalidArgumentException('New password must be at least 8 characters.');
-            }
+            ensure_password_strength($newPassword);
             $data['password_hash'] = password_hash($newPassword, PASSWORD_DEFAULT);
         }
 
@@ -90,8 +89,8 @@ final class UserService
 
     public function adminCreateUser(array $input): array
     {
-        $name = trim((string) ($input['name'] ?? ''));
-        $email = trim((string) ($input['email'] ?? ''));
+        $name = sanitize_single_line($input['name'] ?? '', 120);
+        $email = sanitize_email_address($input['email'] ?? '');
         $role = (string) ($input['role'] ?? '');
         $password = (string) ($input['password'] ?? '');
 
@@ -107,9 +106,7 @@ final class UserService
             throw new InvalidArgumentException('Invalid role.');
         }
 
-        if (mb_strlen($password) < 8) {
-            throw new InvalidArgumentException('Password must be at least 8 characters.');
-        }
+        ensure_password_strength($password);
 
         if ($this->userRepository->emailExists($email)) {
             throw new RuntimeException('Email already in use.');
@@ -118,20 +115,20 @@ final class UserService
         $userId = $this->userRepository->create([
             'name' => $name,
             'email' => $email,
-            'phone' => trim((string) ($input['phone'] ?? '')) ?: null,
+            'phone' => sanitize_phone_number($input['phone'] ?? ''),
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             'role' => $role,
             'is_active' => 1,
         ]);
 
         if ($role === 'seller') {
-            $storeName = trim((string) ($input['store_name'] ?? '')) ?: $name;
-            $storeSlug = trim((string) ($input['store_slug'] ?? '')) ?: $this->slugify($storeName);
+            $storeName = sanitize_single_line($input['store_name'] ?? '', 120) ?: $name;
+            $storeSlug = sanitize_single_line($input['store_slug'] ?? '', 120) ?: $this->slugify($storeName);
 
             $this->userRepository->upsertSellerProfile($userId, [
                 'store_name' => $storeName,
                 'store_slug' => $storeSlug,
-                'support_email' => trim((string) ($input['support_email'] ?? '')) ?: null,
+                'support_email' => sanitize_email_address($input['support_email'] ?? '') ?: null,
             ]);
         }
 
@@ -148,12 +145,18 @@ final class UserService
 
         $data = [];
 
-        if (isset($input['name']) && trim($input['name']) !== '') {
-            $data['name'] = trim($input['name']);
+        if (isset($input['name'])) {
+            $name = sanitize_single_line($input['name'] ?? '', 120);
+            if ($name !== '') {
+                $data['name'] = $name;
+            }
         }
 
-        if (isset($input['email']) && trim($input['email']) !== '') {
-            $email = trim($input['email']);
+        if (isset($input['email'])) {
+            $email = sanitize_email_address($input['email'] ?? '');
+            if ($email === '') {
+                $email = $user['email'];
+            }
             if ($email !== $user['email']) {
                 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     throw new InvalidArgumentException('Invalid email.');
@@ -166,7 +169,7 @@ final class UserService
         }
 
         if (array_key_exists('phone', $input)) {
-            $data['phone'] = trim((string) $input['phone']) ?: null;
+            $data['phone'] = sanitize_phone_number($input['phone'] ?? '');
         }
 
         if (isset($input['is_active'])) {
@@ -175,9 +178,7 @@ final class UserService
 
         $newPassword = trim((string) ($input['new_password'] ?? ''));
         if ($newPassword !== '') {
-            if (mb_strlen($newPassword) < 8) {
-                throw new InvalidArgumentException('Password must be at least 8 characters.');
-            }
+            ensure_password_strength($newPassword);
             $data['password_hash'] = password_hash($newPassword, PASSWORD_DEFAULT);
         }
 
@@ -188,9 +189,9 @@ final class UserService
         if ($user['role'] === 'seller' && (isset($input['store_name']) || isset($input['store_slug']))) {
             $profile = $this->userRepository->findSellerProfile($userId);
             $this->userRepository->upsertSellerProfile($userId, [
-                'store_name' => trim((string) ($input['store_name'] ?? '')) ?: ($profile['store_name'] ?? $user['name']),
-                'store_slug' => trim((string) ($input['store_slug'] ?? '')) ?: ($profile['store_slug'] ?? $this->slugify($user['name'])),
-                'support_email' => trim((string) ($input['support_email'] ?? '')) ?: ($profile['support_email'] ?? null),
+                'store_name' => sanitize_single_line($input['store_name'] ?? '', 120) ?: ($profile['store_name'] ?? $user['name']),
+                'store_slug' => sanitize_single_line($input['store_slug'] ?? '', 120) ?: ($profile['store_slug'] ?? $this->slugify($user['name'])),
+                'support_email' => sanitize_email_address($input['support_email'] ?? '') ?: ($profile['support_email'] ?? null),
             ]);
         }
 
@@ -210,6 +211,29 @@ final class UserService
         return $this->userRepository->findById($userId);
     }
 
+    public function adminDeleteUser(int $userId, int $actingUserId): void
+    {
+        if ($userId < 1) {
+            throw new InvalidArgumentException('Invalid user selected.');
+        }
+
+        if ($userId === $actingUserId) {
+            throw new RuntimeException('You cannot delete your own admin account.');
+        }
+
+        $user = $this->userRepository->findById($userId);
+
+        if ($user === null) {
+            throw new RuntimeException('User not found.');
+        }
+
+        try {
+            $this->userRepository->delete($userId);
+        } catch (Throwable $exception) {
+            throw new RuntimeException('This user cannot be deleted yet because related records still exist.');
+        }
+    }
+
     public function updateSellerStore(int $userId, array $input): array
     {
         $user = $this->userRepository->findById($userId);
@@ -218,8 +242,8 @@ final class UserService
             throw new RuntimeException('Seller not found.');
         }
 
-        $storeName = trim((string) ($input['store_name'] ?? ''));
-        $storeSlug = trim((string) ($input['store_slug'] ?? ''));
+        $storeName = sanitize_single_line($input['store_name'] ?? '', 120);
+        $storeSlug = sanitize_single_line($input['store_slug'] ?? '', 120);
 
         if ($storeName === '') {
             throw new InvalidArgumentException('Store name is required.');
@@ -232,7 +256,7 @@ final class UserService
         $this->userRepository->upsertSellerProfile($userId, [
             'store_name' => $storeName,
             'store_slug' => $storeSlug,
-            'support_email' => trim((string) ($input['support_email'] ?? '')) ?: null,
+            'support_email' => sanitize_email_address($input['support_email'] ?? '') ?: null,
         ]);
 
         return $this->getProfile($userId);

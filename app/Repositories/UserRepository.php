@@ -91,6 +91,13 @@ final class UserRepository
         return $stmt->execute($params);
     }
 
+    public function delete(int $id): bool
+    {
+        $stmt = $this->connection->prepare('DELETE FROM users WHERE id = :id');
+
+        return $stmt->execute(['id' => $id]);
+    }
+
     public function listAll(array $filters = []): array
     {
         $conditions = [];
@@ -118,7 +125,7 @@ final class UserRepository
             $sql .= ' WHERE ' . implode(' AND ', $conditions);
         }
 
-        $sql .= ' ORDER BY created_at DESC';
+        $sql .= ' ORDER BY id ASC';
 
         $stmt = $this->connection->prepare($sql);
         $stmt->execute($params);
