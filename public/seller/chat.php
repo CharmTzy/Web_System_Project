@@ -39,7 +39,7 @@ try {
 $pageTitle = 'Seller Chat';
 $appName = $config['app']['name'];
 $pageScript = 'chat.js';
-$pageSkeletonVariant = 'chat';
+$pageSkeletonVariant = 'admin-chat';
 $cartSummary = ['total_items' => 0];
 $chatWebSocketUrl = chat_websocket_url($config['app']);
 

@@ -68,6 +68,47 @@ if ($order['status'] === 'pending' && $sessionId !== '' && !empty($config['app']
     }
 }
 
+$pendingOrderMarker = (string) ($_SESSION['checkout_pending_order'] ?? '');
+$pendingCartSignature = (string) ($_SESSION['checkout_pending_signature'] ?? '');
+$clearedOrders = $_SESSION['checkout_cleared_orders'] ?? [];
+
+if (!is_array($clearedOrders)) {
+    $clearedOrders = [];
+}
+
+if (in_array((string) $order['status'], ['paid', 'shipped', 'delivered'], true)
+    && empty($clearedOrders[$orderNumber])) {
+    $cartSignature = static function (array $items): string {
+        $signature = array_map(
+            static fn (array $item): string => implode(':', [
+                (int) ($item['product_id'] ?? 0),
+                (int) ($item['seller_id'] ?? 0),
+                (int) ($item['quantity'] ?? 0),
+                number_format((float) ($item['unit_price'] ?? 0), 2, '.', ''),
+                number_format((float) ($item['line_total'] ?? 0), 2, '.', ''),
+            ]),
+            $items
+        );
+
+        sort($signature);
+
+        return implode('|', $signature);
+    };
+
+    $currentCart = $cartService->summary();
+    $shouldClearCart = $sessionId !== '' || $pendingOrderMarker === $orderNumber;
+
+    if ($shouldClearCart
+        || !empty($currentCart['is_empty'])
+        || ($pendingCartSignature !== '' && $cartSignature($currentCart['items']) === $pendingCartSignature)) {
+        $cartService->clear();
+    }
+
+    $clearedOrders[$orderNumber] = true;
+    $_SESSION['checkout_cleared_orders'] = $clearedOrders;
+    unset($_SESSION['checkout_pending_order'], $_SESSION['checkout_pending_signature']);
+}
+
 $paymentsInTestMode = payments_use_test_mode($config['app']);
 $pageTitle = 'Payment status';
 $appName = $config['app']['name'];

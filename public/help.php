@@ -6,7 +6,7 @@ $config = require dirname(__DIR__) . '/bootstrap.php';
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/help.php', PHP_URL_PATH) ?: '/help.php';
 $paymentsInTestMode = payments_use_test_mode($config['app']);
 
-redirect_if_role_disallowed(['admin']);
+redirect_if_role_disallowed(['admin', 'seller']);
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();

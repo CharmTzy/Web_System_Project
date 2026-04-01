@@ -146,8 +146,8 @@ $appliedCoupon = $appliedCoupon ?? ($cart['applied_coupon'] ?? null);
 
                 <p class="summary-card__note mb-3">
                     <?= $paymentsInTestMode
-                        ? 'You’ll be redirected to Stripe test checkout to verify the payment flow. Do not use real payment details on this environment.'
-                        : 'You’ll be redirected to Stripe’s secure checkout page to complete payment.' ?>
+                        ? 'You’ll be redirected to Stripe-hosted test checkout, operated by Stripe on behalf of NovaMarket. Do not use real payment details on this environment.'
+                        : 'You’ll be redirected to Stripe-hosted checkout, operated by Stripe on behalf of NovaMarket, to complete payment.' ?>
                 </p>
                 <button class="btn btn-brand w-100" type="submit">
                     <?= $paymentsInTestMode ? 'Continue to Stripe test checkout' : 'Continue to Stripe' ?>
@@ -187,8 +187,8 @@ $appliedCoupon = $appliedCoupon ?? ($cart['applied_coupon'] ?? null);
             </div>
             <p class="summary-card__note">
                 <?= $paymentsInTestMode
-                    ? 'This environment is using Stripe test mode. Payments here are for checkout testing and verification only.'
-                    : 'Payment is processed securely by Stripe. Your order will be confirmed after payment succeeds.' ?>
+                    ? 'This environment is using Stripe test mode. Stripe is hosting this payment flow on behalf of NovaMarket for checkout testing only.'
+                    : 'Stripe hosts this payment flow on behalf of NovaMarket. Your order will be confirmed after payment succeeds.' ?>
             </p>
         </aside>
     </div>

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__) . '/bootstrap.php';
 
-redirect_if_role_disallowed(['admin']);
-
 $pageTitle = 'Privacy Policy';
 $appName = $config['app']['name'];
 $pageSkeletonVariant = 'legal';
@@ -19,6 +17,7 @@ $policy = [
         'Account details are used to authenticate users and personalize their dashboard experience.',
         'Order, address, and support data are used to process purchases and respond to customer questions.',
         'Payments are handled through Stripe-hosted checkout rather than a custom on-site card form.',
+        'When payment is required, customers are redirected to a Stripe-hosted page that is operated by Stripe on behalf of NovaMarket.',
         'Operational security headers and role access controls are used to reduce exposure to misuse.',
     ],
     'quick_links' => [
@@ -45,6 +44,7 @@ $policy = [
             'title' => 'Payments and checkout',
             'paragraphs' => [
                 'NovaMarket redirects customers to Stripe-hosted checkout to complete payment securely.',
+                'When the payment page opens, it is hosted by Stripe on behalf of NovaMarket. Customers enter payment details on Stripe\'s domain rather than in a custom card form hosted directly on this site.',
                 'Payment confirmation and order finalization are handled through Stripe session and webhook events after the customer leaves the storefront.',
             ],
         ],

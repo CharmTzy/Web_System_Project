@@ -49,29 +49,6 @@ try {
                     throw new RuntimeException('Database unavailable during webhook handling.');
                 }
 
-                $cardBrand = null;
-                $cardLastFour = null;
-                $paymentIntentId = trim((string) ($session['payment_intent'] ?? ''));
-
-                if ($paymentIntentId !== '') {
-                    $intent = stripe_api_request(
-                        'GET',
-                        'payment_intents/' . rawurlencode($paymentIntentId),
-                        (string) $config['app']['stripe_secret_key'],
-                        ['expand[]' => 'latest_charge.payment_method_details.card']
-                    );
-
-                    $card = $intent['latest_charge']['payment_method_details']['card'] ?? [];
-                    if (is_array($card)) {
-                        $brand = strtolower((string) ($card['brand'] ?? ''));
-                        $lastFour = (string) ($card['last4'] ?? '');
-
-                        $allowedBrands = ['visa', 'mastercard', 'amex', 'discover'];
-                        $cardBrand = in_array($brand, $allowedBrands, true) ? $brand : ($brand !== '' ? 'other' : null);
-                        $cardLastFour = preg_match('/^\d{4}$/', $lastFour) ? $lastFour : null;
-                    }
-                }
-
                 $checkoutService = new \App\Services\CheckoutService(
                     new \App\Services\CartService(
                         new \App\Repositories\ProductRepository($connection),
@@ -84,7 +61,7 @@ try {
                     new \App\Repositories\CartRepository($connection),
                 );
 
-                $checkoutService->finalizePendingOrder($orderNumber, $cardBrand, $cardLastFour);
+                $checkoutService->finalizePendingOrder($orderNumber);
             }
         }
     }

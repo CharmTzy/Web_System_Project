@@ -216,6 +216,7 @@ $highlights = [
 ];
 
 $quickLinks = [
+    ['label' => 'Manage orders', 'href' => '/admin/orders.php'],
     ['label' => 'Manage users', 'href' => '/admin/users.php'],
     ['label' => 'Manage products', 'href' => '/admin/products.php'],
     ['label' => 'Manage addresses', 'href' => '/admin/addresses.php'],
