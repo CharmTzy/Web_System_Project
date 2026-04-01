@@ -5,7 +5,12 @@ declare(strict_types=1);
 $config = require dirname(__DIR__) . '/bootstrap.php';
 
 if (!empty($_SESSION['user_id'])) {
-    header('Location: /profile.php');
+    $redirect = match ($_SESSION['user_role'] ?? '') {
+        'admin' => '/admin/',
+        'seller' => '/seller/',
+        default => '/index.html',
+    };
+    header('Location: ' . $redirect);
     exit;
 }
 
@@ -16,7 +21,7 @@ $bodyClass = 'auth-page auth-page--register';
 $authFormView = 'auth/register-form';
 $authPage = [
     'title' => 'Create your account and start shopping with ease',
-    'copy' => 'Set up your customer account to save details, revisit favourites, and move through checkout faster.',
+    'copy' => 'Set up your customer account to track orders, revisit favourites, and manage your shopping preferences.',
     'utility_links' => [],
     'banner_title' => 'Already have an account?',
     'banner_copy' => 'Sign back in and continue browsing the products you have been exploring.',

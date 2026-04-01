@@ -7,4 +7,6 @@ namespace App\Repositories;
 interface CouponRepositoryInterface
 {
     public function activeCoupons(): array;
+
+    public function findActiveByCode(string $code): ?array;
 }

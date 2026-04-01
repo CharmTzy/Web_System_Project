@@ -25,6 +25,7 @@ final class CouponRepository implements CouponRepositoryInterface
                 c.discount_type,
                 c.discount_value,
                 c.minimum_spend,
+                c.seller_id,
                 c.starts_at,
                 c.ends_at,
                 c.is_featured,
@@ -49,6 +50,7 @@ final class CouponRepository implements CouponRepositoryInterface
                 'discount_type' => (string) $row['discount_type'],
                 'discount_value' => (float) $row['discount_value'],
                 'minimum_spend' => $row['minimum_spend'] !== null ? (float) $row['minimum_spend'] : null,
+                'seller_id' => $row['seller_id'] !== null ? (int) $row['seller_id'] : null,
                 'seller_name' => $row['seller_name'] !== null ? (string) $row['seller_name'] : null,
                 'starts_at' => (string) $row['starts_at'],
                 'ends_at' => (string) $row['ends_at'],
@@ -56,6 +58,43 @@ final class CouponRepository implements CouponRepositoryInterface
             ],
             $statement->fetchAll()
         );
+    }
+
+    public function findActiveByCode(string $code): ?array
+    {
+        $statement = $this->connection->prepare(
+            <<<SQL
+            SELECT
+                c.id,
+                c.code,
+                c.title,
+                c.description,
+                c.coupon_type,
+                c.discount_type,
+                c.discount_value,
+                c.minimum_spend,
+                c.seller_id,
+                c.starts_at,
+                c.ends_at,
+                c.is_featured,
+                c.is_active,
+                sp.store_name AS seller_name
+            FROM coupons c
+            LEFT JOIN seller_profiles sp
+                ON sp.user_id = c.seller_id
+            WHERE c.code = :code
+              AND c.is_active = 1
+              AND c.starts_at <= NOW()
+              AND c.ends_at >= NOW()
+            LIMIT 1
+            SQL
+        );
+        $statement->execute([
+            'code' => strtoupper(trim($code)),
+        ]);
+        $row = $statement->fetch();
+
+        return is_array($row) ? $this->normalizeCoupon($row) : null;
     }
 
     public function listAll(array $filters = []): array

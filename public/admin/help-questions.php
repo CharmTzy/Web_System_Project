@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: /login.php');
-    exit;
-}
+require_role('admin');
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
 
 if (!$connection) {
-    http_response_code(503);
-    echo 'Database connection required.';
-    exit;
+    render_error_page(503, 'Service temporarily unavailable', service_unavailable_message());
 }
 
 $service = new \App\Services\AdminHelpCenterService(
@@ -35,7 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('admin_help_notice', 'Help question deleted successfully.');
         }
     } catch (\Throwable $exception) {
-        flash('admin_help_error', $exception->getMessage());
+        report_exception($exception, 'admin.help_questions');
+        flash('admin_help_error', safe_exception_message($exception, 'We could not update the help question right now.'));
     }
 
     header('Location: /admin/help-questions.php');
@@ -46,6 +42,8 @@ $filters = [
     'search' => trim((string) ($_GET['search'] ?? '')),
     'category_id' => filter_input(INPUT_GET, 'category_id', FILTER_VALIDATE_INT) ?: 0,
 ];
+$page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
+$pagination = paginate_items($service->listQuestions($filters), $page, 10);
 
 $pageTitle = 'Manage Help Center';
 $appName = $config['app']['name'];
@@ -64,7 +62,8 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
     <section class="catalog-section">
         <div class="container">
             <?= render('admin/help-question-list', [
-                'questions' => $service->listQuestions($filters),
+                'questions' => $pagination['items'],
+                'pagination' => $pagination,
                 'categories' => $service->categories(),
                 'filters' => $filters,
                 'notice' => flash('admin_help_notice'),

@@ -8,9 +8,11 @@
   const mobileLinksEl = document.querySelector('.mobile-drawer__links');
   const marketSubnav = document.querySelector('.market-subnav');
   const mobileNav = document.querySelector('.mobile-drawer__nav');
+  const isStorefrontCustomerScreen = document.body?.matches?.('[data-catalog-page], [data-product-screen], [data-cart-screen]') ?? false;
   const headerState = (window.__novaHeaderState = window.__novaHeaderState || {
     cartCount: 0,
     notificationCount: 0,
+    notifications: [],
   });
 
   if (!actionsEl) return;
@@ -25,7 +27,13 @@
 
       const user = data.user;
       const role = user.role;
-      const notificationsUrl = '/profile.php#notifications';
+
+      if ((role === 'admin' || role === 'seller') && isStorefrontCustomerScreen) {
+        window.location.replace(role === 'admin' ? '/admin/' : '/seller/');
+        return;
+      }
+
+      const notificationsUrl = '/customer/chat.php';
 
       let dashboardUrl = '/profile.php';
       if (role === 'admin') dashboardUrl = '/admin/';
@@ -34,8 +42,10 @@
 
       // Update desktop header
       if (role === 'customer') {
-        syncCustomerNav(marketSubnav, false);
-        syncCustomerNav(mobileNav, true);
+        syncCustomerNav(marketSubnav);
+        syncCustomerNav(mobileNav);
+        headerState.notificationCount = Number(data.notification_count || 0);
+        headerState.notifications = Array.isArray(data.notifications) ? data.notifications : [];
 
         actionsEl.innerHTML = [
           buildIconAction({
@@ -43,12 +53,10 @@
             label: 'Account',
             icon: 'account',
           }),
-          buildIconAction({
-            href: notificationsUrl,
-            label: 'Notification',
-            icon: 'notification',
+          buildNotificationAction({
+            notificationsUrl,
             badge: headerState.notificationCount,
-            badgeAttr: 'data-notification-count',
+            notifications: headerState.notifications,
           }),
           buildIconAction({
             href: '/cart.html',
@@ -66,6 +74,9 @@
         ].join('');
 
         applyKnownHeaderCounts();
+        if (window.Storefront?.renderNotificationList) {
+          window.Storefront.renderNotificationList(headerState.notifications);
+        }
       } else {
         actionsEl.innerHTML =
           '<a class="header-action-link" href="' + dashboardUrl + '">' + escHtml(user.name) + '</a>' +
@@ -81,15 +92,15 @@
       if (mobileLinksEl) {
         if (role === 'customer') {
           mobileLinksEl.innerHTML =
-            '<a href="' + dashboardUrl + '" data-bs-dismiss="offcanvas">Account</a>' +
-            '<a href="' + notificationsUrl + '" data-bs-dismiss="offcanvas">Notification</a>' +
+            '<a href="' + dashboardUrl + '">Account</a>' +
+            '<a href="' + notificationsUrl + '">Notification</a>' +
             '<a href="/cart.html">Cart</a>' +
-            '<a href="/logout.php" data-bs-dismiss="offcanvas">Sign out</a>';
+            '<a href="/logout.php">Sign out</a>';
         } else {
           mobileLinksEl.innerHTML =
-            '<a href="' + dashboardUrl + '" data-bs-dismiss="offcanvas">' + escHtml(user.name) + ' (' + escHtml(capitalize(role)) + ')</a>' +
-            '<a href="/profile.php" data-bs-dismiss="offcanvas">Profile</a>' +
-            '<a href="/logout.php" data-bs-dismiss="offcanvas">Sign out</a>' +
+            '<a href="' + dashboardUrl + '">' + escHtml(user.name) + ' (' + escHtml(capitalize(role)) + ')</a>' +
+            '<a href="/profile.php">Profile</a>' +
+            '<a href="/logout.php">Sign out</a>' +
             '<a href="/cart.html">Cart</a>';
         }
       }
@@ -106,6 +117,10 @@
     document.querySelectorAll('[data-notification-count]').forEach((node) => {
       node.textContent = String(headerState.notificationCount ?? 0);
     });
+
+    document.querySelectorAll('[data-notification-badge]').forEach((node) => {
+      node.hidden = Number(headerState.notificationCount ?? 0) < 1;
+    });
   }
 
   function buildIconAction({ href, label, icon, badge = null, badgeAttr = '', extraAttrs = '' }) {
@@ -117,6 +132,31 @@
         '</span>' +
         '<span class="header-icon-action__label">' + escHtml(label) + '</span>' +
       '</a>'
+    );
+  }
+
+  function buildNotificationAction({ notificationsUrl, badge, notifications }) {
+    return (
+      '<div class="header-notification" data-notification-menu>' +
+        '<button class="header-icon-action header-icon-action--button header-icon-action--with-badge" type="button" data-notification-toggle aria-haspopup="dialog" aria-expanded="false" aria-controls="headerNotificationPanel">' +
+          '<span class="header-icon-action__icon-wrap">' +
+            renderIcon('notification') +
+            '<strong class="header-icon-action__badge" data-notification-count data-notification-badge' + (Number(badge || 0) < 1 ? ' hidden' : '') + '>' + escHtml(String(badge || 0)) + '</strong>' +
+          '</span>' +
+          '<span class="header-icon-action__label">Notification</span>' +
+        '</button>' +
+        '<div class="header-notification__panel" id="headerNotificationPanel" data-notification-panel hidden>' +
+          '<div class="header-notification__head">' +
+            '<div><strong>Notifications</strong><span>Live chat updates from your conversations.</span></div>' +
+            '<a href="' + notificationsUrl + '">Open chat</a>' +
+          '</div>' +
+          '<div class="header-notification__list" data-notification-list>' +
+            (Array.isArray(notifications) && notifications.length
+              ? ''
+              : '<p class="header-notification__empty">You are all caught up right now.</p>') +
+          '</div>' +
+        '</div>' +
+      '</div>'
     );
   }
 
@@ -141,7 +181,7 @@
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  function syncCustomerNav(container, dismissOffcanvas) {
+  function syncCustomerNav(container) {
     if (!container) return;
 
     const registerLink = container.querySelector('a[href="/register.php"]');
@@ -152,21 +192,29 @@
       registerLink.textContent = 'Coupons';
     }
 
-    if (container.querySelector('a[href="/customer/addresses.php"]')) {
+    if (container.querySelector('a[href="/customer/orders.php"]')) {
       return;
     }
+
+    const ordersLink = document.createElement('a');
+    ordersLink.href = '/customer/orders.php';
+    ordersLink.textContent = 'Orders';
+
+    const chatLink = document.createElement('a');
+    chatLink.href = '/customer/chat.php';
+    chatLink.textContent = 'Chat';
 
     const addressesLink = document.createElement('a');
     addressesLink.href = '/customer/addresses.php';
     addressesLink.textContent = 'Addresses';
 
-    if (dismissOffcanvas) {
-      addressesLink.setAttribute('data-bs-dismiss', 'offcanvas');
-    }
-
     if (helpLink) {
+      container.insertBefore(ordersLink, helpLink);
+      container.insertBefore(chatLink, helpLink);
       container.insertBefore(addressesLink, helpLink);
     } else {
+      container.appendChild(ordersLink);
+      container.appendChild(chatLink);
       container.appendChild(addressesLink);
     }
   }

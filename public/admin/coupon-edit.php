@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: /login.php');
-    exit;
-}
+require_role('admin');
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
 
 if (!$connection) {
-    http_response_code(503);
-    echo 'Database connection required.';
-    exit;
+    render_error_page(503, 'Service temporarily unavailable', service_unavailable_message());
 }
 
 $service = new \App\Services\AdminCouponService(
@@ -47,7 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: /admin/coupon-edit.php?id=' . $savedCoupon['id']);
             exit;
         } catch (\Throwable $exception) {
-            $formError = $exception->getMessage();
+            report_exception($exception, 'admin.coupon_edit');
+            $formError = safe_exception_message($exception, 'We could not save the coupon right now.');
         }
     }
 }

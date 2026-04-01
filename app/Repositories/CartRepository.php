@@ -88,7 +88,11 @@ final class CartRepository
 
     public function replaceItems(int $cartId, array $items): void
     {
-        $this->connection->beginTransaction();
+        $ownsTransaction = !$this->connection->inTransaction();
+
+        if ($ownsTransaction) {
+            $this->connection->beginTransaction();
+        }
 
         try {
             $deleteStatement = $this->connection->prepare(
@@ -119,13 +123,26 @@ final class CartRepository
             );
             $touchStatement->execute(['id' => $cartId]);
 
-            $this->connection->commit();
+            if ($ownsTransaction) {
+                $this->connection->commit();
+            }
         } catch (\Throwable $exception) {
-            if ($this->connection->inTransaction()) {
+            if ($ownsTransaction && $this->connection->inTransaction()) {
                 $this->connection->rollBack();
             }
 
             throw $exception;
         }
+    }
+
+    public function clearActiveCartForUser(int $userId): void
+    {
+        $cartId = $this->findActiveCartIdForUser($userId);
+
+        if ($cartId === null) {
+            return;
+        }
+
+        $this->replaceItems($cartId, []);
     }
 }

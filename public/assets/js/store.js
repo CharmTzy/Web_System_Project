@@ -5,10 +5,13 @@
   const headerState = (window.__novaHeaderState = window.__novaHeaderState || {
     cartCount: 0,
     notificationCount: 0,
+    notifications: [],
   });
+  const notificationPollMs = 5000;
   const minimumSkeletonMs = 900;
   const skeletonStartedAt = window.performance?.now?.() ?? Date.now();
   let pageRevealScheduled = false;
+  let notificationPollTimer = 0;
 
   const revealPageShell = () => {
     if (!body) {
@@ -76,11 +79,124 @@
     document.querySelectorAll('[data-notification-count]').forEach((node) => {
       node.textContent = String(normalizedCount);
     });
+
+    document.querySelectorAll('[data-notification-badge]').forEach((node) => {
+      node.hidden = normalizedCount < 1;
+    });
+  };
+
+  const escapeHtml = (value) => {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(String(value ?? '')));
+    return div.innerHTML;
+  };
+
+  const renderNotificationList = (notifications) => {
+    headerState.notifications = Array.isArray(notifications) ? notifications : [];
+
+    document.querySelectorAll('[data-notification-list]').forEach((list) => {
+      if (!headerState.notifications.length) {
+        list.innerHTML = '<p class="header-notification__empty">You are all caught up right now.</p>';
+        return;
+      }
+
+      list.innerHTML = headerState.notifications
+        .map((item) => {
+          const imageHtml = item.image_url
+            ? '<span class="header-notification__media"><img src="' + escapeHtml(item.image_url) + '" alt=""></span>'
+            : '<span class="header-notification__media"><span class="header-notification__media-mark">NM</span></span>';
+          const unreadCount = Number(item.unread_count || 0);
+
+          return (
+            '<a class="header-notification__item" href="' + escapeHtml(item.href || '/customer/chat.php') + '">' +
+              imageHtml +
+              '<span class="header-notification__body">' +
+                '<span class="header-notification__meta">' +
+                  '<strong class="header-notification__title">' + escapeHtml(item.title || 'New message') + '</strong>' +
+                  (unreadCount > 0 ? '<span class="header-notification__count">' + escapeHtml(String(unreadCount)) + '</span>' : '') +
+                '</span>' +
+                (item.subtitle ? '<span class="header-notification__subtitle">' + escapeHtml(item.subtitle) + '</span>' : '') +
+                '<span class="header-notification__preview">' + escapeHtml(item.preview || 'You have a new message.') + '</span>' +
+                '<span class="header-notification__time">' + escapeHtml(item.updated_label || 'Just now') + '</span>' +
+              '</span>' +
+            '</a>'
+          );
+        })
+        .join('');
+    });
+  };
+
+  const setNotificationMenuOpen = (isOpen) => {
+    document.querySelectorAll('[data-notification-menu]').forEach((menu) => {
+      const panel = menu.querySelector('[data-notification-panel]');
+      const toggle = menu.querySelector('[data-notification-toggle]');
+
+      if (!panel || !toggle) {
+        return;
+      }
+
+      panel.hidden = !isOpen;
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
   };
 
   const applyHeaderCounts = () => {
     updateCartCount(headerState.cartCount);
     updateNotificationCount(headerState.notificationCount);
+    renderNotificationList(headerState.notifications);
+  };
+
+  const syncNotificationCount = async (announce = false) => {
+    try {
+      const response = await fetch('/api/session.php', {
+        headers: {
+          Accept: 'application/json',
+        },
+        credentials: 'same-origin',
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok || !payload.logged_in) {
+        updateNotificationCount(0);
+        renderNotificationList([]);
+        return;
+      }
+
+      const previousCount = Number(headerState.notificationCount ?? 0);
+      const nextCount = Number(payload.notification_count ?? 0);
+      updateNotificationCount(nextCount);
+      renderNotificationList(payload.notifications || []);
+
+      if (announce && nextCount > previousCount) {
+        flashMessage('You have a new chat message.');
+      }
+    } catch (error) {
+      // Leave the last known notification state in place on transient failures.
+    }
+  };
+
+  const startNotificationPolling = () => {
+    if (notificationPollTimer) {
+      return;
+    }
+
+    const syncNow = () => {
+      syncNotificationCount(!document.hidden);
+    };
+
+    syncNotificationCount(false);
+    notificationPollTimer = window.setInterval(syncNow, notificationPollMs);
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        syncNotificationCount(false);
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      syncNotificationCount(false);
+    });
   };
 
   const applyCartPayload = (payload) => {
@@ -206,6 +322,32 @@
   });
 
   document.addEventListener('click', (event) => {
+    const toggle = event.target.closest('[data-notification-toggle]');
+
+    if (toggle) {
+      event.preventDefault();
+      const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+      setNotificationMenuOpen(!isExpanded);
+
+      if (!isExpanded) {
+        syncNotificationCount(false);
+      }
+
+      return;
+    }
+
+    if (!event.target.closest('[data-notification-menu]')) {
+      setNotificationMenuOpen(false);
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      setNotificationMenuOpen(false);
+    }
+  });
+
+  document.addEventListener('click', (event) => {
     const button = event.target.closest('[data-quantity-button]');
 
     if (!button) {
@@ -274,6 +416,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     applyHeaderCounts();
+    startNotificationPolling();
 
     refreshCart().catch(() => {
       // Leave the page usable even if the cart snapshot fails.
@@ -297,6 +440,7 @@
     flashMessage,
     openCartDrawer,
     refreshCart,
+    renderNotificationList,
     scheduleFormSubmit,
     updateCartCount,
     updateNotificationCount,

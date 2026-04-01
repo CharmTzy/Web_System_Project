@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 $config = require dirname(__DIR__, 2) . '/bootstrap.php';
 
-if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'seller') {
-    header('Location: /login.php');
-    exit;
-}
+require_role('seller');
 
 $database = new \App\Support\Database($config['database']);
 $connection = $database->connection();
 
 if (!$connection) {
-    http_response_code(503);
-    echo 'Database connection required.';
-    exit;
+    render_error_page(503, 'Service temporarily unavailable', service_unavailable_message());
 }
 
 $service = new \App\Services\ProductManagementService(
@@ -38,7 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('seller_products_notice', 'Product deleted successfully.');
         }
     } catch (\Throwable $exception) {
-        flash('seller_products_error', $exception->getMessage());
+        report_exception($exception, 'seller.products');
+        flash('seller_products_error', safe_exception_message($exception, 'We could not update the product right now.'));
     }
 
     header('Location: /seller/products.php');
@@ -50,6 +46,7 @@ $products = $service->listSellerProducts((int) $_SESSION['user_id']);
 $pageTitle = 'Manage Products';
 $appName = $config['app']['name'];
 $cartSummary = ['total_items' => 0];
+$pageSkeletonVariant = 'admin-table';
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 ?>

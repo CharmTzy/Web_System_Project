@@ -3,7 +3,7 @@
     <div class="section-block__header">
         <div>
             <span class="results-header__eyebrow">User management</span>
-            <h2><?= e((string) count($users)) ?> users</h2>
+            <h2><?= e((string) ($pagination['total_items'] ?? count($users))) ?> users</h2>
         </div>
         <a class="btn btn-brand" href="/admin/user-edit.php">Add new user</a>
     </div>
@@ -81,5 +81,6 @@
                 </tbody>
             </table>
         </div>
+        <?= render('partials/pagination', ['pagination' => $pagination ?? null]) ?>
     <?php endif; ?>
 </div>
