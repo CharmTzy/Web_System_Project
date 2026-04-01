@@ -191,5 +191,57 @@
     }
   });
 
+  document.addEventListener("click", (event) => {
+    const filterButton = event.target.closest("[data-review-filter]");
+
+    if (!filterButton) {
+      return;
+    }
+
+    const reviewSection = filterButton.closest("[data-product-reviews]");
+
+    if (!reviewSection) {
+      return;
+    }
+
+    const filter = filterButton.dataset.reviewFilter || "all";
+    const cards = [...reviewSection.querySelectorAll("[data-review-card]")];
+    const emptyState = reviewSection.querySelector("[data-review-empty-state]");
+
+    reviewSection.querySelectorAll("[data-review-filter]").forEach((button) => {
+      const isActive = button === filterButton;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+
+    let visibleCount = 0;
+
+    cards.forEach((card) => {
+      const rating = card.dataset.reviewRating || "";
+      const hasMedia = card.dataset.reviewHasMedia === "true";
+
+      let isVisible = true;
+
+      if (filter.startsWith("rating-")) {
+        isVisible = rating === filter.replace("rating-", "");
+      } else if (filter === "media") {
+        isVisible = hasMedia;
+      }
+
+      card.hidden = !isVisible;
+      card.classList.toggle("product-review-card--hidden", !isVisible);
+      card.style.display = isVisible ? "" : "none";
+
+      if (isVisible) {
+        visibleCount += 1;
+      }
+    });
+
+    if (emptyState) {
+      emptyState.hidden = visibleCount > 0;
+      emptyState.style.display = visibleCount > 0 ? "none" : "";
+    }
+  });
+
   loadProduct();
 })();

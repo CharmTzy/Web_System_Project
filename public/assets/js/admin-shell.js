@@ -9,6 +9,10 @@
 
   const isAdminBody = body.classList.contains("admin-body");
   const isSellerBody = body.classList.contains("seller-body");
+  const headerState = (window.__novaHeaderState = window.__novaHeaderState || {
+    cartCount: 0,
+    notificationCount: 0,
+  });
 
   if (!isAdminBody && !isSellerBody) {
     return;
@@ -20,9 +24,11 @@
   const storageKey = isSellerBody
     ? "novamarket-seller-sidebar-collapsed"
     : "novamarket-admin-sidebar-collapsed";
+  const notificationPollMs = 15000;
   const mobileQuery = window.matchMedia("(max-width: 991.98px)");
   let syncFrame = 0;
   let syncTimeout = 0;
+  let notificationPollTimer = 0;
 
   const setExpandedState = () => {
     const isExpanded = mobileQuery.matches
@@ -88,6 +94,57 @@
     syncTimeout = window.setTimeout(runViewportSync, 40);
   };
 
+  const updateNotificationCount = (count) => {
+    const normalizedCount = Number.isFinite(Number(count)) ? Number(count) : 0;
+    headerState.notificationCount = normalizedCount;
+
+    document.querySelectorAll("[data-notification-count]").forEach((node) => {
+      node.textContent = String(normalizedCount);
+    });
+
+    document.querySelectorAll("[data-notification-badge]").forEach((node) => {
+      node.hidden = normalizedCount < 1;
+    });
+  };
+
+  const syncNotificationCount = async () => {
+    try {
+      const response = await fetch("/api/session.php", {
+        headers: {
+          Accept: "application/json",
+        },
+        credentials: "same-origin",
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok || !payload.logged_in) {
+        updateNotificationCount(0);
+        return;
+      }
+
+      updateNotificationCount(payload.notification_count ?? 0);
+    } catch (error) {
+      // Keep the last known unread count if a refresh attempt fails.
+    }
+  };
+
+  const startNotificationPolling = () => {
+    if (notificationPollTimer || !document.querySelector("[data-notification-count]")) {
+      return;
+    }
+
+    syncNotificationCount();
+    notificationPollTimer = window.setInterval(syncNotificationCount, notificationPollMs);
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        syncNotificationCount();
+      }
+    });
+
+    window.addEventListener("focus", syncNotificationCount);
+  };
+
   toggleButton.addEventListener("click", () => {
     if (mobileQuery.matches) {
       body.classList.toggle(openClass);
@@ -130,4 +187,5 @@
   }
 
   scheduleViewportSync();
+  startNotificationPolling();
 })();

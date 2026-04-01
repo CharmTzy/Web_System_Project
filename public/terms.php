@@ -19,6 +19,7 @@ $policy = [
         'Orders are confirmed after successful payment processing and internal order finalization.',
         'Checkout redirects customers to Stripe-hosted payment pages that identify Stripe as the payment operator on behalf of NovaMarket.',
         'Abusive, fraudulent, or disruptive use of the site may lead to account restrictions or removal.',
+        'Listings, messages, and seller activity must not contain counterfeit, unsafe, illegal, or deceptive content.',
     ],
     'quick_links' => [
         ['label' => 'Privacy Policy', 'href' => '/privacy.php'],
@@ -53,17 +54,29 @@ $policy = [
             'paragraphs' => [
                 'Seller accounts and storefront changes may be reviewed before they are published or updated on the marketplace.',
                 'NovaMarket may remove, restrict, or moderate listings that create operational, legal, or trust issues for the platform.',
+                'This includes listings or conduct involving counterfeit goods, unsafe products, prohibited items, impersonation, deceptive product claims, misleading pricing, or attempts to move payment outside the approved checkout flow.',
             ],
         ],
         [
             'title' => 'Prohibited activity',
             'paragraphs' => [
                 'You may not use the site for fraud, unauthorized access, misleading activity, malicious traffic, or attempts to bypass platform restrictions.',
+                'NovaMarket may suspend accounts, remove listings, cancel transactions, or escalate reports when platform activity appears abusive or unsafe.',
             ],
             'items' => [
                 'Do not impersonate other people or businesses.',
+                'Do not list counterfeit, unsafe, restricted, or unlawful goods.',
+                'Do not make false claims about seller identity, pricing, availability, delivery timing, or refund rights.',
+                'Do not ask customers to pay outside Stripe-hosted checkout or through unofficial channels.',
                 'Do not attempt to scrape, attack, or disrupt the platform.',
                 'Do not upload or submit content that is unlawful, deceptive, or abusive.',
+            ],
+        ],
+        [
+            'title' => 'Reporting policy and abuse issues',
+            'paragraphs' => [
+                'Public reports about suspicious listings, seller conduct, counterfeit goods, checkout concerns, or other abuse issues can be submitted through the Contact page and support channels shown on the site.',
+                'Users should include the relevant product URL, seller name, order number, and supporting detail where available so NovaMarket can review the report efficiently.',
             ],
         ],
     ],

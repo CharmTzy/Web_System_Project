@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $orders = $orders ?? [];
-$reviewedProductIds = array_map('intval', $reviewedProductIds ?? []);
+$reviewDataByProduct = $reviewDataByProduct ?? [];
 $returnRequestsByPackage = $returnRequestsByPackage ?? [];
 $returnRequestsEnabled = $returnRequestsEnabled ?? false;
 $notice = $notice ?? null;
@@ -110,7 +110,9 @@ $pagination = $pagination ?? null;
                                         'id' => $item['product_id'],
                                         'slug' => $item['slug'],
                                     ]);
-                                    $isReviewed = in_array((int) $item['product_id'], $reviewedProductIds, true);
+                                    $existingReview = $reviewDataByProduct[(int) $item['product_id']] ?? null;
+                                    $isReviewed = is_array($existingReview);
+                                    $canReviewFromOrder = (string) ($fulfillment['status'] ?? '') === 'delivered' || $isReviewed;
                                     ?>
                                     <article class="order-card__item">
                                         <a class="order-card__item-image" href="<?= e($productLink) ?>">
@@ -128,9 +130,19 @@ $pagination = $pagination ?? null;
                                                         <?= is_array($linkedReturnRequest) ? 'View return / refund' : 'Return / refund' ?>
                                                     </a>
                                                 <?php endif; ?>
-                                                <a class="btn btn-brand-outline btn-sm" href="<?= e($productLink) ?>#product-reviews">
-                                                    <?= $isReviewed ? 'Update review' : 'Write review' ?>
-                                                </a>
+                                                <?php if ($canReviewFromOrder): ?>
+                                                    <button
+                                                        class="btn btn-brand-outline btn-sm"
+                                                        type="button"
+                                                        data-review-trigger
+                                                        data-review-product-id="<?= e((string) $item['product_id']) ?>"
+                                                        data-review-product-name="<?= e((string) $item['product_name']) ?>"
+                                                        data-review-product-image="<?= e((string) $item['image_url']) ?>"
+                                                        data-review-seller-name="<?= e((string) $fulfillment['seller_name']) ?>"
+                                                    >
+                                                        <?= $isReviewed ? 'Update review' : 'Write review' ?>
+                                                    </button>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </article>
@@ -143,4 +155,5 @@ $pagination = $pagination ?? null;
         <?php endforeach; ?>
     </div>
     <?= render('partials/pagination', ['pagination' => $pagination]) ?>
+    <?= render('customer/order-review-modal', ['reviewDataByProduct' => $reviewDataByProduct]) ?>
 <?php endif; ?>

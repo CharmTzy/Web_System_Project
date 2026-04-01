@@ -44,8 +44,8 @@ final class ReviewService
         }
 
         $rating = filter_var($input['rating'] ?? null, FILTER_VALIDATE_INT);
-        $title = trim((string) ($input['title'] ?? ''));
-        $comment = trim((string) ($input['comment'] ?? ''));
+        $title = sanitize_single_line($input['title'] ?? '', 120);
+        $comment = sanitize_multiline_text($input['comment'] ?? '', 1200);
 
         if ($rating === false || $rating < 1 || $rating > 5) {
             throw new InvalidArgumentException('Choose a rating from 1 to 5.');
@@ -53,14 +53,6 @@ final class ReviewService
 
         if ($comment === '') {
             throw new InvalidArgumentException('Write a short review before submitting.');
-        }
-
-        if (mb_strlen($title) > 120) {
-            throw new InvalidArgumentException('Review title must be 120 characters or fewer.');
-        }
-
-        if (mb_strlen($comment) > 1200) {
-            throw new InvalidArgumentException('Review comments must be 1200 characters or fewer.');
         }
 
         $this->reviewRepository->save($productId, $userId, [
@@ -91,14 +83,10 @@ final class ReviewService
             throw new RuntimeException('Product repository is not available.');
         }
 
-        $reply = trim($reply);
+        $reply = sanitize_multiline_text($reply, 1200);
 
         if ($reply === '') {
             throw new InvalidArgumentException('Write a reply before submitting.');
-        }
-
-        if (mb_strlen($reply) > 1200) {
-            throw new InvalidArgumentException('Seller reply must be 1200 characters or fewer.');
         }
 
         $review = $this->reviewRepository->findById($reviewId);
@@ -124,14 +112,10 @@ final class ReviewService
 
     public function flagAsAdmin(int $reviewId, int $adminId, string $reason): array
     {
-        $reason = trim($reason);
+        $reason = sanitize_single_line($reason, 255);
 
         if ($reason === '') {
             throw new InvalidArgumentException('Provide a reason for flagging this review.');
-        }
-
-        if (mb_strlen($reason) > 255) {
-            throw new InvalidArgumentException('Flag reason must be 255 characters or fewer.');
         }
 
         $review = $this->reviewRepository->findById($reviewId);
@@ -147,11 +131,7 @@ final class ReviewService
 
     public function hideAsAdmin(int $reviewId, int $adminId, ?string $reason = null): array
     {
-        $reason = $reason !== null ? trim($reason) : null;
-
-        if ($reason !== null && mb_strlen($reason) > 255) {
-            throw new InvalidArgumentException('Moderation reason must be 255 characters or fewer.');
-        }
+        $reason = $reason !== null ? sanitize_single_line($reason, 255) : null;
 
         $review = $this->reviewRepository->findById($reviewId);
 

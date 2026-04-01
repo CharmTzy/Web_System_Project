@@ -12,6 +12,7 @@
   const headerState = (window.__novaHeaderState = window.__novaHeaderState || {
     cartCount: 0,
     notificationCount: 0,
+    notifications: [],
   });
 
   if (!actionsEl) return;
@@ -32,7 +33,7 @@
         return;
       }
 
-      const notificationsUrl = '/profile.php#notifications';
+      const notificationsUrl = '/customer/chat.php';
 
       let dashboardUrl = '/profile.php';
       if (role === 'admin') dashboardUrl = '/admin/';
@@ -44,6 +45,7 @@
         syncCustomerNav(marketSubnav);
         syncCustomerNav(mobileNav);
         headerState.notificationCount = Number(data.notification_count || 0);
+        headerState.notifications = Array.isArray(data.notifications) ? data.notifications : [];
 
         actionsEl.innerHTML = [
           buildIconAction({
@@ -51,12 +53,10 @@
             label: 'Account',
             icon: 'account',
           }),
-          buildIconAction({
-            href: notificationsUrl,
-            label: 'Notification',
-            icon: 'notification',
+          buildNotificationAction({
+            notificationsUrl,
             badge: headerState.notificationCount,
-            badgeAttr: 'data-notification-count',
+            notifications: headerState.notifications,
           }),
           buildIconAction({
             href: '/cart.html',
@@ -74,6 +74,9 @@
         ].join('');
 
         applyKnownHeaderCounts();
+        if (window.Storefront?.renderNotificationList) {
+          window.Storefront.renderNotificationList(headerState.notifications);
+        }
       } else {
         actionsEl.innerHTML =
           '<a class="header-action-link" href="' + dashboardUrl + '">' + escHtml(user.name) + '</a>' +
@@ -114,6 +117,10 @@
     document.querySelectorAll('[data-notification-count]').forEach((node) => {
       node.textContent = String(headerState.notificationCount ?? 0);
     });
+
+    document.querySelectorAll('[data-notification-badge]').forEach((node) => {
+      node.hidden = Number(headerState.notificationCount ?? 0) < 1;
+    });
   }
 
   function buildIconAction({ href, label, icon, badge = null, badgeAttr = '', extraAttrs = '' }) {
@@ -125,6 +132,31 @@
         '</span>' +
         '<span class="header-icon-action__label">' + escHtml(label) + '</span>' +
       '</a>'
+    );
+  }
+
+  function buildNotificationAction({ notificationsUrl, badge, notifications }) {
+    return (
+      '<div class="header-notification" data-notification-menu>' +
+        '<button class="header-icon-action header-icon-action--button header-icon-action--with-badge" type="button" data-notification-toggle aria-haspopup="dialog" aria-expanded="false" aria-controls="headerNotificationPanel">' +
+          '<span class="header-icon-action__icon-wrap">' +
+            renderIcon('notification') +
+            '<strong class="header-icon-action__badge" data-notification-count data-notification-badge' + (Number(badge || 0) < 1 ? ' hidden' : '') + '>' + escHtml(String(badge || 0)) + '</strong>' +
+          '</span>' +
+          '<span class="header-icon-action__label">Notification</span>' +
+        '</button>' +
+        '<div class="header-notification__panel" id="headerNotificationPanel" data-notification-panel hidden>' +
+          '<div class="header-notification__head">' +
+            '<div><strong>Notifications</strong><span>Live chat updates from your conversations.</span></div>' +
+            '<a href="' + notificationsUrl + '">Open chat</a>' +
+          '</div>' +
+          '<div class="header-notification__list" data-notification-list>' +
+            (Array.isArray(notifications) && notifications.length
+              ? ''
+              : '<p class="header-notification__empty">You are all caught up right now.</p>') +
+          '</div>' +
+        '</div>' +
+      '</div>'
     );
   }
 

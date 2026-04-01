@@ -152,6 +152,40 @@ final class ChatService
         return $this->chatRepository->unreadCountForViewer($viewerId, $viewerRole);
     }
 
+    public function notifications(int $viewerId, string $viewerRole, int $limit = 6): array
+    {
+        $conversations = $this->chatRepository->listConversationsForViewer($viewerId, $viewerRole);
+        $notifications = [];
+
+        foreach ($conversations as $conversation) {
+            if ((int) ($conversation['unread_count'] ?? 0) < 1) {
+                continue;
+            }
+
+            $notifications[] = [
+                'id' => (int) $conversation['id'],
+                'title' => $this->conversationTitle($conversation, $viewerRole),
+                'subtitle' => $this->conversationSubtitle($conversation, $viewerRole),
+                'preview' => $conversation['last_message_body'] !== null && $conversation['last_message_body'] !== ''
+                    ? mb_substr($conversation['last_message_body'], 0, 110)
+                    : 'You have unread chat activity.',
+                'updated_label' => $this->formatConversationDate($conversation['last_message_created_at'] ?: $conversation['last_message_at']),
+                'unread_count' => (int) $conversation['unread_count'],
+                'href' => $this->chatInboxUrl($viewerRole, (int) $conversation['id']),
+                'image_url' => !empty($conversation['product_image_url'])
+                    ? (string) $conversation['product_image_url']
+                    : '/assets/images/products/product-fallback.svg',
+                'product_name' => (string) ($conversation['product_name'] ?? ''),
+            ];
+
+            if (count($notifications) >= $limit) {
+                break;
+            }
+        }
+
+        return $notifications;
+    }
+
     public function conversationForViewer(int $conversationId, int $viewerId, string $viewerRole): array
     {
         $conversation = $this->chatRepository->findConversationForViewer($conversationId, $viewerId, $viewerRole);
@@ -279,5 +313,16 @@ final class ChatService
         }
 
         return date('d M, g:i A', $timestamp);
+    }
+
+    private function chatInboxUrl(string $viewerRole, int $conversationId): string
+    {
+        $basePath = match ($viewerRole) {
+            'seller' => '/seller/chat.php',
+            'admin' => '/admin/chat.php',
+            default => '/customer/chat.php',
+        };
+
+        return $basePath . '?conversation=' . urlencode((string) $conversationId);
     }
 }

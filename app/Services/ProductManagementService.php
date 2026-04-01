@@ -10,7 +10,10 @@ use RuntimeException;
 
 final class ProductManagementService
 {
-    public function __construct(private readonly ProductRepository $repository)
+    public function __construct(
+        private readonly ProductRepository $repository,
+        private readonly ?ProductMediaService $mediaService = null
+    )
     {
     }
 
@@ -35,23 +38,39 @@ final class ProductManagementService
         return $product;
     }
 
-    public function createForSeller(int $sellerId, array $input): array
+    public function createForSeller(int $sellerId, array $input, array $files = []): array
     {
         $data = $this->validate($input);
         $data['seller_id'] = $sellerId;
+        $connection = $this->repository->connection();
+        $connection->beginTransaction();
 
-        $productId = $this->repository->createManagedProduct($data);
+        try {
+            $productId = $this->repository->createManagedProduct($data);
 
-        $product = $this->repository->findManagedById($productId);
+            if ($this->mediaService !== null) {
+                $this->mediaService->syncProductImages($productId, (string) $data['name'], $input, $files, $data);
+            }
 
-        if ($product === null) {
-            throw new RuntimeException('Product could not be created.');
+            $product = $this->repository->findManagedById($productId);
+
+            if ($product === null) {
+                throw new RuntimeException('Product could not be created.');
+            }
+
+            $connection->commit();
+
+            return $product;
+        } catch (\Throwable $exception) {
+            if ($connection->inTransaction()) {
+                $connection->rollBack();
+            }
+
+            throw $exception;
         }
-
-        return $product;
     }
 
-    public function updateForSeller(int $productId, int $sellerId, array $input): array
+    public function updateForSeller(int $productId, int $sellerId, array $input, array $files = []): array
     {
         $existing = $this->getSellerProduct($productId, $sellerId);
 
@@ -60,9 +79,27 @@ final class ProductManagementService
         }
 
         $data = $this->validate($input, $existing);
-        $this->repository->updateManagedProduct($productId, $data);
+        $connection = $this->repository->connection();
+        $connection->beginTransaction();
 
-        return $this->repository->findManagedById($productId) ?? $existing;
+        try {
+            $this->repository->updateManagedProduct($productId, $data);
+
+            if ($this->mediaService !== null) {
+                $this->mediaService->syncProductImages($productId, (string) ($data['name'] ?? $existing['name']), $input, $files, $existing);
+            }
+
+            $updated = $this->repository->findManagedById($productId) ?? $existing;
+            $connection->commit();
+
+            return $updated;
+        } catch (\Throwable $exception) {
+            if ($connection->inTransaction()) {
+                $connection->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     public function deleteForSeller(int $productId, int $sellerId): void
@@ -73,16 +110,20 @@ final class ProductManagementService
             throw new RuntimeException('Product not found.');
         }
 
+        if ($this->mediaService !== null) {
+            $this->mediaService->purgeProductImages($productId, $existing);
+        }
+
         $this->repository->deleteManagedProduct($productId);
     }
 
     private function validate(array $input, ?array $existing = null): array
     {
-        $name = trim((string) ($input['name'] ?? ''));
-        $sku = trim((string) ($input['sku'] ?? ''));
-        $slug = trim((string) ($input['slug'] ?? ''));
-        $shortDescription = trim((string) ($input['short_description'] ?? ''));
-        $description = trim((string) ($input['description'] ?? ''));
+        $name = sanitize_single_line($input['name'] ?? '', 150);
+        $sku = sanitize_single_line($input['sku'] ?? '', 50);
+        $slug = sanitize_single_line($input['slug'] ?? '', 150);
+        $shortDescription = sanitize_single_line($input['short_description'] ?? '', 255);
+        $description = sanitize_multiline_text($input['description'] ?? '');
         $imageUrl = trim((string) ($input['image_url'] ?? ''));
         $categoryId = (int) ($input['category_id'] ?? 0);
         $price = is_numeric($input['price'] ?? null) ? (float) $input['price'] : null;

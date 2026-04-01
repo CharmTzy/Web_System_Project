@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 $supportProfile = $supportProfile ?? [];
 $supportEmail = trim((string) ($supportProfile['support_email'] ?? ''));
+$abuseReportEmail = trim((string) ($supportProfile['abuse_report_email'] ?? ''));
 $supportPhone = trim((string) ($supportProfile['support_phone'] ?? ''));
 $supportLocation = trim((string) ($supportProfile['support_location'] ?? ''));
 $siteHost = trim((string) ($supportProfile['site_host'] ?? 'NovaMarket'));
 $siteUrl = trim((string) ($supportProfile['site_url'] ?? ''));
 $appName = trim((string) ($supportProfile['app_name'] ?? 'NovaMarket'));
+$paymentsMode = trim((string) ($supportProfile['payments_mode'] ?? ($supportProfile['payments_in_test_mode'] ?? false ? 'test' : 'live')));
 $paymentsInTestMode = !empty($supportProfile['payments_in_test_mode']);
 ?>
 <main class="legal-page">
@@ -55,6 +57,18 @@ $paymentsInTestMode = !empty($supportProfile['payments_in_test_mode']);
                             <p>Prospective sellers can register for a storefront account. New seller accounts are reviewed before publishing.</p>
                             <a class="btn btn-brand-outline" href="/register.php">Seller registration</a>
                         </section>
+
+                        <section class="legal-contact-card">
+                            <h2>Policy and abuse reports</h2>
+                            <p>Use this path to report suspicious listings, impersonation, counterfeit goods, checkout concerns, or other trust and safety issues affecting the marketplace.</p>
+                            <?php if ($abuseReportEmail !== ''): ?>
+                                <a class="btn btn-brand-outline" href="mailto:<?= e($abuseReportEmail) ?>">Report an issue</a>
+                            <?php elseif ($supportEmail !== ''): ?>
+                                <a class="btn btn-brand-outline" href="mailto:<?= e($supportEmail) ?>">Contact support</a>
+                            <?php else: ?>
+                                <a class="btn btn-brand-outline" href="/help.php">Open Help Center</a>
+                            <?php endif; ?>
+                        </section>
                     </div>
                 </article>
 
@@ -76,6 +90,9 @@ $paymentsInTestMode = !empty($supportProfile['payments_in_test_mode']);
                             <?php if ($supportEmail !== ''): ?>
                                 <a href="mailto:<?= e($supportEmail) ?>"><?= e($supportEmail) ?></a>
                             <?php endif; ?>
+                            <?php if ($abuseReportEmail !== '' && $abuseReportEmail !== $supportEmail): ?>
+                                <a href="mailto:<?= e($abuseReportEmail) ?>"><?= e($abuseReportEmail) ?></a>
+                            <?php endif; ?>
                             <?php if ($supportPhone !== ''): ?>
                                 <a href="tel:<?= e(preg_replace('/\s+/', '', $supportPhone) ?: $supportPhone) ?>"><?= e($supportPhone) ?></a>
                             <?php endif; ?>
@@ -89,10 +106,34 @@ $paymentsInTestMode = !empty($supportProfile['payments_in_test_mode']);
                             <li>Account-linked order and profile pages for customer support</li>
                             <li>Seller registration and approval workflow for storefront onboarding</li>
                             <li>Stripe-hosted checkout for payment processing and confirmation</li>
+                            <li>Public reporting path for suspicious listings, abuse, or trust and safety concerns</li>
                         </ul>
                     </section>
 
-                    <?php if ($paymentsInTestMode): ?>
+                    <section class="legal-card legal-card--summary">
+                        <span class="hero-section__eyebrow">Report marketplace abuse</span>
+                        <ul class="legal-summary-list">
+                            <li>Report listings or behavior that appears fraudulent, counterfeit, unsafe, deceptive, or abusive.</li>
+                            <li>Include the product URL, seller name, order number, and any relevant screenshots when possible.</li>
+                            <?php if ($abuseReportEmail !== ''): ?>
+                                <li>Send policy and abuse notices to <?= e($abuseReportEmail) ?>.</li>
+                            <?php elseif ($supportEmail !== ''): ?>
+                                <li>Send policy and abuse notices to <?= e($supportEmail) ?> until a dedicated abuse mailbox is configured.</li>
+                            <?php else: ?>
+                                <li>Configure <code>ABUSE_REPORT_EMAIL</code> or <code>SUPPORT_EMAIL</code> so the public site exposes a direct reporting route.</li>
+                            <?php endif; ?>
+                        </ul>
+                    </section>
+
+                    <?php if ($paymentsMode === 'unconfigured'): ?>
+                        <section class="legal-card legal-card--summary">
+                            <span class="hero-section__eyebrow">Environment notice</span>
+                            <ul class="legal-summary-list">
+                                <li>Checkout is currently unavailable because Stripe payment keys have not been configured for this environment.</li>
+                                <li>Customers should not expect payment collection until NovaMarket enables a configured Stripe environment.</li>
+                            </ul>
+                        </section>
+                    <?php elseif ($paymentsInTestMode): ?>
                         <section class="legal-card legal-card--summary">
                             <span class="hero-section__eyebrow">Environment notice</span>
                             <ul class="legal-summary-list">

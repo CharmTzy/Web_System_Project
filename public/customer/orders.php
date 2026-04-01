@@ -36,12 +36,13 @@ foreach ($pagination['items'] as $order) {
     }
 }
 
-$reviewedProductIds = $reviewRepository->reviewedProductIdsForUser((int) $_SESSION['user_id'], $productIds);
+$reviewDataByProduct = $reviewRepository->reviewsByUserForProducts((int) $_SESSION['user_id'], $productIds);
 $returnRequestsByPackage = $returnRequestService->requestsByPackageForCustomer((int) $_SESSION['user_id']);
 
 $pageTitle = 'My Orders';
 $appName = $config['app']['name'];
 $cartSummary = $cartService->summary();
+$pageScript = 'orders.js';
 
 require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 ?>
@@ -58,7 +59,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
             <?= render('customer/order-history', [
                 'orders' => $pagination['items'],
                 'pagination' => $pagination,
-                'reviewedProductIds' => $reviewedProductIds,
+                'reviewDataByProduct' => $reviewDataByProduct,
                 'returnRequestsByPackage' => $returnRequestsByPackage,
                 'returnRequestsEnabled' => $returnRequestService->isAvailable(),
                 'notice' => flash('orders_notice'),
