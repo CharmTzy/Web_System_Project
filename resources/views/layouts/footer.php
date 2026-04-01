@@ -4,7 +4,17 @@ declare(strict_types=1);
 ?>
     <footer class="site-footer">
         <div class="container">
+<<<<<<< Updated upstream
             <p class="mb-0">Copyright &copy; 2026 NovaMarket. All rights reserved.</p>
+=======
+            <nav class="site-footer__links" aria-label="Legal and contact links">
+                <a href="/privacy.php"<?= ($currentPath ?? '') === '/privacy.php' ? ' aria-current="page"' : '' ?>>Privacy Policy</a>
+                <a href="/terms.php"<?= ($currentPath ?? '') === '/terms.php' ? ' aria-current="page"' : '' ?>>Terms</a>
+                <a href="/about.php"<?= ($currentPath ?? '') === '/about.php' ? ' aria-current="page"' : '' ?>>About Us</a>
+                <a href="/contact.php"<?= ($currentPath ?? '') === '/contact.php' ? ' aria-current="page"' : '' ?>>Contact</a>
+            </nav>
+            <p class="site-footer__copyright mb-0">Copyright &copy; 2026 NovaMarket. All rights reserved.</p>
+>>>>>>> Stashed changes
         </div>
     </footer>
 
