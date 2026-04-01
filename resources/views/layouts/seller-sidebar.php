@@ -24,6 +24,7 @@ $sellerNavItems = [
     ['label' => 'Orders', 'href' => '/seller/orders.php', 'icon' => 'orders', 'match' => static fn (string $path): bool => str_starts_with($path, '/seller/orders.php') || str_starts_with($path, '/seller/order-view.php')],
     ['label' => 'Returns & refunds', 'href' => '/seller/returns.php', 'icon' => 'returns', 'match' => static fn (string $path): bool => str_starts_with($path, '/seller/returns.php') || str_starts_with($path, '/seller/return-view.php')],
     ['label' => 'Products', 'href' => '/seller/products.php', 'icon' => 'products', 'match' => static fn (string $path): bool => str_starts_with($path, '/seller/products.php') || str_starts_with($path, '/seller/product-edit.php')],
+    ['label' => 'Customer reviews', 'href' => '/seller/reviews.php', 'icon' => 'chat', 'match' => static fn (string $path): bool => str_starts_with($path, '/seller/reviews.php')],
     ['label' => 'Customer chats', 'href' => '/seller/chat.php', 'icon' => 'chat', 'match' => static fn (string $path): bool => str_starts_with($path, '/seller/chat.php')],
     ['label' => 'Store profile', 'href' => '/seller/store-profile.php', 'icon' => 'store', 'match' => static fn (string $path): bool => str_starts_with($path, '/seller/store-profile.php')],
 ];
