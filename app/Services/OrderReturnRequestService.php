@@ -104,9 +104,9 @@ final class OrderReturnRequestService
 
         $orderId = (int) ($input['order_id'] ?? 0);
         $sellerId = (int) ($input['seller_id'] ?? 0);
-        $requestType = trim((string) ($input['request_type'] ?? ''));
-        $reasonCode = trim((string) ($input['reason_code'] ?? ''));
-        $reasonDetails = trim((string) ($input['reason_details'] ?? ''));
+        $requestType = sanitize_single_line($input['request_type'] ?? '', 40);
+        $reasonCode = sanitize_single_line($input['reason_code'] ?? '', 40);
+        $reasonDetails = sanitize_multiline_text($input['reason_details'] ?? '', 2000);
 
         if ($orderId < 1 || $sellerId < 1) {
             throw new RuntimeException('Select a valid delivered package before submitting a request.');
@@ -118,10 +118,6 @@ final class OrderReturnRequestService
 
         if (!isset(self::REASON_CODES[$reasonCode])) {
             throw new RuntimeException('Choose a valid reason for this request.');
-        }
-
-        if (mb_strlen($reasonDetails) > 2000) {
-            throw new RuntimeException('Additional request details must be 2000 characters or fewer.');
         }
 
         $package = $this->orderRepository->findPackageForCustomer($orderId, $customerId, $sellerId);
@@ -240,8 +236,8 @@ final class OrderReturnRequestService
 
     private function applyDecision(array $request, array $input, array $allowedStatuses): array
     {
-        $status = trim((string) ($input['status'] ?? ''));
-        $sellerResponse = trim((string) ($input['seller_response'] ?? ''));
+        $status = sanitize_single_line($input['status'] ?? '', 40);
+        $sellerResponse = sanitize_multiline_text($input['seller_response'] ?? '', 2000);
 
         if (!in_array($status, $allowedStatuses, true)) {
             throw new RuntimeException('Choose a valid request action.');
@@ -249,10 +245,6 @@ final class OrderReturnRequestService
 
         if ($status === 'rejected' && $sellerResponse === '') {
             throw new RuntimeException('Add a brief reason before rejecting this request.');
-        }
-
-        if (mb_strlen($sellerResponse) > 2000) {
-            throw new RuntimeException('Response notes must be 2000 characters or fewer.');
         }
 
         $now = date('Y-m-d H:i:s');

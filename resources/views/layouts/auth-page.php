@@ -47,6 +47,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
 </head>
 
 <body class="<?= e($bodyClass) ?>">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <?= render('partials/page-skeleton', ['variant' => $pageSkeletonVariant]) ?>
     <script>
         (() => {
@@ -110,7 +111,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
             window.addEventListener('load', scheduleReveal, { once: true });
         })();
     </script>
-    <main class="auth-page__main">
+    <main id="main-content" class="auth-page__main" tabindex="-1">
         <div class="container auth-page__container">
             <section class="auth-shell">
                 <div class="auth-spotlight">

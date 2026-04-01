@@ -51,7 +51,9 @@ if ($selectedCouponCode !== '') {
     }
 }
 
-$paymentsInTestMode = payments_use_test_mode($config['app']);
+$paymentsMode = stripe_mode($config['app']);
+$paymentsInTestMode = $paymentsMode === 'test';
+$paymentsConfigured = payments_are_configured($config['app']);
 
 $pageTitle = 'Checkout';
 $appName = $config['app']['name'];
@@ -64,9 +66,11 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
             <span class="hero-section__eyebrow">Checkout</span>
             <h1 class="hero-section__title" style="max-width:18ch;">Review your order before payment</h1>
             <p class="hero-section__copy">
-                <?= $paymentsInTestMode
+                <?= !$paymentsConfigured
+                    ? 'Checkout is temporarily unavailable because payment processing is not configured for this environment yet.'
+                    : ($paymentsInTestMode
                     ? 'Choose your delivery address, then continue to Stripe test checkout to verify the payment flow safely.'
-                    : 'Choose your delivery address, then continue to Stripe to complete payment securely.' ?>
+                    : 'Choose your delivery address, then continue to Stripe to complete payment securely.') ?>
             </p>
         </div>
     </section>
@@ -77,7 +81,9 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
                 'addresses' => $addresses,
                 'selectedAddressId' => $selectedAddressId,
                 'formError' => $formError,
+                'paymentsMode' => $paymentsMode,
                 'paymentsInTestMode' => $paymentsInTestMode,
+                'paymentsConfigured' => $paymentsConfigured,
                 'availableCoupons' => $availableCoupons,
                 'selectedCouponCode' => $selectedCouponCode,
                 'appliedCoupon' => $appliedCoupon,

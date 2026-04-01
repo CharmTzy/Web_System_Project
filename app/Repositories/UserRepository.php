@@ -125,7 +125,7 @@ final class UserRepository
             $sql .= ' WHERE ' . implode(' AND ', $conditions);
         }
 
-        $sql .= ' ORDER BY created_at DESC';
+        $sql .= ' ORDER BY id ASC';
 
         $stmt = $this->connection->prepare($sql);
         $stmt->execute($params);

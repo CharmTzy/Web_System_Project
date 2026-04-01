@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 $isEdit = isset($editProduct) && is_array($editProduct);
+$existingMedia = $formValues['media'] ?? ($editProduct['media'] ?? []);
 ?>
 <div class="profile-card">
     <span class="hero-section__eyebrow"><?= $isEdit ? 'Edit seller product' : 'Create seller product' ?></span>
@@ -14,7 +15,7 @@ $isEdit = isset($editProduct) && is_array($editProduct);
         <div class="alert alert-danger" role="alert"><?= e((string) $formError) ?></div>
     <?php endif; ?>
 
-    <form class="auth-form" method="post" action="/admin/product-edit.php<?= $isEdit ? '?id=' . e((string) $editProduct['id']) : '' ?>">
+    <form class="auth-form" method="post" enctype="multipart/form-data" action="/admin/product-edit.php<?= $isEdit ? '?id=' . e((string) $editProduct['id']) : '' ?>">
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
         <?php if ($isEdit): ?>
             <input type="hidden" name="product_id" value="<?= e((string) $editProduct['id']) ?>">
@@ -55,16 +56,17 @@ $isEdit = isset($editProduct) && is_array($editProduct);
             </div>
         </div>
 
-        <div class="row g-3">
-            <div class="col-md-6 form-group">
-                <label for="admin-product-slug">Slug</label>
-                <input id="admin-product-slug" class="form-control" type="text" name="slug" value="<?= e((string) $formValues['slug']) ?>" maxlength="150" placeholder="Auto-generated if left blank">
-            </div>
-            <div class="col-md-6 form-group">
-                <label for="admin-product-image-url">Primary image URL</label>
-                <input id="admin-product-image-url" class="form-control" type="url" name="image_url" value="<?= e((string) $formValues['image_url']) ?>" placeholder="https://">
-            </div>
+        <div class="form-group">
+            <label for="admin-product-slug">Slug</label>
+            <input id="admin-product-slug" class="form-control" type="text" name="slug" value="<?= e((string) $formValues['slug']) ?>" maxlength="150" placeholder="Auto-generated if left blank">
         </div>
+
+        <?= render('partials/product-media-manager', [
+            'fieldPrefix' => 'admin-product',
+            'media' => is_array($existingMedia) ? $existingMedia : [],
+            'selectedPrimaryMediaId' => $formValues['primary_media_id'] ?? '',
+            'selectedRemovalIds' => $formValues['remove_media_ids'] ?? [],
+        ]) ?>
 
         <div class="form-group">
             <label for="admin-product-short-description">Short description</label>

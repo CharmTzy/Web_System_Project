@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/assets/css/app.css" />
   </head>
   <body class="page-loading" data-catalog-page>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <script>
       (() => {
         fetch("/api/session.php", {
@@ -190,7 +191,7 @@
       </div>
     </header>
 
-    <main class="storefront-home storefront-home--market">
+    <main id="main-content" class="storefront-home storefront-home--market" tabindex="-1">
       <section class="home-carousel" data-home-discovery>
         <div class="container">
           <div id="novaMarketCarousel" class="carousel slide home-carousel__shell" data-bs-ride="carousel" data-bs-interval="4200" data-bs-pause="false">

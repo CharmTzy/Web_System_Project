@@ -73,17 +73,27 @@ try {
             }
 
             $result = $service->saveForUser($productId, $userId, $_POST);
+            $message = 'Thanks for sharing your review.';
 
             $existingReview = $reviewRepository->findByProductAndUser($productId, $userId);
 
             if ($existingReview !== null) {
-                handleReviewMediaUpload($reviewRepository, (int) $existingReview['id']);
+                $mediaMessage = handleReviewMediaUpload(
+                    $config['app'],
+                    $reviewRepository,
+                    (int) $existingReview['id'],
+                    $productId
+                );
                 $result = $service->forProduct($productId, $userId);
+
+                if ($mediaMessage !== null) {
+                    $message = 'Review saved. ' . $mediaMessage;
+                }
             }
 
             respond([
                 'ok' => true,
-                'message' => 'Thanks for sharing your review.',
+                'message' => $message,
                 'data' => $result,
             ]);
             break;
@@ -251,22 +261,30 @@ try {
     ], 500);
 }
 
-function handleReviewMediaUpload(\App\Repositories\ReviewRepository $reviewRepository, int $reviewId): void
+function handleReviewMediaUpload(
+    array $appConfig,
+    \App\Repositories\ReviewRepository $reviewRepository,
+    int $reviewId,
+    int $productId
+): ?string
 {
     $uploadMap = [
         'photo' => [
             'field' => 'photo',
             'extensions' => ['jpg', 'jpeg', 'png', 'webp'],
             'max_size' => 3 * 1024 * 1024,
-            'directory' => dirname(__DIR__) . '/uploads/reviews/photos',
+            'mime_prefix' => 'image/',
         ],
         'video' => [
             'field' => 'video',
             'extensions' => ['mp4', 'webm'],
             'max_size' => 15 * 1024 * 1024,
-            'directory' => dirname(__DIR__) . '/uploads/reviews/videos',
+            'mime_prefix' => 'video/',
         ],
     ];
+    $warnings = [];
+    $bucket = google_cloud_storage_bucket($appConfig);
+    $prefix = google_cloud_storage_review_prefix($appConfig);
 
     foreach ($uploadMap as $mediaType => $config) {
         $field = $config['field'];
@@ -282,10 +300,12 @@ function handleReviewMediaUpload(\App\Repositories\ReviewRepository $reviewRepos
         }
 
         if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            $warnings[] = ucfirst($mediaType) . ' upload could not be processed.';
             continue;
         }
 
         if (($file['size'] ?? 0) > $config['max_size']) {
+            $warnings[] = ucfirst($mediaType) . ' is too large.';
             continue;
         }
 
@@ -293,11 +313,28 @@ function handleReviewMediaUpload(\App\Repositories\ReviewRepository $reviewRepos
         $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
         if (!in_array($extension, $config['extensions'], true)) {
+            $warnings[] = ucfirst($mediaType) . ' has an unsupported format.';
             continue;
         }
 
-        if (!is_dir($config['directory'])) {
-            mkdir($config['directory'], 0775, true);
+        if ($bucket === '') {
+            $warnings[] = ucfirst($mediaType) . ' upload is not configured yet.';
+            continue;
+        }
+
+        $tmpPath = (string) ($file['tmp_name'] ?? '');
+
+        if ($tmpPath === '' || !is_uploaded_file($tmpPath)) {
+            $warnings[] = ucfirst($mediaType) . ' upload could not be validated.';
+            continue;
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $contentType = (string) ($finfo->file($tmpPath) ?: 'application/octet-stream');
+
+        if (!str_starts_with($contentType, $config['mime_prefix'])) {
+            $warnings[] = ucfirst($mediaType) . ' file type could not be verified.';
+            continue;
         }
 
         $filename = sprintf(
@@ -307,17 +344,31 @@ function handleReviewMediaUpload(\App\Repositories\ReviewRepository $reviewRepos
             $extension
         );
 
-        $destination = $config['directory'] . DIRECTORY_SEPARATOR . $filename;
+        $objectPath = sprintf(
+            '%s/product-%d/review-%d/%s',
+            $prefix,
+            $productId,
+            $reviewId,
+            $filename
+        );
 
-        if (!move_uploaded_file((string) $file['tmp_name'], $destination)) {
+        try {
+            $publicUrl = google_cloud_storage_upload_object(
+                $bucket,
+                $objectPath,
+                $tmpPath,
+                $contentType
+            );
+        } catch (\RuntimeException $exception) {
+            $warnings[] = ucfirst($mediaType) . ' upload failed.';
             continue;
         }
 
-        $publicPath = str_replace(dirname(__DIR__), '', $destination);
-        $publicPath = str_replace('\\', '/', $publicPath);
-
-        $reviewRepository->addMedia($reviewId, $mediaType, $publicPath);
+        $reviewRepository->deleteMediaByType($reviewId, $mediaType);
+        $reviewRepository->addMedia($reviewId, $mediaType, $publicUrl);
     }
+
+    return $warnings === [] ? null : implode(' ', $warnings);
 }
 
 function respond(array $payload, int $status = 200): never

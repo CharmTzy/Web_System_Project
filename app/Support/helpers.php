@@ -226,9 +226,281 @@ function payments_use_test_mode(?array $appConfig = null): bool
     return stripe_mode($appConfig) === 'test';
 }
 
+function payments_are_configured(?array $appConfig = null): bool
+{
+    return in_array(stripe_mode($appConfig), ['test', 'live'], true);
+}
+
+function google_cloud_storage_bucket(?array $appConfig = null): string
+{
+    return trim((string) ($appConfig['google_cloud_storage_bucket'] ?? env('GOOGLE_CLOUD_STORAGE_BUCKET', '')));
+}
+
+function google_cloud_storage_product_prefix(?array $appConfig = null): string
+{
+    $prefix = trim((string) ($appConfig['google_cloud_storage_product_prefix'] ?? env('GOOGLE_CLOUD_STORAGE_PRODUCT_PREFIX', 'product-images')), '/');
+
+    return $prefix !== '' ? $prefix : 'product-images';
+}
+
+function google_cloud_storage_review_prefix(?array $appConfig = null): string
+{
+    $prefix = trim((string) ($appConfig['google_cloud_storage_review_prefix'] ?? env('GOOGLE_CLOUD_STORAGE_REVIEW_PREFIX', 'review-images')), '/');
+
+    return $prefix !== '' ? $prefix : 'review-images';
+}
+
+function google_cloud_storage_public_url(string $bucket, string $objectPath): string
+{
+    $segments = array_map(
+        static fn(string $segment): string => rawurlencode($segment),
+        array_values(array_filter(explode('/', trim($objectPath, '/')), static fn(string $segment): bool => $segment !== ''))
+    );
+
+    return sprintf(
+        'https://storage.googleapis.com/%s/%s',
+        rawurlencode(trim($bucket, '/')),
+        implode('/', $segments)
+    );
+}
+
+function google_cloud_storage_access_token(): string
+{
+    if (!function_exists('curl_init')) {
+        throw new RuntimeException('PHP cURL is required for Google Cloud Storage uploads.');
+    }
+
+    $ch = curl_init('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token');
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 5,
+        CURLOPT_HTTPHEADER => [
+            'Metadata-Flavor: Google',
+        ],
+    ]);
+
+    $response = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    if ($response === false || $status < 200 || $status >= 300) {
+        throw new RuntimeException(
+            $curlError !== ''
+                ? 'Unable to contact the Google Cloud metadata service for uploads.'
+                : 'Google Cloud Storage authentication is not available for uploads.'
+        );
+    }
+
+    $payload = json_decode($response, true);
+    $token = is_array($payload) ? trim((string) ($payload['access_token'] ?? '')) : '';
+
+    if ($token === '') {
+        throw new RuntimeException('Google Cloud Storage did not return an upload access token.');
+    }
+
+    return $token;
+}
+
+function google_cloud_storage_upload_object(
+    string $bucket,
+    string $objectPath,
+    string $localPath,
+    string $contentType
+): string {
+    if (!function_exists('curl_init')) {
+        throw new RuntimeException('PHP cURL is required for Google Cloud Storage uploads.');
+    }
+
+    if (!is_file($localPath)) {
+        throw new RuntimeException('Uploaded media could not be read.');
+    }
+
+    $fileContents = file_get_contents($localPath);
+
+    if ($fileContents === false) {
+        throw new RuntimeException('Uploaded media could not be read.');
+    }
+
+    $uploadUrl = sprintf(
+        'https://storage.googleapis.com/upload/storage/v1/b/%s/o?uploadType=media&name=%s',
+        rawurlencode($bucket),
+        rawurlencode(trim($objectPath, '/'))
+    );
+
+    $token = google_cloud_storage_access_token();
+    $ch = curl_init($uploadUrl);
+
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $token,
+            'Content-Type: ' . $contentType,
+            'Content-Length: ' . (string) strlen($fileContents),
+        ],
+        CURLOPT_POSTFIELDS => $fileContents,
+    ]);
+
+    $response = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    if ($response === false || $status < 200 || $status >= 300) {
+        report_exception(
+            new RuntimeException(
+                $curlError !== ''
+                    ? $curlError
+                    : 'Google Cloud Storage upload failed with status ' . $status
+            ),
+            'gcs.upload.object'
+        );
+        throw new RuntimeException('Unable to upload media right now.');
+    }
+
+    return google_cloud_storage_public_url($bucket, $objectPath);
+}
+
+function google_cloud_storage_public_url_path(string $bucket, string $publicUrl): ?string
+{
+    $bucket = trim($bucket, '/');
+    $publicUrl = trim($publicUrl);
+
+    if ($bucket === '' || $publicUrl === '') {
+        return null;
+    }
+
+    $parsed = parse_url($publicUrl);
+    $host = strtolower((string) ($parsed['host'] ?? ''));
+    $path = (string) ($parsed['path'] ?? '');
+
+    if ($host !== 'storage.googleapis.com' || $path === '') {
+        return null;
+    }
+
+    $prefix = '/' . $bucket . '/';
+
+    if (!str_starts_with($path, $prefix)) {
+        return null;
+    }
+
+    $objectPath = substr($path, strlen($prefix));
+
+    return $objectPath !== false ? rawurldecode($objectPath) : null;
+}
+
+function google_cloud_storage_delete_object(string $bucket, string $objectPath): void
+{
+    if (!function_exists('curl_init')) {
+        throw new RuntimeException('PHP cURL is required for Google Cloud Storage uploads.');
+    }
+
+    $bucket = trim($bucket, '/');
+    $objectPath = trim($objectPath, '/');
+
+    if ($bucket === '' || $objectPath === '') {
+        return;
+    }
+
+    $deleteUrl = sprintf(
+        'https://storage.googleapis.com/storage/v1/b/%s/o/%s',
+        rawurlencode($bucket),
+        rawurlencode($objectPath)
+    );
+
+    $token = google_cloud_storage_access_token();
+    $ch = curl_init($deleteUrl);
+
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => 'DELETE',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $token,
+        ],
+    ]);
+
+    $response = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    if ($response === false || ($status !== 404 && ($status < 200 || $status >= 300))) {
+        report_exception(
+            new RuntimeException(
+                $curlError !== ''
+                    ? $curlError
+                    : 'Google Cloud Storage delete failed with status ' . $status
+            ),
+            'gcs.delete.object'
+        );
+        throw new RuntimeException('Unable to remove media from storage right now.');
+    }
+}
+
 function e(mixed $value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
+function sanitize_single_line(mixed $value, int $maxLength = 0): string
+{
+    $sanitized = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string) $value) ?? '');
+    $sanitized = preg_replace('/\s{2,}/u', ' ', $sanitized) ?? $sanitized;
+
+    if ($maxLength > 0 && mb_strlen($sanitized) > $maxLength) {
+        $sanitized = mb_substr($sanitized, 0, $maxLength);
+    }
+
+    return $sanitized;
+}
+
+function sanitize_multiline_text(mixed $value, int $maxLength = 0): string
+{
+    $sanitized = str_replace(["\r\n", "\r"], "\n", (string) $value);
+    $sanitized = preg_replace('/[^\P{C}\n\t]+/u', '', $sanitized) ?? $sanitized;
+    $sanitized = preg_replace("/\n{3,}/u", "\n\n", trim($sanitized)) ?? $sanitized;
+
+    if ($maxLength > 0 && mb_strlen($sanitized) > $maxLength) {
+        $sanitized = mb_substr($sanitized, 0, $maxLength);
+    }
+
+    return $sanitized;
+}
+
+function sanitize_email_address(mixed $value): string
+{
+    return mb_strtolower(trim((string) filter_var((string) $value, FILTER_SANITIZE_EMAIL)));
+}
+
+function sanitize_phone_number(mixed $value, int $maxLength = 30): ?string
+{
+    $phone = preg_replace('/[^0-9+\-\s()]/', '', trim((string) $value)) ?? '';
+    $phone = preg_replace('/\s{2,}/', ' ', $phone) ?? $phone;
+
+    if ($phone === '') {
+        return null;
+    }
+
+    if (mb_strlen($phone) > $maxLength) {
+        $phone = mb_substr($phone, 0, $maxLength);
+    }
+
+    return $phone;
+}
+
+function ensure_password_strength(string $password): void
+{
+    if (mb_strlen($password) < 8) {
+        throw new InvalidArgumentException('Password must be at least 8 characters.');
+    }
+
+    if (preg_match('/[A-Za-z]/', $password) !== 1 || preg_match('/\d/', $password) !== 1) {
+        throw new InvalidArgumentException('Password must contain at least one letter and one number.');
+    }
 }
 
 function money(float|int|string $value): string

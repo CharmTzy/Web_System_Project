@@ -370,6 +370,10 @@
     document.querySelectorAll("[data-notification-count]").forEach((node) => {
       node.textContent = String(headerState.notificationCount ?? 0);
     });
+
+    document.querySelectorAll("[data-notification-badge]").forEach((node) => {
+      node.hidden = Number(headerState.notificationCount ?? 0) < 1;
+    });
   }
 
   function setStatus(message, isError = false) {

@@ -17,7 +17,11 @@ $guestCartUrl = '/login.php?redirect=' . rawurlencode('/cart.html');
 $isLoggedIn = !empty($_SESSION['user_id']);
 $sessionRole = $_SESSION['user_role'] ?? '';
 $sessionName = $_SESSION['user_name'] ?? '';
-$notificationsUrl = '/profile.php#notifications';
+$notificationsUrl = match ($sessionRole) {
+    'seller' => '/seller/chat.php',
+    'admin' => '/admin/chat.php',
+    default => '/customer/chat.php',
+};
 $isCustomer = $isLoggedIn && $sessionRole === 'customer';
 $isSeller = $isLoggedIn && $sessionRole === 'seller';
 $isAdmin = $isLoggedIn && $sessionRole === 'admin';
@@ -238,6 +242,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
 </head>
 
 <body class="<?= e($bodyClasses) ?>">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <?= render('partials/page-skeleton', ['variant' => $pageSkeletonVariant]) ?>
     <script>
         (() => {
@@ -330,6 +335,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
                         <strong><?= e($pageTitle) ?></strong>
                     </div>
                 </div>
+                <div id="main-content" tabindex="-1"></div>
     <?php else: ?>
     <header class="site-header site-header--market">
         <div class="container">
@@ -355,7 +361,8 @@ if ($robotsMeta !== '' && !headers_sent()) {
                     role="search">
                     <label class="visually-hidden" for="header-search-input">Search the product catalog</label>
                     <input id="header-search-input" class="header-search__input" type="search" name="search"
-                        value="<?= e($headerSearchValue) ?>" placeholder="Search for anything">
+                        value="<?= e($headerSearchValue) ?>" placeholder="Search for anything" autocomplete="off"
+                        aria-autocomplete="list" aria-expanded="false">
                     <button class="header-search__button header-search__button--market" type="submit"
                         aria-label="Search">&#8981;</button>
                 </form>
@@ -369,14 +376,40 @@ if ($robotsMeta !== '' && !headers_sent()) {
                                 </span>
                                 <span class="header-icon-action__label">Account</span>
                             </a>
-                            <a class="header-icon-action header-icon-action--with-badge" href="<?= e($notificationsUrl) ?>">
-                                <span class="header-icon-action__icon-wrap">
-                                    <?= $renderHeaderIcon('notification') ?>
-                                    <strong class="header-icon-action__badge"
-                                        data-notification-count><?= e((string) $notificationCount) ?></strong>
-                                </span>
-                                <span class="header-icon-action__label">Notification</span>
-                            </a>
+                            <div class="header-notification" data-notification-menu>
+                                <button
+                                    class="header-icon-action header-icon-action--button header-icon-action--with-badge"
+                                    type="button"
+                                    data-notification-toggle
+                                    aria-haspopup="dialog"
+                                    aria-expanded="false"
+                                    aria-controls="headerNotificationPanel">
+                                    <span class="header-icon-action__icon-wrap">
+                                        <?= $renderHeaderIcon('notification') ?>
+                                        <strong class="header-icon-action__badge"
+                                            data-notification-count
+                                            data-notification-badge
+                                            <?= (int) $notificationCount < 1 ? 'hidden' : '' ?>><?= e((string) $notificationCount) ?></strong>
+                                    </span>
+                                    <span class="header-icon-action__label">Notification</span>
+                                </button>
+                                <div
+                                    class="header-notification__panel"
+                                    id="headerNotificationPanel"
+                                    data-notification-panel
+                                    hidden>
+                                    <div class="header-notification__head">
+                                        <div>
+                                            <strong>Notifications</strong>
+                                            <span>Live chat updates from your conversations.</span>
+                                        </div>
+                                        <a href="<?= e($notificationsUrl) ?>">Open chat</a>
+                                    </div>
+                                    <div class="header-notification__list" data-notification-list>
+                                        <p class="header-notification__empty">You are all caught up right now.</p>
+                                    </div>
+                                </div>
+                            </div>
                             <a class="header-icon-action header-icon-action--with-badge" href="/cart.html"
                                 data-open-cart-drawer="true" aria-controls="cartDrawer" aria-haspopup="dialog">
                                 <span class="header-icon-action__icon-wrap">
@@ -468,4 +501,5 @@ if ($robotsMeta !== '' && !headers_sent()) {
             </div>
         </div>
     </div>
+    <div id="main-content" tabindex="-1"></div>
     <?php endif; ?>

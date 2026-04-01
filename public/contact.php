@@ -14,8 +14,10 @@ $supportProfile = [
     'site_url' => $appUrl,
     'site_host' => $siteHost,
     'support_email' => trim((string) ($config['app']['support_email'] ?? '')),
+    'abuse_report_email' => trim((string) ($config['app']['abuse_report_email'] ?? '')),
     'support_phone' => trim((string) ($config['app']['support_phone'] ?? '')),
     'support_location' => trim((string) ($config['app']['support_location'] ?? '')),
+    'payments_mode' => stripe_mode($config['app']),
     'payments_in_test_mode' => payments_use_test_mode($config['app']),
 ];
 

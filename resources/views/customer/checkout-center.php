@@ -6,7 +6,11 @@ $cart = $cart ?? ['items' => [], 'is_empty' => true];
 $addresses = $addresses ?? [];
 $formError = $formError ?? null;
 $selectedAddressId = (int) ($selectedAddressId ?? 0);
+$paymentsMode = (string) ($paymentsMode ?? ($paymentsInTestMode ? 'test' : 'live'));
 $paymentsInTestMode = !empty($paymentsInTestMode);
+$paymentsConfigured = array_key_exists('paymentsConfigured', get_defined_vars())
+    ? !empty($paymentsConfigured)
+    : $paymentsMode !== 'unconfigured';
 $availableCoupons = $availableCoupons ?? [];
 $selectedCouponCode = strtoupper(trim((string) ($selectedCouponCode ?? '')));
 $appliedCoupon = $appliedCoupon ?? ($cart['applied_coupon'] ?? null);
@@ -72,7 +76,11 @@ $appliedCoupon = $appliedCoupon ?? ($cart['applied_coupon'] ?? null);
                 <div class="alert alert-danger" role="alert"><?= e((string) $formError) ?></div>
             <?php endif; ?>
 
-            <?php if ($paymentsInTestMode): ?>
+            <?php if (!$paymentsConfigured): ?>
+                <div class="alert alert-danger" role="alert">
+                    Checkout is unavailable right now because Stripe payment processing is not configured for this environment yet.
+                </div>
+            <?php elseif ($paymentsInTestMode): ?>
                 <div class="alert alert-warning" role="alert">
                     Stripe test mode is active on this environment. Use Stripe test cards only. No live charge should be expected here.
                 </div>
@@ -145,12 +153,14 @@ $appliedCoupon = $appliedCoupon ?? ($cart['applied_coupon'] ?? null);
                 </div>
 
                 <p class="summary-card__note mb-3">
-                    <?= $paymentsInTestMode
+                    <?= !$paymentsConfigured
+                        ? 'Stripe checkout is not available on this environment yet. Please configure payment keys before accepting orders.'
+                        : ($paymentsInTestMode
                         ? 'You’ll be redirected to Stripe-hosted test checkout, operated by Stripe on behalf of NovaMarket. Do not use real payment details on this environment.'
-                        : 'You’ll be redirected to Stripe-hosted checkout, operated by Stripe on behalf of NovaMarket, to complete payment.' ?>
+                        : 'You’ll be redirected to Stripe-hosted checkout, operated by Stripe on behalf of NovaMarket, to complete payment.') ?>
                 </p>
-                <button class="btn btn-brand w-100" type="submit">
-                    <?= $paymentsInTestMode ? 'Continue to Stripe test checkout' : 'Continue to Stripe' ?>
+                <button class="btn btn-brand w-100" type="submit" <?= !$paymentsConfigured ? 'disabled aria-disabled="true"' : '' ?>>
+                    <?= !$paymentsConfigured ? 'Stripe checkout unavailable' : ($paymentsInTestMode ? 'Continue to Stripe test checkout' : 'Continue to Stripe') ?>
                     · <?= e((string) $cart['grand_total_formatted']) ?>
                 </button>
             </form>
@@ -186,9 +196,11 @@ $appliedCoupon = $appliedCoupon ?? ($cart['applied_coupon'] ?? null);
                 </div>
             </div>
             <p class="summary-card__note">
-                <?= $paymentsInTestMode
+                <?= !$paymentsConfigured
+                    ? 'This environment is not configured to process payments yet. Stripe checkout remains unavailable until valid payment keys are set for NovaMarket.'
+                    : ($paymentsInTestMode
                     ? 'This environment is using Stripe test mode. Stripe is hosting this payment flow on behalf of NovaMarket for checkout testing only.'
-                    : 'Stripe hosts this payment flow on behalf of NovaMarket. Your order will be confirmed after payment succeeds.' ?>
+                    : 'Stripe hosts this payment flow on behalf of NovaMarket. Your order will be confirmed after payment succeeds.') ?>
             </p>
         </aside>
     </div>

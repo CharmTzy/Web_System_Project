@@ -13,7 +13,8 @@ final class AdminProductService
 {
     public function __construct(
         private readonly ProductRepository $productRepository,
-        private readonly UserRepository $userRepository
+        private readonly UserRepository $userRepository,
+        private readonly ?ProductMediaService $mediaService = null
     ) {
     }
 
@@ -46,20 +47,38 @@ final class AdminProductService
         return $this->productRepository->findManagedById($id);
     }
 
-    public function create(array $input): array
+    public function create(array $input, array $files = []): array
     {
         $data = $this->validate($input);
-        $id = $this->productRepository->createManagedProduct($data);
-        $product = $this->productRepository->findManagedById($id);
+        $connection = $this->productRepository->connection();
+        $connection->beginTransaction();
 
-        if ($product === null) {
-            throw new RuntimeException('Product could not be created.');
+        try {
+            $id = $this->productRepository->createManagedProduct($data);
+
+            if ($this->mediaService !== null) {
+                $this->mediaService->syncProductImages($id, (string) $data['name'], $input, $files, $data);
+            }
+
+            $product = $this->productRepository->findManagedById($id);
+
+            if ($product === null) {
+                throw new RuntimeException('Product could not be created.');
+            }
+
+            $connection->commit();
+
+            return $product;
+        } catch (\Throwable $exception) {
+            if ($connection->inTransaction()) {
+                $connection->rollBack();
+            }
+
+            throw $exception;
         }
-
-        return $product;
     }
 
-    public function update(int $id, array $input): array
+    public function update(int $id, array $input, array $files = []): array
     {
         $existing = $this->productRepository->findManagedById($id);
 
@@ -67,9 +86,28 @@ final class AdminProductService
             throw new RuntimeException('Product not found.');
         }
 
-        $this->productRepository->updateManagedProduct($id, $this->validate($input, $existing));
+        $data = $this->validate($input, $existing);
+        $connection = $this->productRepository->connection();
+        $connection->beginTransaction();
 
-        return $this->productRepository->findManagedById($id) ?? $existing;
+        try {
+            $this->productRepository->updateManagedProduct($id, $data);
+
+            if ($this->mediaService !== null) {
+                $this->mediaService->syncProductImages($id, (string) ($data['name'] ?? $existing['name']), $input, $files, $existing);
+            }
+
+            $product = $this->productRepository->findManagedById($id) ?? $existing;
+            $connection->commit();
+
+            return $product;
+        } catch (\Throwable $exception) {
+            if ($connection->inTransaction()) {
+                $connection->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     public function delete(int $id): void
@@ -78,6 +116,10 @@ final class AdminProductService
 
         if ($existing === null) {
             throw new RuntimeException('Product not found.');
+        }
+
+        if ($this->mediaService !== null) {
+            $this->mediaService->purgeProductImages($id, $existing);
         }
 
         $this->productRepository->deleteManagedProduct($id);

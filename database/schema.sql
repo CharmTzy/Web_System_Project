@@ -1,4 +1,6 @@
--- Run this file inside the database configured in .env.
+-- NovaMarket canonical schema
+-- Run this file inside the database configured in .env when you only want the table structure.
+-- If you want a full rebuild with comprehensive demo data in one pass, run database/setup_demo.sql instead.
 
 CREATE TABLE users (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

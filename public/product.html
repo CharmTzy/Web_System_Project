@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/assets/css/app.css" />
   </head>
   <body class="page-loading" data-product-screen>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <script>
       (() => {
         fetch("/api/session.php", {
@@ -159,7 +160,7 @@
 
           <form class="header-search header-search--market" action="/" method="get" role="search">
             <label class="visually-hidden" for="header-search-input">Search the product catalog</label>
-            <input id="header-search-input" class="header-search__input" type="search" name="search" placeholder="Search for anything" />
+            <input id="header-search-input" class="header-search__input" type="search" name="search" placeholder="Search for anything" autocomplete="off" aria-autocomplete="list" aria-expanded="false" />
             <button class="header-search__button header-search__button--market" type="submit" aria-label="Search">&#8981;</button>
           </form>
 
@@ -188,7 +189,7 @@
       </div>
     </header>
 
-    <main class="product-page product-page--market">
+    <main id="main-content" class="product-page product-page--market" tabindex="-1">
       <section class="product-page__content">
         <div class="container">
           <div class="product-page__shell" data-product-detail-host>

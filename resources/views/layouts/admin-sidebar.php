@@ -49,7 +49,10 @@ $adminNavItems = [
             <?php $isActive = $item['match']($currentPath); ?>
             <a href="<?= e($item['href']) ?>"<?= $isActive ? ' aria-current="page"' : '' ?>>
                 <span class="admin-sidebar__nav-icon" aria-hidden="true"><?= $renderAdminIcon((string) ($item['icon'] ?? '')) ?></span>
-                <span><?= e($item['label']) ?></span>
+                <span class="admin-sidebar__nav-label"><?= e($item['label']) ?></span>
+                <?php if (($item['icon'] ?? '') === 'chat'): ?>
+                    <strong class="admin-sidebar__nav-badge" data-notification-count data-notification-badge hidden>0</strong>
+                <?php endif; ?>
             </a>
         <?php endforeach; ?>
     </nav>

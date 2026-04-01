@@ -72,8 +72,8 @@ final class AdminHelpCenterService
     private function validate(array $input): array
     {
         $categoryId = filter_var($input['category_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-        $question = trim((string) ($input['question'] ?? ''));
-        $answer = trim((string) ($input['answer'] ?? ''));
+        $question = sanitize_single_line($input['question'] ?? '', 255);
+        $answer = sanitize_multiline_text($input['answer'] ?? '');
         $sortOrder = filter_var($input['sort_order'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 
         if ($categoryId === false) {

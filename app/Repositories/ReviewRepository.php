@@ -159,6 +159,49 @@ final class ReviewRepository
         }
     }
 
+    public function reviewsByUserForProducts(int $userId, array $productIds): array
+    {
+        $productIds = array_values(array_filter(array_map('intval', $productIds)));
+
+        if ($productIds === []) {
+            return [];
+        }
+
+        try {
+            $placeholders = implode(', ', array_fill(0, count($productIds), '?'));
+            $statement = $this->connection->prepare(
+                <<<SQL
+                SELECT
+                    pr.*,
+                    u.name AS user_name
+                FROM product_reviews pr
+                INNER JOIN users u
+                    ON u.id = pr.user_id
+                WHERE pr.user_id = ?
+                  AND pr.product_id IN ($placeholders)
+                ORDER BY pr.updated_at DESC, pr.id DESC
+                SQL
+            );
+            $statement->execute([$userId, ...$productIds]);
+
+            $reviews = [];
+
+            foreach ($statement->fetchAll() as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $review = $this->normalize($row);
+                $review['media'] = $this->listMediaByReviewId($review['id']);
+                $reviews[(int) $review['product_id']] = $review;
+            }
+
+            return $reviews;
+        } catch (PDOException) {
+            return [];
+        }
+    }
+
     public function save(int $productId, int $userId, array $data): int
     {
         $existing = $this->findByProductAndUser($productId, $userId);
@@ -423,6 +466,17 @@ final class ReviewRepository
         } catch (PDOException) {
             return null;
         }
+    }
+
+    public function deleteMediaByType(int $reviewId, string $mediaType): void
+    {
+        $statement = $this->connection->prepare(
+            'DELETE FROM product_review_media WHERE review_id = :review_id AND media_type = :media_type'
+        );
+        $statement->execute([
+            'review_id' => $reviewId,
+            'media_type' => $mediaType,
+        ]);
     }
 
     public function listMediaByReviewId(int $reviewId): array
