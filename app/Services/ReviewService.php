@@ -172,6 +172,13 @@ final class ReviewService
         return $this->forProduct((int) $review['product_id'], null);
     }
 
+    public function restoreAsAdmin(int $reviewId): void
+    {
+        if (!$this->reviewRepository->restore($reviewId)) {
+            throw new RuntimeException('We could not restore this review right now.');
+        }
+    }
+
     public function deleteAsAdmin(int $reviewId): array
     {
         $review = $this->reviewRepository->findById($reviewId);

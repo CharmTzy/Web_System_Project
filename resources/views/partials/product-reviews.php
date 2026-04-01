@@ -9,6 +9,7 @@ $canReview = !empty($reviewContext['can_review']);
 $requiresSignIn = !empty($reviewContext['requires_sign_in']);
 $isLoggedIn = !empty($_SESSION['user_id']);
 $isCustomer = !empty($_SESSION['user_id']) && ($_SESSION['user_role'] ?? '') === 'customer';
+$isSeller = !empty($_SESSION['user_id']) && ($_SESSION['user_role'] ?? '') === 'seller';
 $isAdmin = !empty($_SESSION['user_id']) && ($_SESSION['user_role'] ?? '') === 'admin';
 $loginUrl = '/login.php?redirect=' . rawurlencode(product_url($product));
 ?>
@@ -192,6 +193,33 @@ $loginUrl = '/login.php?redirect=' . rawurlencode(product_url($product));
                                     <?php endif; ?>
                                 <?php endforeach; ?>
                             </div>
+                        <?php endif; ?>
+
+                        <?php if ($isSeller): ?>
+                            <form class="product-review-form" data-review-form>
+                                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                <input type="hidden" name="product_id" value="<?= e((string) $product['id']) ?>">
+                                <input type="hidden" name="review_id" value="<?= e((string) $review['id']) ?>">
+                                <input type="hidden" name="action" value="reply">
+
+                                <div class="form-group">
+                                    <label for="seller-reply-<?= e((string) $review['id']) ?>">Reply as seller</label>
+                                    <textarea
+                                        id="seller-reply-<?= e((string) $review['id']) ?>"
+                                        class="form-control"
+                                        name="seller_reply"
+                                        rows="3"
+                                        maxlength="1000"
+                                        placeholder="Reply to this customer review"
+                                    ><?= e((string) ($review['seller_reply'] ?? '')) ?></textarea>
+                                </div>
+
+                                <div class="product-review-form__actions">
+                                    <button class="btn btn-brand-outline" type="submit">
+                                        <?= !empty($review['seller_reply']) ? 'Update seller reply' : 'Post seller reply' ?>
+                                    </button>
+                                </div>
+                            </form>
                         <?php endif; ?>
 
                         <?php if (!empty($review['seller_reply'])): ?>
