@@ -20,11 +20,31 @@ try {
         throw new RuntimeException('Database connection required.');
     }
 
+    $productRepository = new \App\Repositories\ProductRepository($connection);
+    $cartRepository = new \App\Repositories\CartRepository($connection);
+    $orderRepository = new \App\Repositories\OrderRepository($connection);
+    $checkoutService = new \App\Services\CheckoutService(
+        new \App\Services\CartService(
+            $productRepository,
+            $config['app'],
+            $cartRepository,
+        ),
+        new \App\Repositories\AddressRepository($connection),
+        $orderRepository,
+        $productRepository,
+        $cartRepository,
+    );
+
+    if (!empty($config['app']['stripe_secret_key'])) {
+        $checkoutService->reconcilePendingOrdersForCustomer((int) $_SESSION['user_id'], (string) $config['app']['stripe_secret_key']);
+    }
+
     $couponData = (new \App\Services\CouponService(
         new \App\Repositories\CouponRepository($connection),
         'mysql'
-    ))->browse();
-} catch (Throwable) {
+    ))->browse((int) $_SESSION['user_id']);
+} catch (Throwable $exception) {
+    report_exception($exception, 'customer.coupons');
     $couponData = [
         'featured' => [],
         'limited_time' => [],

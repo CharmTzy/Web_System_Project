@@ -13,6 +13,8 @@ final class OrderRepository
     private const SYNTHETIC_FULFILLMENT_SCALE = 1000000;
 
     private ?bool $fulfillmentsTableAvailable = null;
+    private ?bool $couponTrackingAvailable = null;
+    private ?bool $stripeSessionTrackingAvailable = null;
 
     public function __construct(private readonly PDO $connection)
     {
@@ -45,42 +47,33 @@ final class OrderRepository
 
     public function create(array $data, array $items): int
     {
+        $fields = [
+            'customer_id',
+            'order_number',
+            'status',
+            'shipping_recipient',
+            'shipping_line_1',
+            'shipping_line_2',
+            'shipping_city',
+            'shipping_state',
+            'shipping_postal_code',
+            'shipping_country',
+            'shipping_phone',
+            'subtotal',
+            'shipping_fee',
+            'total',
+        ];
+
+        if ($this->couponTrackingAvailable()) {
+            array_splice($fields, 3, 0, ['coupon_code']);
+        }
+
+        $placeholders = array_map(static fn (string $field): string => ':' . $field, $fields);
         $statement = $this->connection->prepare(
-            <<<SQL
-            INSERT INTO orders (
-                customer_id,
-                order_number,
-                status,
-                shipping_recipient,
-                shipping_line_1,
-                shipping_line_2,
-                shipping_city,
-                shipping_state,
-                shipping_postal_code,
-                shipping_country,
-                shipping_phone,
-                subtotal,
-                shipping_fee,
-                total
-            ) VALUES (
-                :customer_id,
-                :order_number,
-                :status,
-                :shipping_recipient,
-                :shipping_line_1,
-                :shipping_line_2,
-                :shipping_city,
-                :shipping_state,
-                :shipping_postal_code,
-                :shipping_country,
-                :shipping_phone,
-                :subtotal,
-                :shipping_fee,
-                :total
-            )
-            SQL
+            'INSERT INTO orders (' . implode(', ', $fields) . ') VALUES (' . implode(', ', $placeholders) . ')'
         );
-        $statement->execute([
+
+        $params = [
             'customer_id' => $data['customer_id'],
             'order_number' => $data['order_number'],
             'status' => $data['status'],
@@ -95,7 +88,13 @@ final class OrderRepository
             'subtotal' => $data['subtotal'],
             'shipping_fee' => $data['shipping_fee'],
             'total' => $data['total'],
-        ]);
+        ];
+
+        if ($this->couponTrackingAvailable()) {
+            $params['coupon_code'] = $data['coupon_code'] ?? null;
+        }
+
+        $statement->execute($params);
 
         $orderId = (int) $this->connection->lastInsertId();
 
@@ -259,6 +258,52 @@ final class OrderRepository
         }
 
         return $this->attachOrderRelations($orders);
+    }
+
+    public function attachStripeSessionId(string $orderNumber, string $stripeSessionId): void
+    {
+        if (!$this->stripeSessionTrackingAvailable()) {
+            return;
+        }
+
+        $statement = $this->connection->prepare(
+            <<<SQL
+            UPDATE orders
+            SET stripe_session_id = :stripe_session_id,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE order_number = :order_number
+              AND status = 'pending'
+            SQL
+        );
+        $statement->execute([
+            'stripe_session_id' => $stripeSessionId,
+            'order_number' => $orderNumber,
+        ]);
+    }
+
+    public function pendingOrdersWithStripeSessionForCustomer(int $customerId, int $limit = 5): array
+    {
+        if (!$this->stripeSessionTrackingAvailable()) {
+            return [];
+        }
+
+        $statement = $this->connection->prepare(
+            <<<SQL
+            SELECT *
+            FROM orders
+            WHERE customer_id = :customer_id
+              AND status = 'pending'
+              AND stripe_session_id IS NOT NULL
+              AND stripe_session_id <> ''
+            ORDER BY created_at DESC, id DESC
+            LIMIT :limit_count
+            SQL
+        );
+        $statement->bindValue(':customer_id', $customerId, PDO::PARAM_INT);
+        $statement->bindValue(':limit_count', max(1, $limit), PDO::PARAM_INT);
+        $statement->execute();
+
+        return array_map(fn (array $row): array => $this->normalizeOrder($row), $statement->fetchAll());
     }
 
     public function findMatchingPendingOrderForCustomer(int $customerId, array $snapshot, array $items): ?array
@@ -516,7 +561,7 @@ final class OrderRepository
 
     private function orderMatchesSnapshot(array $order, array $snapshot, array $items): bool
     {
-        foreach ([
+        $snapshotFields = [
             'customer_id',
             'shipping_recipient',
             'shipping_line_1',
@@ -526,7 +571,13 @@ final class OrderRepository
             'shipping_postal_code',
             'shipping_country',
             'shipping_phone',
-        ] as $field) {
+        ];
+
+        if ($this->couponTrackingAvailable()) {
+            array_splice($snapshotFields, 1, 0, ['coupon_code']);
+        }
+
+        foreach ($snapshotFields as $field) {
             if ($this->normalizeSnapshotValue($order[$field] ?? null) !== $this->normalizeSnapshotValue($snapshot[$field] ?? null)) {
                 return false;
             }
@@ -1362,6 +1413,8 @@ final class OrderRepository
             'customer_id' => (int) $row['customer_id'],
             'order_number' => (string) $row['order_number'],
             'status' => (string) $row['status'],
+            'coupon_code' => array_key_exists('coupon_code', $row) && $row['coupon_code'] !== null ? (string) $row['coupon_code'] : null,
+            'stripe_session_id' => array_key_exists('stripe_session_id', $row) && $row['stripe_session_id'] !== null ? (string) $row['stripe_session_id'] : null,
             'shipping_recipient' => (string) $row['shipping_recipient'],
             'shipping_line_1' => (string) $row['shipping_line_1'],
             'shipping_line_2' => $row['shipping_line_2'],
@@ -1381,5 +1434,49 @@ final class OrderRepository
             'created_at' => (string) $row['created_at'],
             'updated_at' => (string) $row['updated_at'],
         ];
+    }
+
+    private function couponTrackingAvailable(): bool
+    {
+        if ($this->couponTrackingAvailable !== null) {
+            return $this->couponTrackingAvailable;
+        }
+
+        $statement = $this->connection->prepare(
+            <<<SQL
+            SELECT COUNT(*)
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+              AND table_name = 'orders'
+              AND column_name = 'coupon_code'
+            SQL
+        );
+        $statement->execute();
+
+        $this->couponTrackingAvailable = (int) $statement->fetchColumn() > 0;
+
+        return $this->couponTrackingAvailable;
+    }
+
+    private function stripeSessionTrackingAvailable(): bool
+    {
+        if ($this->stripeSessionTrackingAvailable !== null) {
+            return $this->stripeSessionTrackingAvailable;
+        }
+
+        $statement = $this->connection->prepare(
+            <<<SQL
+            SELECT COUNT(*)
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+              AND table_name = 'orders'
+              AND column_name = 'stripe_session_id'
+            SQL
+        );
+        $statement->execute();
+
+        $this->stripeSessionTrackingAvailable = (int) $statement->fetchColumn() > 0;
+
+        return $this->stripeSessionTrackingAvailable;
     }
 }

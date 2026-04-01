@@ -13,21 +13,41 @@ if (!$connection) {
     render_error_page(503, 'Service temporarily unavailable', service_unavailable_message());
 }
 
+$productRepository = new \App\Repositories\ProductRepository($connection);
+$cartRepository = new \App\Repositories\CartRepository($connection);
+$addressRepository = new \App\Repositories\AddressRepository($connection);
 $cartService = new \App\Services\CartService(
-    new \App\Repositories\ProductRepository($connection),
+    $productRepository,
     $config['app'],
-    new \App\Repositories\CartRepository($connection),
+    $cartRepository,
 );
+$orderRepository = new \App\Repositories\OrderRepository($connection);
 $couponRepository = new \App\Repositories\CouponRepository($connection);
 $checkoutCouponService = new \App\Services\CheckoutCouponService($couponRepository);
+$checkoutService = new \App\Services\CheckoutService(
+    $cartService,
+    $addressRepository,
+    $orderRepository,
+    $productRepository,
+    $cartRepository,
+);
 $addressService = new \App\Services\AddressService(
-    new \App\Repositories\AddressRepository($connection)
+    $addressRepository
 );
 
 $userId = (int) $_SESSION['user_id'];
+
+if (!empty($config['app']['stripe_secret_key'])) {
+    try {
+        $checkoutService->reconcilePendingOrdersForCustomer($userId, (string) $config['app']['stripe_secret_key']);
+    } catch (\Throwable $exception) {
+        report_exception($exception, 'customer.checkout.reconcile');
+    }
+}
+
 $cartSummary = $cartService->summary();
 $selectedCouponCode = strtoupper(trim((string) ($_GET['coupon_code'] ?? '')));
-$availableCoupons = $checkoutCouponService->checkoutOptions($cartSummary);
+$availableCoupons = $checkoutCouponService->checkoutOptions($cartSummary, $userId);
 $appliedCoupon = null;
 
 if (!empty($cartSummary['is_empty'])) {
@@ -42,7 +62,7 @@ $selectedAddressId = (int) ($_GET['address_id'] ?? ($addresses[0]['id'] ?? 0));
 
 if ($selectedCouponCode !== '') {
     try {
-        $couponResult = $checkoutCouponService->applyCoupon($cartSummary, $selectedCouponCode);
+        $couponResult = $checkoutCouponService->applyCoupon($cartSummary, $selectedCouponCode, $userId);
         $cartSummary = $couponResult['summary'];
         $appliedCoupon = $couponResult['coupon'];
     } catch (\Throwable $exception) {

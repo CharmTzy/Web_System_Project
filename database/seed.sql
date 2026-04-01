@@ -1,6 +1,8 @@
 -- NovaMarket comprehensive demo seed
 -- Common demo password hash is shared across seeded accounts.
 -- Run this after database/schema.sql, or use database/setup_demo.sql to rebuild schema and data together.
+SET @OLD_SQL_SAFE_UPDATES := @@SQL_SAFE_UPDATES;
+SET SQL_SAFE_UPDATES = 0;
 
 INSERT INTO users (id, name, email, phone, avatar_url, password_hash, role, is_active) VALUES
     (1, 'Admin User', 'admin@novamarket.test', '+65 9000 0001', NULL, '$2y$12$eBzUWJoDoB55n7mjjzpaquK/l.EfPgXG7xL/0dEKaSsxhK7o8T2yq', 'admin', 1),
@@ -4767,3 +4769,5 @@ LEFT JOIN (
     ON review_stats.product_id = p.id
 SET p.average_rating = COALESCE(review_stats.average_rating, 0),
     p.review_count = COALESCE(review_stats.review_count, 0);
+
+SET SQL_SAFE_UPDATES = @OLD_SQL_SAFE_UPDATES;

@@ -189,6 +189,8 @@ CREATE TABLE orders (
     customer_id BIGINT UNSIGNED NOT NULL,
     order_number VARCHAR(30) NOT NULL UNIQUE,
     status ENUM('pending', 'paid', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
+    coupon_code VARCHAR(40) DEFAULT NULL,
+    stripe_session_id VARCHAR(255) DEFAULT NULL,
     shipping_recipient VARCHAR(120) NOT NULL,
     shipping_line_1 VARCHAR(255) NOT NULL,
     shipping_line_2 VARCHAR(255) DEFAULT NULL,
@@ -203,6 +205,8 @@ CREATE TABLE orders (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_orders_customer (customer_id),
+    INDEX idx_orders_customer_coupon (customer_id, coupon_code),
+    INDEX idx_orders_stripe_session (stripe_session_id),
     INDEX idx_orders_status (status),
     INDEX idx_orders_created_at (created_at),
     CONSTRAINT fk_orders_customer

@@ -44,12 +44,13 @@ $cartService = new \App\Services\CartService(
     $config['app'],
     new \App\Repositories\CartRepository($connection),
 );
+$orderRepository = new \App\Repositories\OrderRepository($connection);
 $couponRepository = new \App\Repositories\CouponRepository($connection);
 $checkoutCouponService = new \App\Services\CheckoutCouponService($couponRepository);
 $checkoutService = new \App\Services\CheckoutService(
     $cartService,
     new \App\Repositories\AddressRepository($connection),
-    new \App\Repositories\OrderRepository($connection),
+    $orderRepository,
     new \App\Repositories\ProductRepository($connection),
     new \App\Repositories\CartRepository($connection),
 );
@@ -76,12 +77,12 @@ try {
     $appliedCoupon = null;
 
     if ($selectedCouponCode !== '') {
-        $couponResult = $checkoutCouponService->applyCoupon($cartSummary, $selectedCouponCode);
+        $couponResult = $checkoutCouponService->applyCoupon($cartSummary, $selectedCouponCode, $userId);
         $cartSummary = $couponResult['summary'];
         $appliedCoupon = $couponResult['coupon'];
     }
 
-    $pendingOrder = $checkoutService->createPendingOrder($userId, $selectedAddressId, $cartSummary);
+    $pendingOrder = $checkoutService->createPendingOrder($userId, $selectedAddressId, $cartSummary, $selectedCouponCode !== '' ? $selectedCouponCode : null);
 
     $lineItems = [];
     foreach ($pendingOrder['items'] as $item) {
@@ -144,10 +145,15 @@ try {
 
     $session = stripe_api_request('POST', 'checkout/sessions', (string) $config['app']['stripe_secret_key'], $sessionPayload);
 
+    $stripeSessionId = trim((string) ($session['id'] ?? ''));
     $checkoutUrl = (string) ($session['url'] ?? '');
 
     if ($checkoutUrl === '') {
         throw new RuntimeException('Unable to start Stripe checkout. Please try again.');
+    }
+
+    if ($stripeSessionId !== '') {
+        $checkoutService->attachStripeSessionId((string) $pendingOrder['order_number'], $stripeSessionId);
     }
 
     $_SESSION['checkout_pending_order'] = (string) $pendingOrder['order_number'];

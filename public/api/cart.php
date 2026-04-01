@@ -29,8 +29,37 @@ function guest_drawer_cart(array $summary): array
 
 try {
     $config = require dirname(__DIR__, 2) . '/bootstrap.php';
-    $services = \App\Support\AppFactory::storefront($config);
-    $cartService = $services['cart'];
+    $database = new \App\Support\Database($config['database']);
+    $connection = $database->connection();
+
+    if (!$connection) {
+        throw new RuntimeException('Database connection required.');
+    }
+
+    $productRepository = new \App\Repositories\ProductRepository($connection);
+    $cartRepository = new \App\Repositories\CartRepository($connection);
+    $cartService = new \App\Services\CartService($productRepository, $config['app'], $cartRepository);
+
+    if (!empty($_SESSION['user_id'])
+        && (string) ($_SESSION['user_role'] ?? '') === 'customer'
+        && !empty($config['app']['stripe_secret_key'])) {
+        $checkoutService = new \App\Services\CheckoutService(
+            $cartService,
+            new \App\Repositories\AddressRepository($connection),
+            new \App\Repositories\OrderRepository($connection),
+            $productRepository,
+            $cartRepository,
+        );
+
+        try {
+            $checkoutService->reconcilePendingOrdersForCustomer(
+                (int) $_SESSION['user_id'],
+                (string) $config['app']['stripe_secret_key']
+            );
+        } catch (\Throwable $exception) {
+            report_exception($exception, 'api.cart.reconcile');
+        }
+    }
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $summary = $cartService->summary();

@@ -15,11 +15,15 @@ final class CouponService
     ) {
     }
 
-    public function browse(): array
+    public function browse(?int $customerId = null): array
     {
+        $availableCoupons = $customerId !== null
+            ? $this->repository->activeCouponsForCustomer($customerId)
+            : $this->repository->activeCoupons();
+
         $coupons = array_map(
             fn (array $coupon): array => $this->presentCoupon($coupon),
-            $this->repository->activeCoupons()
+            $availableCoupons
         );
 
         $limitedTime = array_values(array_filter(

@@ -169,6 +169,7 @@ final class CartService
     public function clear(): void
     {
         $this->storeCart([]);
+        $_SESSION[self::SESSION_KEY] = [];
     }
 
     private function sessionCart(): array

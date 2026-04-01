@@ -54,7 +54,7 @@ final class CheckoutService
         });
     }
 
-    public function createPendingOrder(int $userId, int $addressId, ?array $summaryOverride = null): array
+    public function createPendingOrder(int $userId, int $addressId, ?array $summaryOverride = null, ?string $couponCode = null): array
     {
         $summary = $summaryOverride ?? $this->cartService->summary();
 
@@ -68,7 +68,7 @@ final class CheckoutService
         }
 
         $items = $this->buildOrderItems($summary);
-        $orderData = $this->buildOrderData($userId, $address, $summary);
+        $orderData = $this->buildOrderData($userId, $address, $summary, $couponCode);
 
         return $this->orderRepository->transaction(function () use ($userId, $items, $orderData) {
             $existingOrder = $this->orderRepository->findMatchingPendingOrderForCustomer($userId, $orderData, $items);
@@ -124,6 +124,51 @@ final class CheckoutService
         });
     }
 
+    public function attachStripeSessionId(string $orderNumber, string $stripeSessionId): void
+    {
+        $normalizedOrderNumber = trim($orderNumber);
+        $normalizedSessionId = trim($stripeSessionId);
+
+        if ($normalizedOrderNumber === '' || $normalizedSessionId === '') {
+            return;
+        }
+
+        $this->orderRepository->attachStripeSessionId($normalizedOrderNumber, $normalizedSessionId);
+    }
+
+    public function reconcilePendingOrdersForCustomer(int $userId, string $stripeSecretKey, int $limit = 5): void
+    {
+        if ($userId < 1 || trim($stripeSecretKey) === '') {
+            return;
+        }
+
+        foreach ($this->orderRepository->pendingOrdersWithStripeSessionForCustomer($userId, $limit) as $order) {
+            $sessionId = trim((string) ($order['stripe_session_id'] ?? ''));
+            $orderNumber = trim((string) ($order['order_number'] ?? ''));
+
+            if ($sessionId === '' || $orderNumber === '') {
+                continue;
+            }
+
+            try {
+                $session = stripe_api_request(
+                    'GET',
+                    'checkout/sessions/' . rawurlencode($sessionId),
+                    $stripeSecretKey
+                );
+
+                $sessionOrder = trim((string) ($session['metadata']['order_number'] ?? ''));
+                $paymentStatus = (string) ($session['payment_status'] ?? '');
+
+                if ($sessionOrder === $orderNumber && $paymentStatus === 'paid') {
+                    $this->finalizePendingOrder($orderNumber);
+                }
+            } catch (\Throwable $exception) {
+                report_exception($exception, 'checkout.reconcile-pending');
+            }
+        }
+    }
+
     private function generateOrderNumber(): string
     {
         return 'NM-' . date('ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
@@ -144,11 +189,12 @@ final class CheckoutService
         );
     }
 
-    private function buildOrderData(int $userId, array $address, array $summary): array
+    private function buildOrderData(int $userId, array $address, array $summary, ?string $couponCode = null): array
     {
         return [
             'customer_id' => $userId,
             'status' => 'pending',
+            'coupon_code' => $couponCode !== null && trim($couponCode) !== '' ? strtoupper(trim($couponCode)) : null,
             'shipping_recipient' => $address['recipient'],
             'shipping_line_1' => $address['line_1'],
             'shipping_line_2' => $address['line_2'],
@@ -168,6 +214,7 @@ final class CheckoutService
         return [
             'customer_id' => (int) $order['customer_id'],
             'status' => (string) $order['status'],
+            'coupon_code' => $order['coupon_code'] ?? null,
             'shipping_recipient' => (string) $order['shipping_recipient'],
             'shipping_line_1' => (string) $order['shipping_line_1'],
             'shipping_line_2' => $order['shipping_line_2'],
