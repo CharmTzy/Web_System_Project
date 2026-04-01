@@ -97,7 +97,7 @@ $pageSkeletonVariant = $pageSkeletonVariant ?? match (true) {
     $currentPath === '/seller/index.php' => 'seller-dashboard',
     $currentPath === '/seller/products.php' => 'market-table',
     $currentPath === '/seller/product-edit.php' => 'form',
-    in_array($currentPath, ['/privacy.php', '/terms.php', '/contact.php'], true) => 'legal',
+    in_array($currentPath, ['/privacy.php', '/terms.php', '/contact.php', '/about.php'], true) => 'legal',
     $currentPath === '/profile.php',
     $currentPath === '/seller/store-profile.php' => 'form',
     default => 'panel',
