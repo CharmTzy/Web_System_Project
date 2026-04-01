@@ -6167,6 +6167,63 @@ a {
   color: var(--ink);
 }
 
+.product-review-card__admin-actions {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(13, 103, 213, 0.12);
+}
+
+.product-review-card__media,
+.product-review-form__existing-media {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  align-items: flex-start;
+}
+
+.product-review-card__image,
+.product-review-card__video {
+  display: block;
+  width: min(100%, 220px);
+  border-radius: 18px;
+  border: 1px solid #d7e3f6;
+  background: #f8fbff;
+  overflow: hidden;
+}
+
+.product-review-card__image {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.product-review-card__video {
+  aspect-ratio: 9 / 16;
+  max-height: 320px;
+  object-fit: contain;
+}
+
+.product-review-form__existing-media .product-review-card__image,
+.product-review-form__existing-media .product-review-card__video {
+  width: min(100%, 180px);
+  max-height: 260px;
+}
+
+@media (max-width: 767.98px) {
+  .product-review-card__image,
+  .product-review-card__video,
+  .product-review-form__existing-media .product-review-card__image,
+  .product-review-form__existing-media .product-review-card__video {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .product-review-card__video {
+    max-height: 420px;
+  }
+}
+
 .product-review-card__header p,
 .product-review-card p {
   margin: 0;
