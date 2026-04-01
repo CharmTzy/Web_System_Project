@@ -13,26 +13,30 @@ final class CheckoutCouponService
     {
     }
 
-    public function checkoutOptions(array $summary): array
+    public function checkoutOptions(array $summary, ?int $customerId = null): array
     {
+        $coupons = $customerId !== null
+            ? $this->couponRepository->activeCouponsForCustomer($customerId)
+            : $this->couponRepository->activeCoupons();
+
         return array_map(
             fn (array $coupon): array => $this->presentCouponForCheckout($coupon, $summary),
-            $this->couponRepository->activeCoupons()
+            $coupons
         );
     }
 
-    public function applyCoupon(array $summary, ?string $couponCode): array
+    public function applyCoupon(array $summary, ?string $couponCode, ?int $customerId = null): array
     {
         $normalizedCode = strtoupper(trim((string) $couponCode));
 
         if ($normalizedCode === '') {
             return [
-                'summary' => $summary + [
+                'summary' => array_merge($summary, [
                     'discount_amount' => 0.0,
                     'discount_amount_formatted' => money(0),
                     'applied_coupon' => null,
                     'has_discount' => false,
-                ],
+                ]),
                 'coupon' => null,
             ];
         }
@@ -41,6 +45,10 @@ final class CheckoutCouponService
 
         if ($coupon === null) {
             throw new RuntimeException('That coupon is not available right now.');
+        }
+
+        if ($customerId !== null && $this->couponRepository->hasCustomerUsedCoupon($customerId, $normalizedCode)) {
+            throw new RuntimeException('You have already used this coupon on a previous order.');
         }
 
         $evaluation = $this->evaluateCoupon($coupon, $summary);
@@ -58,7 +66,7 @@ final class CheckoutCouponService
         ];
 
         return [
-            'summary' => $summary + [
+            'summary' => array_merge($summary, [
                 'discount_amount' => $discountAmount,
                 'discount_amount_formatted' => money($discountAmount),
                 'applied_coupon' => $presentedCoupon,
@@ -67,7 +75,7 @@ final class CheckoutCouponService
                 'original_grand_total_formatted' => money($baseGrandTotal),
                 'grand_total' => $adjustedGrandTotal,
                 'grand_total_formatted' => money($adjustedGrandTotal),
-            ],
+            ]),
             'coupon' => $presentedCoupon,
         ];
     }

@@ -8,6 +8,8 @@ use PDO;
 
 final class CouponRepository implements CouponRepositoryInterface
 {
+    private ?bool $orderCouponTrackingAvailable = null;
+
     public function __construct(private readonly PDO $connection)
     {
     }
@@ -60,6 +62,50 @@ final class CouponRepository implements CouponRepositoryInterface
         );
     }
 
+    public function activeCouponsForCustomer(int $customerId): array
+    {
+        if (!$this->orderCouponTrackingAvailable()) {
+            return $this->activeCoupons();
+        }
+
+        $statement = $this->connection->prepare(
+            <<<SQL
+            SELECT
+                c.id,
+                c.code,
+                c.title,
+                c.description,
+                c.coupon_type,
+                c.discount_type,
+                c.discount_value,
+                c.minimum_spend,
+                c.seller_id,
+                c.starts_at,
+                c.ends_at,
+                c.is_featured,
+                c.is_active,
+                sp.store_name AS seller_name
+            FROM coupons c
+            LEFT JOIN seller_profiles sp
+                ON sp.user_id = c.seller_id
+            WHERE c.is_active = 1
+                AND c.starts_at <= NOW()
+                AND c.ends_at >= NOW()
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM orders o
+                    WHERE o.customer_id = :customer_id
+                      AND o.coupon_code = c.code
+                      AND o.status IN ('paid', 'shipped', 'delivered')
+                )
+            ORDER BY c.is_featured DESC, c.ends_at ASC, c.id ASC
+            SQL
+        );
+        $statement->execute(['customer_id' => $customerId]);
+
+        return array_map([$this, 'normalizeCoupon'], $statement->fetchAll());
+    }
+
     public function findActiveByCode(string $code): ?array
     {
         $statement = $this->connection->prepare(
@@ -95,6 +141,29 @@ final class CouponRepository implements CouponRepositoryInterface
         $row = $statement->fetch();
 
         return is_array($row) ? $this->normalizeCoupon($row) : null;
+    }
+
+    public function hasCustomerUsedCoupon(int $customerId, string $code): bool
+    {
+        if (!$this->orderCouponTrackingAvailable()) {
+            return false;
+        }
+
+        $statement = $this->connection->prepare(
+            <<<SQL
+            SELECT COUNT(*)
+            FROM orders
+            WHERE customer_id = :customer_id
+              AND coupon_code = :coupon_code
+              AND status IN ('paid', 'shipped', 'delivered')
+            SQL
+        );
+        $statement->execute([
+            'customer_id' => $customerId,
+            'coupon_code' => strtoupper(trim($code)),
+        ]);
+
+        return (int) $statement->fetchColumn() > 0;
     }
 
     public function listAll(array $filters = []): array
@@ -299,5 +368,27 @@ final class CouponRepository implements CouponRepositoryInterface
             'is_active' => (bool) ($row['is_active'] ?? true),
             'created_at' => (string) ($row['created_at'] ?? ''),
         ];
+    }
+
+    private function orderCouponTrackingAvailable(): bool
+    {
+        if ($this->orderCouponTrackingAvailable !== null) {
+            return $this->orderCouponTrackingAvailable;
+        }
+
+        $statement = $this->connection->prepare(
+            <<<SQL
+            SELECT COUNT(*)
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+              AND table_name = 'orders'
+              AND column_name = 'coupon_code'
+            SQL
+        );
+        $statement->execute();
+
+        $this->orderCouponTrackingAvailable = (int) $statement->fetchColumn() > 0;
+
+        return $this->orderCouponTrackingAvailable;
     }
 }

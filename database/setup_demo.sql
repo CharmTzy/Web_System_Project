@@ -2,6 +2,8 @@
 -- Run this file to rebuild the schema and populate comprehensive demo data in one pass.
 -- Warning: this drops the current database tables before recreating them.
 SET NAMES utf8mb4;
+SET @OLD_SQL_SAFE_UPDATES := @@SQL_SAFE_UPDATES;
+SET SQL_SAFE_UPDATES = 0;
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS chat_reads;
 DROP TABLE IF EXISTS chat_messages;
@@ -218,6 +220,8 @@ CREATE TABLE orders (
     customer_id BIGINT UNSIGNED NOT NULL,
     order_number VARCHAR(30) NOT NULL UNIQUE,
     status ENUM('pending', 'paid', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
+    coupon_code VARCHAR(40) DEFAULT NULL,
+    stripe_session_id VARCHAR(255) DEFAULT NULL,
     shipping_recipient VARCHAR(120) NOT NULL,
     shipping_line_1 VARCHAR(255) NOT NULL,
     shipping_line_2 VARCHAR(255) DEFAULT NULL,
@@ -232,6 +236,8 @@ CREATE TABLE orders (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_orders_customer (customer_id),
+    INDEX idx_orders_customer_coupon (customer_id, coupon_code),
+    INDEX idx_orders_stripe_session (stripe_session_id),
     INDEX idx_orders_status (status),
     INDEX idx_orders_created_at (created_at),
     CONSTRAINT fk_orders_customer
@@ -5199,3 +5205,5 @@ LEFT JOIN (
     ON review_stats.product_id = p.id
 SET p.average_rating = COALESCE(review_stats.average_rating, 0),
     p.review_count = COALESCE(review_stats.review_count, 0);
+
+SET SQL_SAFE_UPDATES = @OLD_SQL_SAFE_UPDATES;

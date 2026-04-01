@@ -13,17 +13,35 @@ if (!$connection) {
     render_error_page(503, 'Service temporarily unavailable', service_unavailable_message());
 }
 
+$productRepository = new \App\Repositories\ProductRepository($connection);
+$cartRepository = new \App\Repositories\CartRepository($connection);
+$addressRepository = new \App\Repositories\AddressRepository($connection);
 $cartService = new \App\Services\CartService(
-    new \App\Repositories\ProductRepository($connection),
+    $productRepository,
     $config['app'],
-    new \App\Repositories\CartRepository($connection),
+    $cartRepository,
 );
 $orderRepository = new \App\Repositories\OrderRepository($connection);
 $reviewRepository = new \App\Repositories\ReviewRepository($connection);
+$checkoutService = new \App\Services\CheckoutService(
+    $cartService,
+    $addressRepository,
+    $orderRepository,
+    $productRepository,
+    $cartRepository,
+);
 $returnRequestService = new \App\Services\OrderReturnRequestService(
     new \App\Repositories\OrderReturnRequestRepository($connection),
     $orderRepository
 );
+
+if (!empty($config['app']['stripe_secret_key'])) {
+    try {
+        $checkoutService->reconcilePendingOrdersForCustomer((int) $_SESSION['user_id'], (string) $config['app']['stripe_secret_key']);
+    } catch (\Throwable $exception) {
+        report_exception($exception, 'customer.orders.reconcile');
+    }
+}
 
 $orders = $orderRepository->listByCustomer((int) $_SESSION['user_id']);
 $page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;

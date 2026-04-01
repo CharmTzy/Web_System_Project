@@ -414,14 +414,15 @@ final class ProductRepository implements CatalogRepositoryInterface
         $statement = $this->connection->prepare(
             <<<SQL
             UPDATE products
-            SET stock_quantity = stock_quantity - :quantity
+            SET stock_quantity = stock_quantity - :quantity_to_reduce
             WHERE id = :id
-              AND stock_quantity >= :quantity
+              AND stock_quantity >= :minimum_required
             SQL
         );
         $statement->execute([
             'id' => $productId,
-            'quantity' => $quantity,
+            'quantity_to_reduce' => $quantity,
+            'minimum_required' => $quantity,
         ]);
 
         if ($statement->rowCount() < 1) {
