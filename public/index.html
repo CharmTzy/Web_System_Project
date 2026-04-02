@@ -145,7 +145,7 @@
 
           <form id="header-search-form" class="header-search header-search--market" action="/" method="get" role="search">
             <label class="visually-hidden" for="header-search-input">Search the product catalog</label>
-            <input id="header-search-input" class="header-search__input" type="search" name="search" placeholder="Search for anything" autocomplete="off" aria-autocomplete="list" aria-controls="header-search-autocomplete" aria-expanded="false" />
+            <input id="header-search-input" class="header-search__input" type="search" name="search" placeholder="Search for anything" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="header-search-autocomplete" aria-expanded="false" />
             <button class="header-search__button header-search__button--market" type="submit" aria-label="Search">&#8981;</button>
             <div class="search-autocomplete" id="header-search-autocomplete" data-search-autocomplete hidden>
               <div class="search-autocomplete__grid" data-search-autocomplete-grid>
@@ -269,7 +269,7 @@
       </section>
     </main>
 
-    <div class="offcanvas offcanvas-end cart-drawer" tabindex="-1" id="cartDrawer" aria-labelledby="cartDrawerLabel">
+    <div class="offcanvas offcanvas-end cart-drawer" tabindex="-1" id="cartDrawer" role="dialog" aria-labelledby="cartDrawerLabel">
       <div class="offcanvas-header">
         <div>
           <span class="hero-section__eyebrow">Cart preview</span>
@@ -280,7 +280,7 @@
       <div class="offcanvas-body" data-cart-drawer></div>
     </div>
 
-    <div class="offcanvas offcanvas-start mobile-drawer" tabindex="-1" id="mobileNavDrawer" aria-labelledby="mobileNavDrawerLabel">
+    <div class="offcanvas offcanvas-start mobile-drawer" tabindex="-1" id="mobileNavDrawer" role="dialog" aria-labelledby="mobileNavDrawerLabel">
       <div class="offcanvas-header">
         <div>
           <span class="hero-section__eyebrow">NovaMarket</span>
@@ -302,7 +302,7 @@
       </div>
     </div>
 
-    <div class="offcanvas offcanvas-end mobile-drawer mobile-filter-drawer" tabindex="-1" id="mobileFilterDrawer" aria-labelledby="mobileFilterDrawerLabel">
+    <div class="offcanvas offcanvas-end mobile-drawer mobile-filter-drawer" tabindex="-1" id="mobileFilterDrawer" role="dialog" aria-labelledby="mobileFilterDrawerLabel">
       <div class="offcanvas-header">
         <div>
           <span class="hero-section__eyebrow">Catalog tools</span>

@@ -122,6 +122,7 @@ $pageTitle = 'Help Center';
             <nav class="market-utility-nav" aria-label="Company information">
                 <a href="/privacy.php"<?= $currentPath === '/privacy.php' ? ' aria-current="page"' : '' ?>>Privacy Policy</a>
                 <a href="/terms.php"<?= $currentPath === '/terms.php' ? ' aria-current="page"' : '' ?>>Terms</a>
+                <a href="/about.php"<?= $currentPath === '/about.php' ? ' aria-current="page"' : '' ?>>About Us</a>
                 <a href="/contact.php"<?= $currentPath === '/contact.php' ? ' aria-current="page"' : '' ?>>Contact</a>
             </nav>
             <?php if ($paymentsInTestMode): ?>
@@ -153,6 +154,7 @@ $pageTitle = 'Help Center';
             <nav class="site-footer__links" aria-label="Legal and contact links">
                 <a href="/privacy.php"<?= $currentPath === '/privacy.php' ? ' aria-current="page"' : '' ?>>Privacy Policy</a>
                 <a href="/terms.php"<?= $currentPath === '/terms.php' ? ' aria-current="page"' : '' ?>>Terms</a>
+                <a href="/about.php"<?= $currentPath === '/about.php' ? ' aria-current="page"' : '' ?>>About Us</a>
                 <a href="/contact.php"<?= $currentPath === '/contact.php' ? ' aria-current="page"' : '' ?>>Contact</a>
             </nav>
             <p class="mb-0">Copyright &copy; 2026 NovaMarket. All rights reserved.</p>
