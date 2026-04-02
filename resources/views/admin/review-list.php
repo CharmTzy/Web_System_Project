@@ -15,6 +15,39 @@
         <div class="alert alert-danger" role="alert"><?= e((string) $error) ?></div>
     <?php endif; ?>
 
+    <form method="get" action="/admin/reviews.php" class="mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-6 form-group">
+                <label for="admin-review-search">Search reviews</label>
+                <input
+                    id="admin-review-search"
+                    class="form-control"
+                    type="text"
+                    name="search"
+                    value="<?= e((string) ($search ?? '')) ?>"
+                    placeholder="Search by customer, product, title, comment, seller reply, or reason"
+                >
+            </div>
+
+            <div class="col-md-3 form-group">
+                <label for="admin-review-status">Filter by status</label>
+                <select id="admin-review-status" class="form-select" name="status">
+                    <option value="" <?= ($statusFilter ?? '') === '' ? 'selected' : '' ?>>All reviews</option>
+                    <option value="visible" <?= ($statusFilter ?? '') === 'visible' ? 'selected' : '' ?>>Visible</option>
+                    <option value="flagged" <?= ($statusFilter ?? '') === 'flagged' ? 'selected' : '' ?>>Flagged</option>
+                    <option value="hidden" <?= ($statusFilter ?? '') === 'hidden' ? 'selected' : '' ?>>Hidden</option>
+                    <option value="flagged_hidden" <?= ($statusFilter ?? '') === 'flagged_hidden' ? 'selected' : '' ?>>Flagged + Hidden</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-brand" type="submit">Apply</button>
+                <a class="btn btn-brand-outline" href="/admin/reviews.php">Reset</a>
+            </div>
+        </div>
+    </form>
+
+
     <?php if ($reviews === []): ?>
         <div class="empty-state">
             <h3>No reviews found.</h3>

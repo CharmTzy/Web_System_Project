@@ -24,8 +24,8 @@ $buildUrl = static function (int $page) use ($currentPath, $query): string {
     return $currentPath . ($queryString !== '' ? '?' . $queryString : '');
 };
 
-$windowStart = max(1, (int) $pagination['page'] - 2);
-$windowEnd = min((int) $pagination['total_pages'], (int) $pagination['page'] + 2);
+$windowStart = max(1, (int) $pagination['page'] - 4);
+$windowEnd = min((int) $pagination['total_pages'], (int) $pagination['page'] + 4);
 ?>
 <nav class="admin-pagination" aria-label="Pagination">
     <p class="admin-pagination__summary">
