@@ -359,8 +359,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
                     role="search">
                     <label class="visually-hidden" for="header-search-input">Search the product catalog</label>
                     <input id="header-search-input" class="header-search__input" type="search" name="search"
-                        value="<?= e($headerSearchValue) ?>" placeholder="Search for anything" autocomplete="off"
-                        role="combobox" aria-autocomplete="list" aria-expanded="false">
+                        value="<?= e($headerSearchValue) ?>" placeholder="Search for anything" autocomplete="off">
                     <button class="header-search__button header-search__button--market" type="submit"
                         aria-label="Search">&#8981;</button>
                 </form>
