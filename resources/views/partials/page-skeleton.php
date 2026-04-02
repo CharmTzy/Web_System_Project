@@ -7,7 +7,7 @@ $variant = (string) ($variant ?? 'panel');
 <div class="page-skeleton page-skeleton--<?= e($variant) ?>" data-page-skeleton aria-hidden="true">
     <?php if ($variant === 'auth'): ?>
         <div class="page-skeleton__auth-shell">
-            <section class="page-skeleton__auth-spotlight">
+            <div class="page-skeleton__auth-spotlight">
                 <div class="page-skeleton__auth-brand">
                     <span class="page-skeleton__auth-brand-mark skeleton-shimmer"></span>
                     <span class="page-skeleton__auth-brand-wordmark skeleton-shimmer"></span>
@@ -29,9 +29,9 @@ $variant = (string) ($variant ?? 'panel');
                     <span class="page-skeleton__auth-footer-card skeleton-shimmer"></span>
                     <span class="page-skeleton__auth-footer-note skeleton-shimmer"></span>
                 </div>
-            </section>
+            </div>
 
-            <section class="page-skeleton__auth-panel">
+            <div class="page-skeleton__auth-panel">
                 <div class="page-skeleton__auth-card">
                     <span class="page-skeleton__auth-card-eyebrow skeleton-shimmer"></span>
                     <span class="page-skeleton__auth-card-title skeleton-shimmer"></span>
@@ -49,7 +49,7 @@ $variant = (string) ($variant ?? 'panel');
 
                     <span class="page-skeleton__auth-footer-link skeleton-shimmer"></span>
                 </div>
-            </section>
+            </div>
         </div>
     <?php elseif (str_starts_with($variant, 'admin-')): ?>
         <div class="page-skeleton__admin-shell">
