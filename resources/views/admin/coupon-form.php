@@ -1,8 +1,10 @@
 <?php
+
 declare(strict_types=1);
+
 $isEdit = isset($editCoupon) && is_array($editCoupon);
 ?>
-<div class="profile-card">
+<div class="profile-card profile-card--editor coupon-form-card">
     <span class="hero-section__eyebrow"><?= $isEdit ? 'Edit coupon' : 'Create coupon' ?></span>
     <h2 class="auth-card__title"><?= $isEdit ? e((string) $editCoupon['title']) : 'New coupon' ?></h2>
 
@@ -14,7 +16,7 @@ $isEdit = isset($editCoupon) && is_array($editCoupon);
         <div class="alert alert-danger" role="alert"><?= e((string) $formError) ?></div>
     <?php endif; ?>
 
-    <form class="auth-form" method="post" action="/admin/coupon-edit.php<?= $isEdit ? '?id=' . e((string) $editCoupon['id']) : '' ?>">
+    <form class="auth-form coupon-form" method="post" action="/admin/coupon-edit.php<?= $isEdit ? '?id=' . e((string) $editCoupon['id']) : '' ?>">
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
         <?php if ($isEdit): ?>
             <input type="hidden" name="coupon_id" value="<?= e((string) $editCoupon['id']) ?>">
@@ -65,7 +67,8 @@ $isEdit = isset($editCoupon) && is_array($editCoupon);
                 <input id="coupon-minimum-spend" class="form-control" type="number" name="minimum_spend" value="<?= e((string) ($formValues['minimum_spend'] ?? '')) ?>" min="0" step="0.01">
             </div>
             <div class="col-md-6 form-group">
-                <label for="coupon-seller">Seller (shop coupons only)</label>
+                <label for="coupon-seller">Seller</label>
+                <p class="coupon-form__helper">Leave this blank for sitewide campaigns. Select a seller only for shop coupons.</p>
                 <select id="coupon-seller" class="form-select" name="seller_id">
                     <option value="">Sitewide / no specific seller</option>
                     <?php foreach ($sellers as $seller): ?>

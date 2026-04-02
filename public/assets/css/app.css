@@ -2536,6 +2536,10 @@ a {
   margin: 0 auto;
 }
 
+.auth-wrapper--wide {
+  max-width: 860px;
+}
+
 .auth-card,
 .profile-card {
   background: var(--surface);
@@ -2543,6 +2547,10 @@ a {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow);
   padding: 2rem;
+}
+
+.profile-card--editor {
+  padding: clamp(1.75rem, 3vw, 2.5rem);
 }
 
 .auth-card__title {
@@ -2589,6 +2597,38 @@ a {
   text-align: center;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.coupon-form {
+  gap: 1.15rem;
+}
+
+.coupon-form .row {
+  --bs-gutter-x: 1rem;
+  --bs-gutter-y: 1rem;
+}
+
+.coupon-form .form-control,
+.coupon-form .form-select {
+  min-width: 0;
+}
+
+.coupon-form textarea.form-control {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.coupon-form__helper {
+  margin: -0.1rem 0 0.15rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.coupon-form .toggle-field {
+  width: 100%;
+  min-height: 100%;
+  align-items: flex-start;
 }
 
 .header-action-badge {
