@@ -160,6 +160,35 @@ INSERT INTO product_media (id, product_id, media_type, media_url, thumbnail_url,
     (31, 31, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/nova-wireless-earbuds-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/nova-wireless-earbuds-3.jpg', 'RapidCharge Power Bank product image', 1, 1),
     (32, 32, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/tidefold-weekender-bag.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/tidefold-weekender-bag.jpg', 'Traveler Passport Wallet product image', 1, 1);
 
+-- Keep dedicated galleries for the original 10 media-backed products.
+INSERT INTO product_media (id, product_id, media_type, media_url, thumbnail_url, alt_text, sort_order, is_primary) VALUES
+    (33, 1, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/nova-wireless-earbuds-2.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/nova-wireless-earbuds-2.jpg', 'Nova Wireless Earbuds gallery image', 2, 0),
+    (34, 1, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/nova-wireless-earbuds-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/nova-wireless-earbuds-3.jpg', 'Nova Wireless Earbuds gallery image', 3, 0),
+    (35, 2, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/echo-mechanical-keyboard-2.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/echo-mechanical-keyboard-2.jpg', 'Echo Mechanical Keyboard gallery image', 2, 0),
+    (36, 2, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/echo-mechanical-keyboard-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/echo-mechanical-keyboard-3.jpg', 'Echo Mechanical Keyboard gallery image', 3, 0),
+    (37, 3, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/halo-standing-desk-lamp-2.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/halo-standing-desk-lamp-2.jpg', 'Halo Standing Desk Lamp gallery image', 2, 0),
+    (38, 3, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/halo-standing-desk-lamp-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/halo-standing-desk-lamp-3.jpg', 'Halo Standing Desk Lamp gallery image', 3, 0),
+    (39, 4, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/ember-mug-warmer-2.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/ember-mug-warmer-2.jpg', 'Ember Mug Warmer gallery image', 2, 0),
+    (40, 4, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/ember-mug-warmer-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/ember-mug-warmer-3.jpg', 'Ember Mug Warmer gallery image', 3, 0),
+    (41, 5, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/solace-aroma-diffuser-2.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/solace-aroma-diffuser-2.jpg', 'Solace Aroma Diffuser gallery image', 2, 0),
+    (42, 5, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/solace-aroma-diffuser-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/solace-aroma-diffuser-3.jpg', 'Solace Aroma Diffuser gallery image', 3, 0),
+    (43, 6, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/tidefold-weekender-bag-2.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/tidefold-weekender-bag-2.jpg', 'TideFold Weekender Bag gallery image', 2, 0),
+    (44, 6, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/tidefold-weekender-bag-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/tidefold-weekender-bag-3.jpg', 'TideFold Weekender Bag gallery image', 3, 0),
+    (45, 7, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/pulse-smart-bottle-2.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/pulse-smart-bottle-2.jpg', 'Pulse Smart Bottle gallery image', 2, 0),
+    (46, 7, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/pulse-smart-bottle-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/pulse-smart-bottle-3.jpg', 'Pulse Smart Bottle gallery image', 3, 0),
+    (47, 8, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/hearth-throw-blanket-2.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/hearth-throw-blanket-2.jpg', 'Hearth Throw Blanket gallery image', 2, 0),
+    (48, 8, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/hearth-throw-blanket-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/hearth-throw-blanket-3.jpg', 'Hearth Throw Blanket gallery image', 3, 0),
+    (49, 9, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/aeroblend-portable-blender-2.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/aeroblend-portable-blender-2.jpg', 'AeroBlend Portable Blender gallery image', 2, 0),
+    (50, 9, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/aeroblend-portable-blender-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/aeroblend-portable-blender-3.jpg', 'AeroBlend Portable Blender gallery image', 3, 0),
+    (51, 10, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/terra-recycled-tote-2.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/terra-recycled-tote-2.jpg', 'Terra Recycled Tote gallery image', 2, 0),
+    (52, 10, 'image', 'https://storage.googleapis.com/novamarket-product-images/product-images/terra-recycled-tote-3.jpg', 'https://storage.googleapis.com/novamarket-product-images/product-images/terra-recycled-tote-3.jpg', 'Terra Recycled Tote gallery image', 3, 0);
+
+-- Products 11-32 do not have dedicated cloud images in the demo bundle yet.
+-- Remove the recycled cross-product photos so those products fall back cleanly
+-- until their own media is uploaded through the admin or seller product editor.
+DELETE FROM product_media WHERE product_id BETWEEN 11 AND 32;
+UPDATE products SET image_url = NULL WHERE id BETWEEN 11 AND 32;
+
 INSERT INTO addresses (id, user_id, label, recipient, line_1, line_2, city, state, postal_code, country, phone, is_default) VALUES
     (1, 9, 'Home', 'Sample Customer', '123 Orchard Road, #04-56', NULL, 'Singapore', 'Central', '238888', 'Singapore', '+65 9123 4567', 1),
     (2, 10, 'Home', 'Mia Tan', '18 Tanjong Pagar Plaza, #08-19', NULL, 'Singapore', 'Central', '081018', 'Singapore', '+65 9123 4501', 1),
