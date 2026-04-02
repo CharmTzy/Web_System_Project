@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use PDO;
 use PDOException;
 
@@ -44,6 +46,8 @@ final class Database
                     PDO::ATTR_EMULATE_PREPARES => false,
                 ]
             );
+
+            $this->configureSessionTimezone($this->connection);
         } catch (PDOException) {
             return null;
         }
@@ -56,5 +60,28 @@ final class Database
         return (string) $this->config['host'] !== ''
             && (string) $this->config['database'] !== '';
     }
-}
 
+    private function configureSessionTimezone(PDO $connection): void
+    {
+        $timezoneName = trim((string) ($this->config['timezone'] ?? ''));
+
+        if ($timezoneName === '') {
+            return;
+        }
+
+        try {
+            $timezone = new DateTimeZone($timezoneName);
+        } catch (\Throwable) {
+            return;
+        }
+
+        $offsetSeconds = $timezone->getOffset(new DateTimeImmutable('now', $timezone));
+        $sign = $offsetSeconds < 0 ? '-' : '+';
+        $absoluteSeconds = abs($offsetSeconds);
+        $hours = intdiv($absoluteSeconds, 3600);
+        $minutes = intdiv($absoluteSeconds % 3600, 60);
+        $offset = sprintf('%s%02d:%02d', $sign, $hours, $minutes);
+
+        $connection->exec('SET time_zone = ' . $connection->quote($offset));
+    }
+}
