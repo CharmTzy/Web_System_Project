@@ -77,19 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$allProducts = $productRepository->listManagedProducts();
-$allReviews = [];
-
-foreach ($allProducts as $product) {
-    $productReviews = $reviewRepository->listAllByProduct((int) $product['id']);
-
-    foreach ($productReviews as $review) {
-        $review['product_name'] = (string) ($product['name'] ?? 'Unknown product');
-        $review['product_slug'] = (string) ($product['slug'] ?? '');
-        $review['seller_id'] = (int) ($product['seller_id'] ?? 0);
-        $allReviews[] = $review;
-    }
-}
+$allReviews = $reviewRepository->listAllForAdmin();
 
 usort(
     $allReviews,
