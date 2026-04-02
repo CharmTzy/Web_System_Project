@@ -14,12 +14,15 @@
             <input type="hidden" name="address_id" value="" data-address-id>
 
             <div class="form-group">
-                <label for="addr-label">Label</label>
-                <select id="addr-label" class="form-select" name="label">
-                    <option value="Home">Home</option>
-                    <option value="Office">Office</option>
-                    <option value="Other">Other</option>
-                </select>
+                <label for="addr-label">Address name</label>
+                <input
+                    id="addr-label"
+                    class="form-control"
+                    type="text"
+                    name="label"
+                    required
+                    maxlength="50"
+                    placeholder="e.g. Mom's house, Uni hostel, Partner office">
             </div>
 
             <div class="form-group">

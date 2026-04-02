@@ -57,6 +57,7 @@ $paymentsInTestMode = !empty($paymentsInTestMode);
                         <div>
                             <strong><?= e((string) $fulfillment['seller_name']) ?></strong>
                             <p><?= e((string) $fulfillment['item_count']) ?> items · <?= e((string) ($fulfillment['tracking_number'] ?: 'Tracking to follow')) ?></p>
+                            <p>Estimated delivery: <?= e((string) ($fulfillment['estimated_delivery_date_formatted'] ?: 'We’ll update this soon')) ?></p>
                         </div>
                         <span class="<?= e(delivery_status_badge_class((string) $fulfillment['status'])) ?>">
                             <?= e((string) $fulfillment['status_label']) ?>

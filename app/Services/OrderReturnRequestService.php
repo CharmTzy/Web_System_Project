@@ -130,8 +130,15 @@ final class OrderReturnRequestService
             throw new RuntimeException('Return and refund requests are available after the package has been delivered.');
         }
 
-        if ($this->requestRepository->findActiveForCustomerPackage($customerId, $orderId, $sellerId) !== null) {
-            throw new RuntimeException('You already have an active return or refund request for this package.');
+        $activeRequest = $this->requestRepository->findActiveForCustomerPackage($customerId, $orderId, $sellerId);
+        if ($activeRequest !== null) {
+            $activeStatus = (string) ($activeRequest['status'] ?? 'pending');
+
+            throw new RuntimeException(match ($activeStatus) {
+                'approved' => 'Your latest request is already approved. Follow the seller handoff instructions in your request details.',
+                'received' => 'Your return has been received. Please wait while the seller completes the refund step.',
+                default => 'You already have an active request for this package. Wait for the seller to review it before opening a new one.',
+            });
         }
 
         return $this->presentRequest($this->requestRepository->create([

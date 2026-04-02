@@ -11,6 +11,7 @@ use RuntimeException;
 final class OrderRepository
 {
     private const SYNTHETIC_FULFILLMENT_SCALE = 1000000;
+    private const DEFAULT_ESTIMATED_DELIVERY_DAYS = 3;
 
     private ?bool $fulfillmentsTableAvailable = null;
     private ?bool $couponTrackingAvailable = null;
@@ -233,12 +234,18 @@ final class OrderRepository
                         WHEN f.status = 'pending' THEN 'paid'
                         ELSE f.status
                     END,
+                    f.estimated_delivery_date = CASE
+                        WHEN f.status = 'pending' AND f.estimated_delivery_date IS NULL
+                            THEN DATE_ADD(CURRENT_DATE, INTERVAL :eta_days DAY)
+                        ELSE f.estimated_delivery_date
+                    END,
                     f.updated_at = CURRENT_TIMESTAMP
                 WHERE o.order_number = :order_number
                 SQL
             );
             $fulfillmentStatement->execute([
                 'order_number' => $orderNumber,
+                'eta_days' => self::DEFAULT_ESTIMATED_DELIVERY_DAYS,
             ]);
         }
 

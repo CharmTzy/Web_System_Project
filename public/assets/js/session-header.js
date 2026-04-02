@@ -204,18 +204,12 @@
     chatLink.href = '/customer/chat.php';
     chatLink.textContent = 'Chat';
 
-    const addressesLink = document.createElement('a');
-    addressesLink.href = '/customer/addresses.php';
-    addressesLink.textContent = 'Addresses';
-
     if (helpLink) {
       container.insertBefore(ordersLink, helpLink);
       container.insertBefore(chatLink, helpLink);
-      container.insertBefore(addressesLink, helpLink);
     } else {
       container.appendChild(ordersLink);
       container.appendChild(chatLink);
-      container.appendChild(addressesLink);
     }
   }
 })();
