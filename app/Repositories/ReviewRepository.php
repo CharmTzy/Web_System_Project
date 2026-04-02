@@ -72,6 +72,48 @@ final class ReviewRepository
         }
     }
 
+    public function listAllForAdmin(): array
+    {
+        try {
+            $statement = $this->connection->query(
+                <<<SQL
+                SELECT
+                    pr.*,
+                    u.name AS user_name,
+                    p.name AS product_name,
+                    p.slug AS product_slug,
+                    p.seller_id
+                FROM product_reviews pr
+                INNER JOIN users u
+                    ON u.id = pr.user_id
+                INNER JOIN products p
+                    ON p.id = pr.product_id
+                ORDER BY pr.updated_at DESC, pr.id DESC
+                SQL
+            );
+
+            $reviews = array_map(fn (array $row): array => $this->normalize($row), $statement->fetchAll());
+
+            $reviewIds = array_map(
+                static fn(array $review): int => (int) $review['id'],
+                $reviews
+            );
+
+            $mediaByReviewId = $this->listMediaByReviewIds($reviewIds);
+
+            foreach ($reviews as &$review) {
+                $review['media'] = $mediaByReviewId[$review['id']] ?? [];
+            }
+            unset($review);
+
+            return $reviews;
+        } catch (PDOException) {
+            return [];
+        }
+    }
+
+
+
     public function findById(int $reviewId): ?array
     {
         try {
@@ -512,6 +554,45 @@ final class ReviewRepository
         }
     }
 
+    private function listMediaByReviewIds(array $reviewIds): array
+    {
+        $reviewIds = array_values(array_filter(array_map('intval', $reviewIds)));
+
+        if ($reviewIds === []) {
+            return [];
+        }
+
+        try {
+            $placeholders = implode(', ', array_fill(0, count($reviewIds), '?'));
+            $statement = $this->connection->prepare(
+                "SELECT id, review_id, media_type, file_path, created_at
+                FROM product_review_media
+                WHERE review_id IN ($placeholders)
+                ORDER BY id ASC"
+            );
+            $statement->execute($reviewIds);
+
+            $grouped = [];
+
+            foreach ($statement->fetchAll() as $row) {
+                $reviewId = (int) $row['review_id'];
+
+                $grouped[$reviewId][] = [
+                    'id' => (int) $row['id'],
+                    'review_id' => $reviewId,
+                    'media_type' => (string) $row['media_type'],
+                    'file_path' => (string) $row['file_path'],
+                    'created_at' => (string) $row['created_at'],
+                ];
+            }
+
+            return $grouped;
+        } catch (PDOException) {
+            return [];
+        }
+    }
+
+
     private function refreshProductStats(int $productId): void
     {
         $statement = $this->connection->prepare(
@@ -539,11 +620,20 @@ final class ReviewRepository
         ]);
     }
 
-    private function normalize(array $row): array
+   private function normalize(array $row): array
     {
         return [
             'id' => (int) $row['id'],
             'product_id' => (int) $row['product_id'],
+            'product_name' => isset($row['product_name']) && $row['product_name'] !== null
+                ? (string) $row['product_name']
+                : null,
+            'product_slug' => isset($row['product_slug']) && $row['product_slug'] !== null
+                ? (string) $row['product_slug']
+                : null,
+            'seller_id' => isset($row['seller_id']) && $row['seller_id'] !== null
+                ? (int) $row['seller_id']
+                : null,
             'user_id' => (int) $row['user_id'],
             'user_name' => (string) ($row['user_name'] ?? ''),
             'rating' => (int) $row['rating'],

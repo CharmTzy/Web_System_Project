@@ -66,6 +66,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
             <div class="d-flex gap-3 flex-wrap">
                 <a class="btn btn-brand" href="/seller/orders.php">Manage orders</a>
                 <a class="btn btn-brand" href="/seller/products.php">Manage products</a>
+                <a class="btn btn-brand" href="/seller/reviews.php">Manage reviews</a>
                 <a class="btn btn-brand-outline" href="/seller/product-edit.php">Add new product</a>
                 <a class="btn btn-brand-outline" href="/seller/chat.php">Open chat inbox</a>
                 <a class="btn btn-brand-outline" href="/seller/store-profile.php">Edit store profile</a>
