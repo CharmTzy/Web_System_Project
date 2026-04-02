@@ -110,9 +110,9 @@ $reviewStateJson = json_encode(
                                 class="form-control"
                                 type="file"
                                 name="video"
-                                accept=".mp4,.webm,video/*"
+                                accept=".mp4,.webm,.mov,.m4v,video/*"
                             >
-                            <small class="form-text">Upload one review video. It will also be stored in Google Cloud Storage.</small>
+                            <small class="form-text">Upload one review video in MP4, WebM, MOV, or M4V format. Maximum 25 MB. It will also be stored in Google Cloud Storage.</small>
                         </div>
                     </div>
 

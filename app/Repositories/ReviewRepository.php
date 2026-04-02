@@ -496,6 +496,9 @@ final class ReviewRepository
                     :media_type,
                     :file_path
                 )
+                ON DUPLICATE KEY UPDATE
+                    file_path = VALUES(file_path),
+                    created_at = CURRENT_TIMESTAMP
                 SQL
             );
             $statement->execute([
@@ -504,7 +507,7 @@ final class ReviewRepository
                 'file_path' => $filePath,
             ]);
 
-            return (int) $this->connection->lastInsertId();
+            return (int) ($this->connection->lastInsertId() ?: $reviewId);
         } catch (PDOException) {
             return null;
         }

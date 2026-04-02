@@ -14,6 +14,16 @@ try {
         ], 405);
     }
 
+    if (request_was_rejected_for_size()) {
+        respond([
+            'ok' => false,
+            'message' => sprintf(
+                'The upload is larger than the current server limit. Please keep it under %s or increase PHP upload_max_filesize/post_max_size.',
+                ini_get('upload_max_filesize') ?: 'the configured file-size limit'
+            ),
+        ], 413);
+    }
+
     if (!verify_csrf($_POST['csrf_token'] ?? null)) {
         respond([
             'ok' => false,
@@ -277,8 +287,8 @@ function handleReviewMediaUpload(
         ],
         'video' => [
             'field' => 'video',
-            'extensions' => ['mp4', 'webm'],
-            'max_size' => 15 * 1024 * 1024,
+            'extensions' => ['mp4', 'webm', 'mov', 'm4v'],
+            'max_size' => 25 * 1024 * 1024,
             'mime_prefix' => 'video/',
         ],
     ];
@@ -300,7 +310,7 @@ function handleReviewMediaUpload(
         }
 
         if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-            $warnings[] = ucfirst($mediaType) . ' upload could not be processed.';
+            $warnings[] = reviewMediaUploadErrorMessage($mediaType, (int) ($file['error'] ?? UPLOAD_ERR_OK));
             continue;
         }
 
@@ -364,11 +374,26 @@ function handleReviewMediaUpload(
             continue;
         }
 
-        $reviewRepository->deleteMediaByType($reviewId, $mediaType);
-        $reviewRepository->addMedia($reviewId, $mediaType, $publicUrl);
+        $savedMediaId = $reviewRepository->addMedia($reviewId, $mediaType, $publicUrl);
+
+        if ($savedMediaId === null) {
+            $warnings[] = ucfirst($mediaType) . ' upload succeeded, but the review media could not be saved.';
+        }
     }
 
     return $warnings === [] ? null : implode(' ', $warnings);
+}
+
+function reviewMediaUploadErrorMessage(string $mediaType, int $errorCode): string
+{
+    $label = ucfirst($mediaType);
+
+    return match ($errorCode) {
+        UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => $label . ' is too large for the server upload limit.',
+        UPLOAD_ERR_PARTIAL => $label . ' upload was interrupted. Please try again.',
+        UPLOAD_ERR_NO_TMP_DIR, UPLOAD_ERR_CANT_WRITE, UPLOAD_ERR_EXTENSION => $label . ' upload could not be stored on the server.',
+        default => $label . ' upload could not be processed.',
+    };
 }
 
 function respond(array $payload, int $status = 200): never
@@ -376,4 +401,45 @@ function respond(array $payload, int $status = 200): never
     http_response_code($status);
     echo json_encode($payload);
     exit;
+}
+
+function request_was_rejected_for_size(): bool
+{
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        return false;
+    }
+
+    $contentType = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ''));
+    $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+
+    if ($contentLength < 1 || !str_contains($contentType, 'multipart/form-data')) {
+        return false;
+    }
+
+    if ($_POST !== [] || $_FILES !== []) {
+        return false;
+    }
+
+    $postMaxBytes = ini_size_to_bytes((string) ini_get('post_max_size'));
+
+    return $postMaxBytes > 0 && $contentLength > $postMaxBytes;
+}
+
+function ini_size_to_bytes(string $value): int
+{
+    $value = trim($value);
+
+    if ($value === '') {
+        return 0;
+    }
+
+    $unit = strtolower(substr($value, -1));
+    $number = (float) $value;
+
+    return match ($unit) {
+        'g' => (int) round($number * 1024 * 1024 * 1024),
+        'm' => (int) round($number * 1024 * 1024),
+        'k' => (int) round($number * 1024),
+        default => (int) round($number),
+    };
 }
