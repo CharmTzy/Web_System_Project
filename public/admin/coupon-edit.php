@@ -91,7 +91,7 @@ require dirname(__DIR__, 2) . '/resources/views/layouts/header.php';
 <main>
     <section class="auth-section">
         <div class="container">
-            <div class="auth-wrapper">
+            <div class="auth-wrapper auth-wrapper--wide">
                 <?= render('admin/coupon-form', [
                     'editCoupon' => $editCoupon,
                     'formValues' => $formValues,
