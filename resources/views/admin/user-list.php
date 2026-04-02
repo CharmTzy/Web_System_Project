@@ -17,9 +17,11 @@
     <?php endif; ?>
 
     <form class="catalog-sortbar" method="get" action="/admin/users.php" style="margin-bottom:1rem;">
-        <input class="form-control" type="search" name="search" value="<?= e($filters['search'] ?? '') ?>" placeholder="Search by name or email" style="max-width:300px;">
+        <label class="visually-hidden" for="admin-user-search">Search users</label>
+        <input id="admin-user-search" class="form-control" type="search" name="search" value="<?= e($filters['search'] ?? '') ?>" placeholder="Search by name or email" style="max-width:300px;">
         <div class="catalog-sortbar__controls">
-            <select class="form-select" name="role" onchange="this.form.submit()" style="min-width:150px;">
+            <label class="visually-hidden" for="admin-role-filter">Filter by role</label>
+            <select id="admin-role-filter" class="form-select" name="role" onchange="this.form.submit()" style="min-width:150px;">
                 <option value="">All roles</option>
                 <option value="admin" <?= ($filters['role'] ?? '') === 'admin' ? 'selected' : '' ?>>Admin</option>
                 <option value="seller" <?= ($filters['role'] ?? '') === 'seller' ? 'selected' : '' ?>>Seller</option>

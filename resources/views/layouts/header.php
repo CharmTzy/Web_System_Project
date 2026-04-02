@@ -360,7 +360,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
                     <label class="visually-hidden" for="header-search-input">Search the product catalog</label>
                     <input id="header-search-input" class="header-search__input" type="search" name="search"
                         value="<?= e($headerSearchValue) ?>" placeholder="Search for anything" autocomplete="off"
-                        aria-autocomplete="list" aria-expanded="false">
+                        role="combobox" aria-autocomplete="list" aria-expanded="false">
                     <button class="header-search__button header-search__button--market" type="submit"
                         aria-label="Search">&#8981;</button>
                 </form>
@@ -466,7 +466,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
         </div>
     </header>
 
-    <div class="offcanvas offcanvas-end cart-drawer" tabindex="-1" id="cartDrawer" aria-labelledby="cartDrawerLabel">
+    <div class="offcanvas offcanvas-end cart-drawer" tabindex="-1" id="cartDrawer" role="dialog" aria-labelledby="cartDrawerLabel">
         <div class="offcanvas-header">
             <div>
                 <span class="hero-section__eyebrow">Cart preview</span>
@@ -478,7 +478,7 @@ if ($robotsMeta !== '' && !headers_sent()) {
     </div>
 
     <div class="offcanvas offcanvas-start mobile-drawer" tabindex="-1" id="mobileNavDrawer"
-        aria-labelledby="mobileNavDrawerLabel">
+        role="dialog" aria-labelledby="mobileNavDrawerLabel">
         <div class="offcanvas-header">
             <div>
                 <span class="hero-section__eyebrow">Browse menu</span>
