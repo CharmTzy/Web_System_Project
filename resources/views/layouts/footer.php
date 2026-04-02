@@ -37,5 +37,8 @@ declare(strict_types=1);
     <?php if (!empty($pageScript)): ?>
         <script src="<?= e(asset('js/' . $pageScript)) ?>"></script>
     <?php endif; ?>
+    <?php if (!empty($pageScriptExtra)): ?>
+        <script src="<?= e(asset('js/' . $pageScriptExtra)) ?>"></script>
+    <?php endif; ?>
 </body>
 </html>
