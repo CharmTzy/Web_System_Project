@@ -10,5 +10,5 @@ return [
     'username' => (string) env('DB_USERNAME', 'root'),
     'password' => (string) env('DB_PASSWORD', ''),
     'charset' => (string) env('DB_CHARSET', 'utf8mb4'),
+    'timezone' => (string) env('APP_TIMEZONE', 'Asia/Singapore'),
 ];
-
