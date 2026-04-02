@@ -37,12 +37,16 @@ $isEdit = isset($editAddress) && is_array($editAddress);
 
         <div class="row g-3">
             <div class="col-md-4 form-group">
-                <label for="admin-address-label">Label</label>
-                <select id="admin-address-label" class="form-select" name="label" required>
-                    <option value="Home" <?= (string) $formValues['label'] === 'Home' ? 'selected' : '' ?>>Home</option>
-                    <option value="Office" <?= (string) $formValues['label'] === 'Office' ? 'selected' : '' ?>>Office</option>
-                    <option value="Other" <?= (string) $formValues['label'] === 'Other' ? 'selected' : '' ?>>Other</option>
-                </select>
+                <label for="admin-address-label">Address name</label>
+                <input
+                    id="admin-address-label"
+                    class="form-control"
+                    type="text"
+                    name="label"
+                    value="<?= e((string) $formValues['label']) ?>"
+                    required
+                    maxlength="50"
+                    placeholder="e.g. Parent's house, Branch office">
             </div>
             <div class="col-md-8 form-group">
                 <label for="admin-address-recipient">Recipient</label>

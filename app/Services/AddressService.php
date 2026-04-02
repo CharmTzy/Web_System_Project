@@ -93,12 +93,16 @@ final class AddressService
 
     private function validateAddress(array $input): array
     {
-        $label = trim((string) ($input['label'] ?? 'Home'));
+        $label = sanitize_single_line($input['label'] ?? '', 50);
         $recipient = trim((string) ($input['recipient'] ?? ''));
         $line1 = trim((string) ($input['line_1'] ?? ''));
         $city = trim((string) ($input['city'] ?? ''));
         $state = trim((string) ($input['state'] ?? ''));
         $postalCode = trim((string) ($input['postal_code'] ?? ''));
+
+        if ($label === '') {
+            throw new InvalidArgumentException('Address name is required.');
+        }
 
         if ($recipient === '') {
             throw new InvalidArgumentException('Recipient name is required.');
@@ -118,11 +122,6 @@ final class AddressService
 
         if ($postalCode === '') {
             throw new InvalidArgumentException('Postal code is required.');
-        }
-
-        $allowedLabels = ['Home', 'Office', 'Other'];
-        if (!in_array($label, $allowedLabels, true)) {
-            $label = 'Other';
         }
 
         return [

@@ -1937,10 +1937,14 @@ a {
 
 .catalog-sidebar__panel {
   position: sticky;
-  top: 8.6rem;
+  top: 7.2rem;
   display: grid;
   gap: 1.2rem;
   padding: 1.35rem;
+  align-self: start;
+  max-height: calc(100vh - 8.2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .catalog-sidebar__section {
@@ -4206,7 +4210,6 @@ a {
 }
 
 .catalog-sidebar__panel {
-  top: 7.2rem;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: #ffffff;

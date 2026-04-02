@@ -38,14 +38,12 @@ if ($isAdmin) {
 
 $marketNavLinks = [
     ['label' => 'Home Favorites', 'href' => '/?category=home-living', 'active' => false],
-    ['label' => 'Fashion Finds', 'href' => '/?category=lifestyle', 'active' => false],
 ];
 
 if ($isCustomer) {
     $marketNavLinks[] = ['label' => 'Coupons', 'href' => '/customer/coupons.php', 'active' => $currentPath === '/customer/coupons.php'];
     $marketNavLinks[] = ['label' => 'Orders', 'href' => '/customer/orders.php', 'active' => $currentPath === '/customer/orders.php'];
     $marketNavLinks[] = ['label' => 'Chat', 'href' => '/customer/chat.php', 'active' => $currentPath === '/customer/chat.php'];
-    $marketNavLinks[] = ['label' => 'Addresses', 'href' => '/customer/addresses.php', 'active' => $currentPath === '/customer/addresses.php'];
 } else {
     $profileShortcut = ['label' => 'Registry', 'href' => '/register.php', 'active' => $currentPath === '/register.php'];
 
