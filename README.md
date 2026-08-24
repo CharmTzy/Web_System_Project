@@ -1,5 +1,8 @@
 # Web System Project
 
+> 📄 **Case study:** https://waiyanaung.dev/projects/web-system-project
+> 🔗 **Live demo:** https://novamarket-storefront.vercel.app/
+
 Customer-facing e-commerce module for INF1005 System 2: product listing, filtering, quantity updates, and shopping cart.
 
 ## What Is Included
